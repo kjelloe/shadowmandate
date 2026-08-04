@@ -1,0 +1,7 @@
+dev-prompts.md
+node_modules/
+
+# Dev tools
+.claude
+dev-log.md
+dev-questions.md
