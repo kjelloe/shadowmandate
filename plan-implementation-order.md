@@ -1,9 +1,9 @@
 # Shadow Mandate — Implementation Order (M0–M7)
 
-**STATUS 2026-08-04: M0–M4 landed (engine) + rulings D35–D40, suite 96/96
-green. Building ENTRY landed early (D38 needed it), so slice 5f is part-done.
-M3/M4 client slices deferred; M5 starting now. See `dev-log.md` for
-per-milestone findings; `dev-questions.md` is currently empty.**
+**STATUS 2026-08-04: M0–M4 complete + M5 slices 5a–5c (sim harness, AI rival
+Firms), suite 106/106 green, committed and pushed to `dev_night`. Building
+ENTRY landed early (D38), so 5f is part-done. Remaining in M5: 5d standoff,
+5f dialogue content, 5g batch lane, 5h payBail. M3/M4 client slices deferred.**
 
 *Written 2026-08-04, for the implementing agent (me). The operational plan is
 `plan-version1.md`; specs are `specs/systems/S01–S15`; this file is HOW the
@@ -120,7 +120,7 @@ downed→captured / heat rise+decay) + census shows every transition fires.
 **Gate:** scripted agent completes each type; economy census columns
 (offered/accepted/completed/expired) emitting — these become battery columns.
 
-## M5 — AI Rival Firms ⬜ NOT STARTED
+## M5 — AI Rival Firms 🟡 IN PROGRESS (5a–5c done)
 
 - **5a** **Sim harness before doctrine** (instrument-first): `tools/
   sm_worldday.mjs` — runs K Firms through a world-day of deployments on a

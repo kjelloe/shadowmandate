@@ -159,6 +159,34 @@ export function agentAtCell(state, cellX, cellY, exceptId = -1) {
   return null;
 }
 
+// D17 + D40: bail. Paid from the BANK (D30), scaled by the Firm's tier, and
+// it restores the agent to its HQ — which, inside D40's grace window, also
+// saves whatever contracts it was running.
+//
+// The bank balance lives in the server ledger, so it arrives on the command:
+// the reducer must not read storage.
+export function bailCost(firm, cfg) {
+  const pct = (cfg.bail.pctOfBankTier1 ?? 15)
+    + (cfg.bail.pctPerTier ?? 10) * Math.max(0, (firm.tierUnlocked | 0) - 1);
+  return pct;
+}
+
+export function payBail(state, firm, agent, combatCfg, agentsCfg, bank, hq) {
+  if (agent.state !== AGENT_HELD) return { error: "agent_not_held" };
+  if (agent.firmId !== firm.id) return { error: "not_your_agent" };
+  const pct = bailCost(firm, combatCfg);
+  const cost = Math.trunc(((bank | 0) * pct) / 100);
+  if ((bank | 0) <= 0 || cost <= 0) return { error: "cannot_afford" };
+
+  const err = releaseAgent(state, agent, agentsCfg,
+    hq ? hq.cellX : -1, hq ? hq.cellY : -1);
+  if (err) return { error: err };
+  state.events.push({
+    type: "bailPaid", firmId: firm.id, agentId: agent.id, cost, pct,
+  });
+  return { cost };
+}
+
 // Authority arrests (D27): patrols take downed agents always, and burned
 // agents they reach once the district is at heat 3 or above.
 export function stepArrests(state, detCfg, combatCfg, agentsCfg) {

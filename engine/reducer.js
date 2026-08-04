@@ -14,18 +14,20 @@ import {
   CMD_ADVANCE_TICK, CMD_SET_STANCE, CMD_MOVE, CMD_USE_ITEM,
   CMD_RESCUE, CMD_CAPTURE, CMD_DROP_IN, CMD_ACTIVATE_EVAC, CMD_CANCEL_EVAC,
   CMD_EXTRACT, CMD_ACCEPT_CONTRACT, CMD_ABANDON_CONTRACT, CMD_SITE_ACTION,
-  CMD_ENTER_BUILDING, CMD_EXIT_BUILDING, CMD_BUY_ITEM,
+  CMD_ENTER_BUILDING, CMD_EXIT_BUILDING, CMD_BUY_ITEM, CMD_STANDOFF_CHOICE,
+  CMD_PAY_BAIL,
 } from "./commands.js";
 import { AGENT_ACTIVE, AGENT_DOWNED } from "./state.js";
 import { orderMove, stepAgent, stepPatrol } from "./agents.js";
 import { stepDetection, stepHeat } from "./detection.js";
-import { rescueAgent, captureAgent, useItem, stepArrests } from "./combat.js";
-import { dropIn, activateEvac, cancelEvac, extract, stepHqs } from "./hq.js";
+import { rescueAgent, captureAgent, useItem, stepArrests, payBail } from "./combat.js";
+import { dropIn, activateEvac, cancelEvac, extract, stepHqs, hqOf } from "./hq.js";
 import {
   acceptContract, abandonContract, siteAction, stepContracts, reapContracts,
   refillPool, rebuildOffers, noteBurn, seedSitesNearHq,
 } from "./contracts.js";
 import { enterBuilding, exitBuilding, buyCover } from "./buildings.js";
+import { stepStandoffs, submitChoice } from "./standoff.js";
 
 export function copyState(state) {
   return {
@@ -188,6 +190,24 @@ function applyBuyItem(next, command) {
   return next;
 }
 
+function applyPayBail(next, command) {
+  const firm = next.firms[command.firmId];
+  const agent = next.agents[command.agentId];
+  if (!firm || !agent) return reject(next, command, "no_such_agent");
+  const result = payBail(next, firm, agent, next.rules.combat, next.rules.agents,
+    command.bank ?? 0, hqOf(next, command.firmId));
+  if (result.error) return reject(next, command, result.error);
+  return next;
+}
+
+function applyStandoffChoice(next, command) {
+  const agent = next.agents[command.agentId];
+  if (!agent) return reject(next, command, "no_such_agent");
+  const err = submitChoice(next, command.standoffId, command.agentId, command.choice);
+  if (err) return reject(next, command, err);
+  return next;
+}
+
 function applyAcceptContract(next, command) {
   const agent = next.agents[command.agentId];
   if (!agent) return reject(next, command, "no_such_agent");
@@ -239,6 +259,7 @@ function applyAdvanceTick(next) {
   stepHeat(next, r.detection);
   stepArrests(next, r.detection, r.combat, r.agents);
   stepHqs(next, r.hq);
+  stepStandoffs(next, r.standoff, r.detection, r.agents);
   stepContracts(next, r.contracts, r.detection);
   if (reapContracts(next) > 0) refillPool(next, r.contracts, r.detection);
   rebuildOffers(next, r.contracts, r.detection);
@@ -288,6 +309,10 @@ export function apply(state, command) {
       return applyExitBuilding(next, command);
     case CMD_BUY_ITEM:
       return applyBuyItem(next, command);
+    case CMD_STANDOFF_CHOICE:
+      return applyStandoffChoice(next, command);
+    case CMD_PAY_BAIL:
+      return applyPayBail(next, command);
     default:
       // A validated command whose milestone has not landed yet. Explicit, so a
       // premature call is visible in the event stream rather than silent.

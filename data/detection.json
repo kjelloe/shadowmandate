@@ -10,18 +10,27 @@
   "heat": {
     "max": 5,
     "decayTicks": 1800,
-    "sources": { "burn": 1, "sabotage": 2, "standoffCombat": 1, "hqRaid": 1 },
+    "sources": {
+      "burn": 1,
+      "sabotage": 2,
+      "standoffCombat": 1,
+      "hqRaid": 1
+    },
     "checkpointsActiveAt": 4,
     "tier1SuspendedAt": 4,
     "informantQuietAt": 4,
     "extraPatrolsAt": 2,
     "sensorRadiusMulAt2": 320,
     "riskPremiumPct": 25,
-    "fuzzBands": [2, 4]
+    "fuzzBands": [
+      2,
+      4
+    ]
   },
   "arrest": {
     "downedAlways": true,
     "burnedAtHeat": 3,
     "arrestTicks": 20
-  }
+  },
+  "standoffDamage": 55
 }

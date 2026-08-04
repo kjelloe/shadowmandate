@@ -23,6 +23,7 @@ import { hqOf, dropIn, activateEvac, extract } from "./hq.js";
 import { acceptContract } from "./contracts.js";
 import { findDropZones, autoSelectDropZone } from "./citygen.js";
 import { findPath } from "./pathfind.js";
+import { inStandoff, aiStandoffChoice, CHOICE_NONE } from "./standoff.js";
 import { worldToCellFloor } from "../shared/fixedmath.js";
 import { sfc32Next } from "../shared/prng.js";
 
@@ -139,6 +140,21 @@ export function aiDecide(state, firmId, rules) {
   if (agent.state === AGENT_HELD) { debug("agent_held"); return { command: null, telemetry }; }
   if (agent.state === AGENT_DOWNED) { debug("agent_downed"); return { command: null, telemetry }; }
   if (agent.state === AGENT_INSIDE) return { command: { type: 35, agentId: agent.id }, telemetry };  // EXIT_BUILDING
+
+  // ── In a standoff: answer it. Nothing else matters for these ten seconds. ──
+  const standoff = inStandoff(state, agent.id);
+  if (standoff) {
+    const mine = standoff.agentA === agent.id ? standoff.choiceA : standoff.choiceB;
+    if (mine === CHOICE_NONE) {
+      const choice = aiStandoffChoice(state, standoff, agent.id, personality, rules.agents);
+      debug("standoff_choice", { standoffId: standoff.id, choice });
+      return {
+        command: { type: 50, agentId: agent.id, standoffId: standoff.id, choice },
+        telemetry,
+      };
+    }
+    return { command: null, telemetry };
+  }
 
   // ── Evacuating: hold and get out ──
   if (firm.state === FIRM_EVACUATING) {

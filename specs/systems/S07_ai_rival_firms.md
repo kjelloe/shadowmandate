@@ -53,6 +53,29 @@ violations; census shows contracts completed, raids attempted, evacs held by
 AI. Battery (n=300 world-days): burn rate, heat trajectories, rep spread,
 raid frequency within tolerance bands (S14 owns the bands).
 
+## AS BUILT (M5 slices 5a–5c, 2026-08-04) — `engine/ai_firms.js`
+
+Implemented: `aiLawfulView` (the only accessor the decision function may use —
+enforced by a structural test), three temperaments, contract scoring by
+payoff-over-risk, execution doctrine with stance switching, go-home-then-evac,
+hot-district abort, and raiding for aggressive temperaments. Driven from
+OUTSIDE the reducer by `stepAiFirms(state, rules, apply)` so the AI is a player
+issuing ordinary commands, never a privileged subsystem.
+
+**`stepAiFirms` returns its events, and `aiDecide` returns its telemetry.**
+Both were originally written to push into `state.events`, which the very next
+`apply()` discards — a full world-day of decisions produced an empty debug
+census while looking healthy. Anything driving the AI must consume both.
+
+**The rejection log is the AI's bug report.** A well-behaved AI issues ZERO
+rejected commands. The first run produced 1324 `move:no_route` and 136
+`activateEvac:not_at_hq` per world-day, which led to three AI fixes and the
+discovery of the drop-zone stranding bug (S01/S05). Watch this number.
+
+**NOT implemented:** the standoff policy is declared in `data/ai_firms.json`
+but not yet consulted (S08 is slice 5d), and AI Firms do not use vehicles
+(D34 allows motorbikes; slice 6b).
+
 ## To pin
 
 `⚙ tune` all personality/threshold numbers by battery. (AI vehicles ruled,

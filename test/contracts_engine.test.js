@@ -125,8 +125,6 @@ test("commands that are not yet implemented reject explicitly, never silently", 
   // event stream. Silence here would look like success to a client.
   const s = makeWorld();
   for (const command of [
-    { type: CMD.CMD_PAY_BAIL, firmId: 0, agentId: 0 },
-    { type: CMD.CMD_STANDOFF_CHOICE, agentId: 0, standoffId: 0, choice: 0 },
     { type: CMD.CMD_DORMANCY_TICK, elapsedMs: 1000 },
     { type: CMD.CMD_ENTER_VEHICLE, agentId: 0 },
   ]) {

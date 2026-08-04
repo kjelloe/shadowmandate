@@ -3,10 +3,10 @@
 Drop-in/drop-out covert-ops game. Sibling of Fireline Command
 (`~/GIT/firepower` — the fork source, never modified from here).
 
-**Status: M0–M4 of V1 implemented plus rulings D35–D40, engine only.
-`npm test` = 96 green.** No client exists yet. Next milestone: **M5 AI Rival
-Firms**, whose first slice is the sim harness, before any AI doctrine —
-instrument before the thing it measures.
+**Status: M0–M4 complete plus M5 slices 5a–5c (sim harness + AI rival Firms),
+engine only. `npm test` = 106 green.** No client exists yet. Remaining in M5:
+standoff protocol (5d), informant dialogue (5f), batch-lane bring-up (5g),
+`payBail` (5h).
 
 ## Read first
 
@@ -26,6 +26,9 @@ node --test test/citygen.test.js            # one file
 node tools/render_city.mjs 4711 64          # eyeball a generated city
 node tools/render_city.mjs 4711 16 5        # the microscope config
 SEED=4711 node debugging/sm_systems.mjs     # event census: what actually FIRED
+node tools/sm_worldday.mjs 12               # AI world-day sweep, CSV metrics
+MIRROR=1 node tools/sm_worldday.mjs 300     # fairness instrument
+FIRMSWAP=1 node tools/sm_worldday.mjs 300   # personality vs seat
 node debugging/dbg_choke.mjs 1548 64        # example one-off probe (kept)
 node tools/repin_fixture.mjs "<reason>"     # deliberate fixture re-pin
 ```
@@ -35,7 +38,7 @@ node tools/repin_fixture.mjs "<reason>"     # deliberate fixture re-pin
 | Path | Contents |
 |---|---|
 | `shared/` | prng, canonical byte writer + FNV-1a 64, fixedmath — **verbatim from firepower**, do not edit |
-| `engine/` | pure reducer and subsystems: state, commands, reducer, snapshot, terrain, citygen, worldprobes, pathfind, agents, detection, combat, hq, contracts, buildings, mirror |
+| `engine/` | pure reducer and subsystems: state, commands, reducer, snapshot, terrain, citygen, worldprobes, pathfind, agents, detection, combat, hq, contracts, buildings, ai_firms, mirror |
 | `server/` | all I/O: `ruleset.js` (loads `data/`), `ledger.js` (world ledger, identity) |
 | `data/` | every tuned number, 12 files + `ruleset.json` manifest with an era version |
 | `client/i18n/` | `en.json` / `no.json`, key-parity enforced |
@@ -90,7 +93,12 @@ is undeclared. A missed mirror field silently invalidates every future battery.
   is always a map corner. Those failures are the test's fault, not the engine's.
 - Test bugs and engine bugs look identical from the outside. When a probe and
   the game disagree, **check the instrument first** — two of M1's three "bugs"
-  were in my own probes.
+  were in my own probes, and M5's AI telemetry was itself silently dropping
+  every record it made.
+- **Read the AI's rejected commands.** `move:no_route` and
+  `activateEvac:not_at_hq` counts in a world-day found three AI defects and one
+  serious player-facing bug that no test caught. A well-behaved AI issues zero
+  rejections; anything else is a bug report.
 
 ## Workflow
 
@@ -108,7 +116,11 @@ is undeclared. A missed mirror field silently invalidates every future battery.
 - **Batch lane** (D25): shared with firepower, repo-tagged, hub port 8972.
   Never tune or convict on 5 seeds — batteries (n=300+) decide. Not live until
   M5 slice 5g.
-- Git: the user handles all commits and pushes. Stop and report.
+- **Git (updated 2026-08-04): committing and pushing to `dev_night` is
+  allowed.** Remote is `git@github.com:kjelloe/shadowmandate.git`. Commit at
+  slice boundaries with a green double-run suite, never on a red one. Any other
+  branch, and anything resembling a merge, rebase or force-push, still stops
+  and reports.
 
 ## Gotchas quick list
 
