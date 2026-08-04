@@ -82,7 +82,7 @@ test("driving outruns walking", () => {
     const dest = reachableDestination(s, spot, 14);
     if (!dest) return -1;
     s = apply(s, { type: CMD_MOVE, agentId: 0, cellX: dest.x, cellY: dest.y });
-    for (let i = 1; i <= 300; i++) {
+    for (let i = 1; i <= 4000; i++) {
       s = apply(s, { type: CMD_ADVANCE_TICK });
       if (s.events.some((e) => e.type === "agentArrived")) return i;
     }

@@ -158,9 +158,17 @@ test("SCENARIO: surveillance only counts while the agent is unseen", () => {
     "being seen must reset the surveillance hold");
 
   s.agents[agent.id].detection = 0;
-  const hold = RULES.contracts.types.surveillance.holdTicks;
-  const run = tickCollecting(s, apply, hold + 5);
-  assert.ok(run.saw("contractCompleted"), "an unseen hold never completed");
+  // D41: surveillance is several separate passes, not one long stare — so a
+  // single completed hold reports a PASS, and the contract keeps going.
+  const spec = RULES.contracts.types.surveillance;
+  const first = tickCollecting(s, apply, spec.holdTicks + 5);
+  assert.ok(first.saw("surveillancePass") || first.saw("contractCompleted"),
+    "an unseen hold produced neither a pass nor a completion");
+  if (spec.passes > 1) {
+    assert.ok(first.saw("surveillancePass"), "a multi-pass contract completed in one hold");
+    const rest = tickCollecting(first.state, apply, spec.holdTicks * spec.passes + 20);
+    assert.ok(rest.saw("contractCompleted"), "the remaining passes never completed");
+  }
 });
 
 test("D19: completing enough contracts unlocks the next tier", () => {

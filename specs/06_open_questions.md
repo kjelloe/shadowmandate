@@ -3,7 +3,7 @@
 Numbered, answered in batches (firepower practice). Answers become rulings in
 `01_design_of_record.md` and slices in the plans.
 
-**All 35 questions answered.** The queue is empty — new questions start at Q36
+**All 36 questions answered.** The queue is empty — new questions start at Q36
 (live queue: `../dev-questions.md`). Rulings D15–D40 are in `01_design_of_record.md`.
 
 ---
@@ -49,5 +49,7 @@ Numbered, answered in batches (firepower practice). Answers become rulings in
 | Q33 | Can a burned agent hide in a building? | Hiding never clears a burn and patrols post at the door — **except a paid Cover Shop**, which changes the agent's appearance and lets them leave by another exit (**D38**). | 2026-08-04 |
 | Q34 | How is Recognition earned? | From **craft**: tier + unseen bonus − burns, never payout (**D39**). | 2026-08-04 |
 | Q35 | Do contracts fail instantly on capture? | No — a 2–3 minute grace window; rescue or bail restores them (**D40**). | 2026-08-04 |
+
+| Q36 | Session pacing is 3–6× short of D11 — tune, revise, or add content? | **(c) with a little of (a)**: sortie length comes from content — multi-stage work and patrol timing windows — not from slower walking. Modest travel slowdown kept; D11 targets stand; owner playtests for feel (**D41**). | 2026-08-05 |
 
 Also confirmed 2026-08-03: **Snatch stays** (D6 — no lethal assassinations); the design update's "Assassination" rows were terminology-era leftovers.

@@ -102,6 +102,12 @@ These seven rulings resolve the open forks in the starter document and in `batch
 | **D39** | **Recognition rewards craft, not payout.** It accrues from contract tier, plus a bonus for finishing unseen, minus burns taken during the contract — the lifetime honor score reflects how well you work, not how many hours you log. |
 | **D40** | **Capture starts a grace window (2–3 minutes) rather than failing contracts instantly.** A rescue or a paid bail inside the window restores the contract; after it, the contract fails. This makes rescuing a captured colleague mid-contract genuinely valuable, and matters most in V2 squads. |
 
+### Sixth decision batch (2026-08-05, Q36)
+
+| # | Ruling |
+|---:|---|
+| **D41** | **Sortie length comes from CONTENT, not from slower walking** (Q36, option c with a little of a). The M6 battery measured an AI sortie at 0.4 min against D11's 15–20; a first tuning pass reached 2.5 min and only closed a fifth of the gap by making travel slower. Slower is not the same as tenser. So: keep a modest travel slowdown, and spend the remaining minutes on **decisions** — multi-stage contracts, objectives that must be approached when a patrol is elsewhere, and legs that cannot be done in one pass. D11's targets stand; how they are reached is content. The pacing columns exist so every further pass is measured, and the owner playtests for feel. |
+
 ---
 
 ## Terminology Contract (D8)

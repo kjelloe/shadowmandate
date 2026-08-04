@@ -88,6 +88,12 @@
 | D39 | Recognition | Earned from tier + unseen bonus − burns, not from payout |
 | D40 | Capture | 2–3 min grace window; rescue or bail restores the contract |
 
+## Sixth decision batch (2026-08-05, Q36)
+
+| # | Decision | Ruling |
+|---:|---|---|
+| D41 | Sortie pacing | Length comes from **content** (multi-stage work, patrol timing windows), not from slower walking; modest travel slowdown retained. D11 targets stand |
+
 ## Sibling project references
 
 | Project | Location | What it contributes |

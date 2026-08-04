@@ -75,7 +75,9 @@ function generateContract(state, cfg, detCfg) {
   const kind = roll(state, 0, KIND_COUNT - 1);
   const site = state.sites[roll(state, 0, state.sites.length - 1)];
   let siteB = -1;
-  if (kind === KIND_COURIER) {
+  // Courier needs a destination; sabotage needs a second charge site (D41);
+  // acquisition needs a drop-off that is NOT the way you came in.
+  if (kind === KIND_COURIER || kind === KIND_SABOTAGE || kind === KIND_ACQUISITION) {
     const other = state.sites[roll(state, 0, state.sites.length - 1)];
     if (!other || other.id === site.id) return null;
     siteB = other.id;
@@ -96,6 +98,7 @@ function generateContract(state, cfg, detCfg) {
     stageTicks: 0,
     graceTicks: 0,      // D40 capture grace
     burnsTaken: 0,      // D39 recognition input
+    legsDone: 0,        // D41 multi-stage progress
   };
 }
 
@@ -220,6 +223,21 @@ function siteCell(state, siteId) {
   return s ? { x: s.cellX, y: s.cellY } : null;
 }
 
+// D41: the patrol window. An objective cannot be worked while a patrol is
+// within `patrolWindow.radius`, so a contract is a matter of TIMING, not only
+// of travel. This is where the minutes are meant to come from: watching a
+// route, waiting for the pass, and moving in the gap.
+export function windowOpen(state, siteId, cfg) {
+  const win = cfg.patrolWindow;
+  if (!win || !win.enabled) return true;
+  const site = state.sites.find((s) => s.id === siteId);
+  if (!site) return true;
+  for (const p of state.patrols) {
+    if (Math.abs(p.x - site.cellX) + Math.abs(p.y - site.cellY) <= win.radius) return false;
+  }
+  return true;
+}
+
 function atSite(state, agent, siteId, radius = 1) {
   const cell = siteCell(state, siteId);
   if (!cell) return false;
@@ -314,11 +332,24 @@ export function stepContracts(state, cfg, detCfg) {
         if (contract.stage === STAGE_TRAVEL && atSite(state, agent, contract.siteId)) {
           contract.stage = STAGE_WORK; contract.stageTicks = 0;
         } else if (contract.stage === STAGE_WORK) {
-          // Holding only counts while UNSEEN — that is the whole contract.
-          if (!atSite(state, agent, contract.siteId) || agent.detection !== 0) {
+          // Holding only counts while UNSEEN and while the patrol window is
+          // open — that is the whole contract.
+          if (!atSite(state, agent, contract.siteId) || agent.detection !== 0
+            || !windowOpen(state, contract.siteId, cfg)) {
             contract.stageTicks = 0;
           } else if (contract.stageTicks >= (spec.holdTicks ?? 300)) {
-            completeContract(state, contract, agent, cfg);
+            // D41: several separate observation passes, not one long stare.
+            // Breaking contact and returning is a decision each time.
+            contract.legsDone = (contract.legsDone | 0) + 1;
+            contract.stageTicks = 0;
+            if (contract.legsDone >= (spec.passes ?? 1)) {
+              completeContract(state, contract, agent, cfg);
+            } else {
+              state.events.push({
+                type: "surveillancePass", contractId: contract.id,
+                pass: contract.legsDone, of: spec.passes ?? 1,
+              });
+            }
           }
         }
         break;
@@ -342,9 +373,20 @@ export function stepContracts(state, cfg, detCfg) {
         if (contract.stage === STAGE_TRAVEL && atSite(state, agent, contract.siteId)) {
           contract.stage = STAGE_WORK; contract.stageTicks = 0;
         } else if (contract.stage === STAGE_WORK) {
+          if (!windowOpen(state, contract.siteId, cfg)) break;   // wait for the pass
           if (contract.stageTicks >= (spec.plantTicks ?? 100)) {
-            contract.stage = STAGE_RETURN; contract.stageTicks = 0;
-            state.events.push({ type: "chargePlanted", contractId: contract.id, agentId: agent.id });
+            contract.legsDone = (contract.legsDone | 0) + 1;
+            contract.stageTicks = 0;
+            state.events.push({
+              type: "chargePlanted", contractId: contract.id, agentId: agent.id,
+              leg: contract.legsDone, of: spec.legs ?? 1,
+            });
+            // D41: a second charge, on a different site, under the fuse.
+            if (contract.legsDone < (spec.legs ?? 1) && contract.siteIdB >= 0) {
+              contract.stage = STAGE_TRAVEL;
+            } else {
+              contract.stage = STAGE_RETURN;
+            }
           }
         } else if (contract.stage === STAGE_RETURN) {
           if (contract.stageTicks >= (spec.fuseTicks ?? 300)) {
@@ -372,9 +414,17 @@ export function stepContracts(state, cfg, detCfg) {
             state.events.push({ type: "vaultCracked", contractId: contract.id, agentId: agent.id });
           }
         } else if (contract.stage === STAGE_RETURN) {
-          const hq = hqOf(state, agent.firmId);
-          const here = agentCell(agent);
-          if (hq && Math.abs(hq.cellX - here.x) + Math.abs(hq.cellY - here.y) <= 2) {
+          // D41: the vault alarms behind you, so the goods go to a separate
+          // drop-off rather than back the way you came.
+          const useDrop = (spec.dropOff === true) && contract.siteIdB >= 0;
+          const done = useDrop
+            ? atSite(state, agent, contract.siteIdB, 1)
+            : (() => {
+              const hq = hqOf(state, agent.firmId);
+              const here = agentCell(agent);
+              return hq && Math.abs(hq.cellX - here.x) + Math.abs(hq.cellY - here.y) <= 2;
+            })();
+          if (done) {
             agent.carryKind = 0; agent.carryRef = -1;
             completeContract(state, contract, agent, cfg);
           }

@@ -36,13 +36,14 @@
     "courier": {
       "tier": 1,
       "reward": 80,
-      "expiryTicks": 36000
+      "expiryTicks": 48000
     },
     "surveillance": {
       "tier": 1,
       "reward": 40,
-      "holdTicks": 1800,
-      "expiryTicks": 0
+      "holdTicks": 1200,
+      "expiryTicks": 0,
+      "passes": 3
     },
     "extraction": {
       "tier": 1,
@@ -53,14 +54,16 @@
       "tier": 2,
       "reward": 120,
       "plantTicks": 600,
-      "fuseTicks": 900,
-      "expiryTicks": 24000
+      "fuseTicks": 1800,
+      "expiryTicks": 24000,
+      "legs": 2
     },
     "acquisition": {
       "tier": 3,
       "reward": 300,
       "crackTicks": 1200,
-      "expiryTicks": 0
+      "expiryTicks": 0,
+      "dropOff": true
     }
   },
   "captureGraceTicks": 1800,
@@ -70,5 +73,10 @@
     "unseenBonus": 15,
     "perBurn": -10
   },
-  "nearHqMinDistance": 4
+  "nearHqMinDistance": 4,
+  "patrolWindow": {
+    "note": "D41: an objective can only be worked while no patrol is within this radius. Waiting for the window is the decision that fills the minutes.",
+    "radius": 7,
+    "enabled": true
+  }
 }

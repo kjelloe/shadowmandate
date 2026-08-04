@@ -85,6 +85,7 @@ export function hashState(state) {
     w.writeI32LE(c.reservedBy); w.writeI32LE(c.acceptedBy); w.writeI32LE(c.stage);
     w.writeI32LE(c.stageTicks);
     w.writeI32LE(c.graceTicks ?? 0); w.writeI32LE(c.burnsTaken ?? 0);
+    w.writeI32LE(c.legsDone ?? 0);
   }
   for (const o of state.offers) {
     w.writeI32LE(o.firmId);

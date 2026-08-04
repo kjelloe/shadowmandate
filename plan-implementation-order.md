@@ -120,7 +120,7 @@ downed→captured / heat rise+decay) + census shows every transition fires.
 **Gate:** scripted agent completes each type; economy census columns
 (offered/accepted/completed/expired) emitting — these become battery columns.
 
-## M5 — AI Rival Firms 🟢 DONE except 5g (batch lane — needs the gaming PC)
+## M5 — AI Rival Firms 🟢 DONE (5g lane built + verified; see BATCH_PC.md)
 
 - **5a** **Sim harness before doctrine** (instrument-first): `tools/
   sm_worldday.mjs` — runs K Firms through a world-day of deployments on a
@@ -144,7 +144,7 @@ downed→captured / heat rise+decay) + census shows every transition fires.
 **Gate:** AI-vs-AI 12–16k ticks × 5 pinned seeds, zero invariant violations,
 census complete; battery within provisional bands.
 
-## M6 — Depth & Tier 2–3 🟡 IN PROGRESS (6a machines + 6c vendor already shipped; 6b/6d/6e remain)
+## M6 — Depth & Tier 2–3 🟢 DONE (D41 pacing-by-content applied; owner playtests for feel)
 
 - **6a** Sabotage + Acquisition machines; radius phases 2–3; tier unlock
   counts; risk premium on offers in heat 2–3.

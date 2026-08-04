@@ -1,6 +1,6 @@
 {
   "note": "S02. Speeds are fixed-point world units per tick (256 units = 1 cell). Stance multipliers are /256. All values marked tune-by-battery in S02. baseSpeed cut 96->12 in the M6 pacing pass: the AI was completing a full sortie in 0.4 min against D11's 15-20.",
-  "baseSpeed": 12,
+  "baseSpeed": 9,
   "stances": {
     "sneak": {
       "speedMul": 128,
