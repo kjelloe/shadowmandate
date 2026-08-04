@@ -5,8 +5,9 @@ Drop-in/drop-out covert-ops game. Sibling of Fireline Command
 
 **Status: M0–M5 complete except slice 5g, engine only. `npm test` = 130
 green.** No client exists yet. **5g (batch-lane bring-up) needs the gaming PC
-and cannot be done solo** — runbook in `plan-implementation-order.md`. M6 done; batch lane (5g) built and verified — see `BATCH_PC.md`.
-Remaining for V1: **M7** (art, client, mobile, identity, VM deploy).
+and cannot be done solo** — runbook in `plan-implementation-order.md`. M6 done; batch lane verified (`BATCH_PC.md`). **M7 in progress**: views,
+hosted worlds and identity have landed; the ws transport, client, art and VM
+deploy remain.
 
 ## Read first
 

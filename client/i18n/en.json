@@ -91,5 +91,7 @@
   "dialog.coverShop.greet": "Sit down. Don't look in the mirror yet.",
   "shop.title": "FOR SALE",
   "shop.cost": "COST",
-  "shop.owned": "OWNED"
+  "shop.owned": "OWNED",
+  "recovery.title": "RECOVERY CODE",
+  "recovery.note": "Write this down. It is shown once and never again."
 }

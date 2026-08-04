@@ -91,5 +91,7 @@
   "dialog.coverShop.greet": "Sett deg. Ikke se i speilet ennå.",
   "shop.title": "TIL SALGS",
   "shop.cost": "PRIS",
-  "shop.owned": "EID"
+  "shop.owned": "EID",
+  "recovery.title": "GJENOPPRETTINGSKODE",
+  "recovery.note": "Skriv dette ned. Det vises én gang og aldri igjen."
 }

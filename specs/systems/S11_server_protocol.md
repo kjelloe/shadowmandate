@@ -48,6 +48,23 @@ Real-ws-client tests: join/new, claim, drop-in, command round-trip, view
 payload assertions, reconnect inside/outside grace, tamper frames rejected.
 Poll-waits, never fixed settles (suite runs on the loaded PC too).
 
+## AS BUILT (M7, 2026-08-05) — `server/world.js`, `engine/view.js`
+
+Implemented: the world pump (queue → apply → AI step → broadcast), per-seat
+fog-filtered views, seat/unseat with D31 grace, sleep-and-wake driven by real
+seats with an injectable clock, and the return-visit briefing.
+
+**Events are ROUTED, not broadcast.** A message reaches a seat only if it
+concerns that Firm; world-scale events (heat, dormancy, pact expiry) go to
+everyone. A rival is not told about someone else's deployment — asserted.
+
+`FORBIDDEN_IN_VIEW` in `engine/view.js` lists what must never cross the wire
+(contract pool, rng, rules, districtOwner, reachable). Add a field to the view
+and you must decide whether it belongs; you cannot inherit the decision.
+
+**NOT implemented:** the ws transport itself (`server/index.js`), reconnect
+over a real socket, caps/limits, and the ops deploy.
+
 ## To pin
 
 `⚙` caps/limits · deploy runbook (M7 doc). (Reconnect grace ruled: D31, 120s.)

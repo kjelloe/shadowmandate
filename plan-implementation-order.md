@@ -161,7 +161,7 @@ census complete; battery within provisional bands.
 
 **Gate:** pacing battery inside D11/D19 bands; dormancy replay-exact.
 
-## M7 — Presentation & Ship ⬜ NOT STARTED
+## M7 — Presentation & Ship 🟡 IN PROGRESS (views + world host + identity done; transport, client, art, deploy remain)
 
 - **7a** Asset pipeline fork + placeholder-to-painted pass (S15 inventory);
   gallery page screenshot-diff green.

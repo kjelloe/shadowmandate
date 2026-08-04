@@ -8,7 +8,7 @@
 import { apply } from "../engine/reducer.js";
 import { CMD_ADVANCE_TICK, CMD_DORMANCY_TICK, validate } from "../engine/commands.js";
 import { createInitialState } from "../engine/state.js";
-import { generateCity } from "../engine/citygen.js";
+import { generateCity, findDropZones, autoSelectDropZone } from "../engine/citygen.js";
 import { buildView } from "../engine/view.js";
 import { hashState } from "../engine/snapshot.js";
 import { refillPool, rebuildOffers } from "../engine/contracts.js";
@@ -121,6 +121,19 @@ export class World {
     const firm = this.state.firms[firmId];
     if (firm) firm.graceTicks = this.rules.season.reconnectGraceTicks | 0;
     this.sleepIfEmpty();
+  }
+
+  dropZones() {
+    return findDropZones(this.state, this.rules.citygen).map((z) => ({
+      cellX: z.cellX, cellY: z.cellY, districtId: z.districtId,
+    }));
+  }
+
+  autoDropZone(firmId) {
+    const zones = findDropZones(this.state, this.rules.citygen);
+    const firm = this.state.firms[firmId];
+    return autoSelectDropZone(this.state, zones, this.rules.citygen, this.rules.hq,
+      firm?.tierUnlocked ?? 1);
   }
 
   viewFor(firmId) {
