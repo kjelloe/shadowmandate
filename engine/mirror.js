@@ -102,7 +102,12 @@ export function mirrorState(state) {
     offers: state.offers.map((o) => ({ ...o, contractIds: o.contractIds.slice() })),
     standoffs: state.standoffs.map((s) => ({ ...s })),
     pacts: state.pacts.map((p) => ({ ...p })),
-    firms: state.firms.map((f) => ({ ...f })),
+    firms: state.firms.map((f) => ({
+      ...f,
+      heatIntel: (f.heatIntel ?? []).map((h) => ({ ...h })),
+      knownRivalHqs: (f.knownRivalHqs ?? []).slice(),
+      upgrades: (f.upgrades ?? []).slice(),
+    })),
     events: [],
   };
 }

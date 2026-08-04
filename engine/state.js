@@ -79,6 +79,9 @@ export function createFirm(id) {
     isAi: 0,
     aiPersonality: 0,
     aiNextDeployTick: 0,
+    heatIntel: [],            // S09: bought knowledge, expires
+    knownRivalHqs: [],
+    upgrades: [],
     graceTicks: 0,            // D31 disconnect grace
   };
 }

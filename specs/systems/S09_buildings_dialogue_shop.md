@@ -76,9 +76,19 @@ a bank-only purchase changes `agent.disguiseId`, clears the burn and puts the
 agent out the back. Disguise variants (deliberately comic, per the owner) are in
 `data/buildings/disguises.json`.
 
-**NOT implemented:** the dialogue framework and shop catalogues themselves —
-there is entry, but no informant conversation and no vendor inventory behind it.
-That is still M5 (informant) and M6 (vendor).
+**COMPLETED in M5 slice 5f (which also covers M6's vendor, 6c):** the dialogue
+and shop framework. Content lives in `data/buildings/payloads.json` and is
+purely declarative — options, costs and typed effects — so an author adds an
+informant line or a shop item without touching engine code. Every string is an
+i18n key, enforced by test against `en.json`.
+
+Shipped content: the **informant** (sells a rival HQ location; sells exact
+district heat as *temporary* knowledge per D20, which expires — otherwise one
+purchase would make the fuzz band meaningless forever; goes quiet at lockdown
+heat), and the **vendor** (three upgrades plus a medkit, bank-only per D30, no
+double-selling an owned upgrade).
+
+Firm-level state added: `heatIntel` (expiring), `knownRivalHqs`, `upgrades`.
 
 ## To pin
 

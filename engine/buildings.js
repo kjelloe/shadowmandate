@@ -22,6 +22,89 @@ import { BUILDING_COVERSHOP } from "./citygen.js";
 export const DISGUISE_NONE = 0;
 export const DISGUISE_COUNT = 6;   // see data/buildings/disguises.json
 
+// ── Dialogue and shops (S09) ──────────────────────────────────────────────
+//
+// Content is DATA. `data/buildings/payloads.json` declares options, costs and
+// effects; this module applies them. A content author adds an informant line
+// or a shop item without touching engine code, and every string is an i18n key
+// so nothing ships untranslatable.
+
+export const EFFECT_REVEAL_RIVAL_HQ = "revealRivalHq";
+export const EFFECT_HEAT_INTEL = "heatIntel";
+export const EFFECT_UPGRADE = "upgrade";
+export const EFFECT_HEAL = "heal";
+export const EFFECT_COVER = "cover";
+
+// What a Firm currently knows that it had to buy. Kept on the Firm because it
+// survives the agent (intel outlives the operative who paid for it).
+export function grantHeatIntel(state, firm, districtId, ticks) {
+  firm.heatIntel = firm.heatIntel ?? [];
+  const existing = firm.heatIntel.find((h) => h.districtId === districtId);
+  const expires = (state.tick + ticks) | 0;
+  if (existing) existing.expiresTick = Math.max(existing.expiresTick, expires);
+  else firm.heatIntel.push({ districtId, expiresTick: expires });
+}
+
+export function hasHeatIntel(state, firm, districtId) {
+  return (firm.heatIntel ?? []).some((h) =>
+    h.districtId === districtId && state.tick < h.expiresTick);
+}
+
+// The payload a building is currently offering, given world conditions.
+// An informant goes quiet in a locked-down district (D20/S03) — the content
+// declares the threshold, the engine enforces it.
+export function payloadFor(building, payloads, districtHeat) {
+  if (building.kind === BUILDING_COVERSHOP) {
+    return payloads.shops.find((s) => s.id === "covershop") ?? null;
+  }
+  if (building.kind === 1) return payloads.shops.find((s) => s.id === "vendor") ?? null;
+  const dialogue = payloads.dialogues.find((d) => d.id === "informant") ?? null;
+  if (dialogue && districtHeat >= (dialogue.quietAtHeat ?? 99)) {
+    return { ...dialogue, quiet: true, options: [dialogue.options[dialogue.options.length - 1]] };
+  }
+  return dialogue;
+}
+
+// Apply one declarative effect. Returns an error string or null.
+export function applyEffect(state, agent, firm, effect, ctx) {
+  switch (effect.type) {
+    case EFFECT_REVEAL_RIVAL_HQ: {
+      const rival = state.hqs.find((h) => h.firmId !== firm.id);
+      if (!rival) return "nothing_to_reveal";
+      firm.knownRivalHqs = firm.knownRivalHqs ?? [];
+      if (!firm.knownRivalHqs.includes(rival.id)) firm.knownRivalHqs.push(rival.id);
+      state.events.push({
+        type: "rivalHqRevealed", firmId: firm.id, hqId: rival.id,
+        cellX: rival.cellX, cellY: rival.cellY,
+      });
+      return null;
+    }
+    case EFFECT_HEAT_INTEL: {
+      grantHeatIntel(state, firm, ctx.districtId, effect.ticks | 0);
+      state.events.push({
+        type: "heatIntelBought", firmId: firm.id, districtId: ctx.districtId,
+      });
+      return null;
+    }
+    case EFFECT_HEAL: {
+      agent.condition = ctx.conditionMax;
+      state.events.push({ type: "agentTreated", agentId: agent.id });
+      return null;
+    }
+    case EFFECT_UPGRADE: {
+      firm.upgrades = firm.upgrades ?? [];
+      if (firm.upgrades.includes(effect.slot)) return "already_owned";
+      firm.upgrades.push(effect.slot);
+      state.events.push({ type: "upgradeBought", firmId: firm.id, slot: effect.slot });
+      return null;
+    }
+    case EFFECT_COVER:
+      return "use_buy_cover";   // handled by buyCover (D38)
+    default:
+      return "unknown_effect";
+  }
+}
+
 export function buildingAt(state, cellX, cellY) {
   return state.buildings.find((b) => b.entranceX === cellX && b.entranceY === cellY)
     ?? state.buildings.find((b) => b.exitX === cellX && b.exitY === cellY)

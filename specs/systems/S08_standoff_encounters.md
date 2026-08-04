@@ -58,6 +58,26 @@ and expires. Client acceptance: panel appears, buttons submit, timeout
 defaults to Withdraw. Battery: standoff frequency and outcome distribution
 per AI personality (S14 bands).
 
+## AS BUILT (M5 slice 5d, 2026-08-04) — `engine/standoff.js`
+
+Implemented: mutual-awareness trigger, 10s timer, the full resolution matrix,
+timed non-aggression pacts (which also suppress re-triggering), and AI answers
+by temperament.
+
+Two rules made explicit because they are easy to erode later:
+- **An UNSEEN agent never triggers a standoff.** Staying invisible is how you
+  decline the encounter — the stealth pillar restated at rival contact.
+- **Silence resolves as Withdraw.** A player who freezes backs off; nobody
+  starts a firefight by failing to click.
+
+Engage-vs-Negotiate resolves as `standoffBetrayed`: the negotiator takes the
+hit but gets the first step away, so an ambush hurts without being an execution
+(D6). An aggressive temperament withdraws when badly hurt — asserted at 5%
+condition, because a disposition is not a death wish.
+
+Movement is not frozen during the standoff (the `❑ pin` below); in practice the
+10s window resolves before an agent walks out of contact.
+
 ## To pin
 
 `❑` movement freeze vs slow-walk during standoff · `❑` Engage-vs-Negotiate

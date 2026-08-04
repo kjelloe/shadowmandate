@@ -68,9 +68,13 @@ Implemented: suppressor / disruptor / sidearm, condition damage, downed+crawl,
 rescue, capture to Holding Sites, D27 Authority arrests. The D6 no-deletion
 invariant is enforced by `test/guards.test.js`, not merely intended.
 
-**NOT implemented (gap, needed for M4/M6 completeness):** `payBail` (D17) and
-the auto-generated Extraction contract for a held agent. The command exists in
-the vocabulary and is rejected as `not_implemented`.
+**`payBail` (D17) SHIPPED in M5 slice 5h:** bank-only (D30), priced as a
+tier-scaled share of the bank, releases the agent to its HQ — and because that
+happens inside D40's grace window it also restores the contracts the agent was
+running. The two rulings only pay off together.
+
+**Still NOT implemented:** the auto-generated Extraction contract for an agent
+left in custody (D17's other half).
 
 ## To pin
 

@@ -9,7 +9,6 @@
   "splash.fieldStatus": "FIELD STATUS",
   "splash.undeployed": "UNDEPLOYED",
   "splash.dropIn": "DROP IN? (ENTER)",
-
   "briefing.firm": "FIRM",
   "briefing.operative": "OPERATIVE",
   "briefing.district": "DISTRICT",
@@ -19,11 +18,9 @@
   "briefing.airDrop": "AIR DROP",
   "briefing.skip": "SKIP (SPACE)",
   "briefing.newsSince": "SINCE YOUR LAST VISIT",
-
   "dropzone.title": "SELECT DROP ZONE",
   "dropzone.auto": "AUTO-SELECTING SAFEST ZONE",
   "dropzone.unavailable": "NO CLEAR ZONE IN THIS DISTRICT",
-
   "hud.stance": "STANCE",
   "hud.stance.sneak": "SNEAK",
   "hud.stance.move": "MOVE",
@@ -36,7 +33,6 @@
   "hud.heat.lockdown": "LOCKDOWN",
   "hud.cache": "CACHE",
   "hud.centreOnAgent": "CENTRE ON AGENT",
-
   "board.title": "AVAILABLE CONTRACTS",
   "board.tier": "TIER",
   "board.reward": "REWARD",
@@ -46,20 +42,17 @@
   "board.loadout": "LOADOUT (L)",
   "board.back": "BACK (ESC)",
   "board.full": "CONTRACT LIMIT REACHED",
-
   "contract.courier": "Courier",
   "contract.surveillance": "Surveillance",
   "contract.extraction": "Extraction",
   "contract.sabotage": "Sabotage",
   "contract.acquisition": "Acquisition",
-
   "evac.beaconActive": "EVAC BEACON ACTIVE",
   "evac.eta": "DROPSHIP ETA: {0} SECONDS",
   "evac.hold": "HOLD THE HQ",
   "evac.paused": "RETURN TO THE HQ — TIMER PAUSED",
   "evac.emergency": "EMERGENCY EVAC — REACH A SAFE ZONE",
   "evac.cancelled": "EVAC CANCELLED",
-
   "debrief.title": "EXTRACTION COMPLETE",
   "debrief.operative": "OPERATIVE",
   "debrief.firm": "FIRM",
@@ -70,13 +63,11 @@
   "debrief.reputation": "FIRM REPUTATION",
   "debrief.returnToWorld": "RETURN TO WORLD (ENTER)",
   "debrief.mainMenu": "MAIN MENU (ESC)",
-
   "standoff.title": "STANDOFF",
   "standoff.engage": "ENGAGE",
   "standoff.withdraw": "WITHDRAW",
   "standoff.negotiate": "NEGOTIATE",
   "standoff.pactActive": "NON-AGGRESSION PACT ACTIVE",
-
   "dialog.common.leave": "Leave",
   "dialog.informant.greet": "You did not see me. What do you need?",
   "dialog.informant.askRival": "Where is the competition working?",
@@ -85,13 +76,20 @@
   "dialog.vendor.greet": "Cash only. No questions, no receipts.",
   "dialog.vendor.cannotAfford": "Come back when you can pay.",
   "dialog.vendor.bankOnly": "Banked funds only — I don't touch field cash.",
-
   "alarm.perimeter": "PERIMETER ALARM — HQ",
   "alarm.burned": "YOU ARE BURNED",
   "alarm.captured": "AGENT CAPTURED",
-
   "common.yes": "YES",
   "common.no": "NO",
   "common.cancel": "CANCEL",
-  "common.confirm": "CONFIRM"
+  "common.confirm": "CONFIRM",
+  "shop.softSoles": "Soft-soled boots",
+  "shop.cargoHarness": "Cargo harness",
+  "shop.jammerII": "Sensor jammer II",
+  "shop.medkit": "Field medkit",
+  "shop.newFace": "A new face",
+  "dialog.coverShop.greet": "Sit down. Don't look in the mirror yet.",
+  "shop.title": "FOR SALE",
+  "shop.cost": "COST",
+  "shop.owned": "OWNED"
 }

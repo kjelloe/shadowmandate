@@ -3,10 +3,10 @@
 Drop-in/drop-out covert-ops game. Sibling of Fireline Command
 (`~/GIT/firepower` — the fork source, never modified from here).
 
-**Status: M0–M4 complete plus M5 slices 5a–5c (sim harness + AI rival Firms),
-engine only. `npm test` = 106 green.** No client exists yet. Remaining in M5:
-standoff protocol (5d), informant dialogue (5f), batch-lane bring-up (5g),
-`payBail` (5h).
+**Status: M0–M4 complete plus M5 slices 5a–5d and 5h (sim harness, AI rival
+Firms, standoff, bail), engine only. `npm test` = 120 green.** No client exists
+yet. Remaining in M5: informant dialogue (5f) and batch-lane bring-up (5g) —
+5g needs the gaming PC, so it is the one slice that cannot be done solo.
 
 ## Read first
 
@@ -38,7 +38,7 @@ node tools/repin_fixture.mjs "<reason>"     # deliberate fixture re-pin
 | Path | Contents |
 |---|---|
 | `shared/` | prng, canonical byte writer + FNV-1a 64, fixedmath — **verbatim from firepower**, do not edit |
-| `engine/` | pure reducer and subsystems: state, commands, reducer, snapshot, terrain, citygen, worldprobes, pathfind, agents, detection, combat, hq, contracts, buildings, ai_firms, mirror |
+| `engine/` | pure reducer and subsystems: state, commands, reducer, snapshot, terrain, citygen, worldprobes, pathfind, agents, detection, combat, hq, contracts, buildings, standoff, ai_firms, mirror |
 | `server/` | all I/O: `ruleset.js` (loads `data/`), `ledger.js` (world ledger, identity) |
 | `data/` | every tuned number, 12 files + `ruleset.json` manifest with an era version |
 | `client/i18n/` | `en.json` / `no.json`, key-parity enforced |

@@ -15,7 +15,7 @@ import {
   CMD_RESCUE, CMD_CAPTURE, CMD_DROP_IN, CMD_ACTIVATE_EVAC, CMD_CANCEL_EVAC,
   CMD_EXTRACT, CMD_ACCEPT_CONTRACT, CMD_ABANDON_CONTRACT, CMD_SITE_ACTION,
   CMD_ENTER_BUILDING, CMD_EXIT_BUILDING, CMD_BUY_ITEM, CMD_STANDOFF_CHOICE,
-  CMD_PAY_BAIL,
+  CMD_PAY_BAIL, CMD_DIALOGUE_CHOICE,
 } from "./commands.js";
 import { AGENT_ACTIVE, AGENT_DOWNED } from "./state.js";
 import { orderMove, stepAgent, stepPatrol } from "./agents.js";
@@ -26,7 +26,9 @@ import {
   acceptContract, abandonContract, siteAction, stepContracts, reapContracts,
   refillPool, rebuildOffers, noteBurn, seedSitesNearHq,
 } from "./contracts.js";
-import { enterBuilding, exitBuilding, buyCover } from "./buildings.js";
+import {
+  enterBuilding, exitBuilding, buyCover, payloadFor, applyEffect,
+} from "./buildings.js";
 import { stepStandoffs, submitChoice } from "./standoff.js";
 
 export function copyState(state) {
@@ -44,7 +46,12 @@ export function copyState(state) {
     reachable: state.reachable,
     rules: state.rules,
 
-    firms: state.firms.map((f) => ({ ...f })),
+    firms: state.firms.map((f) => ({
+      ...f,
+      heatIntel: (f.heatIntel ?? []).map((h) => ({ ...h })),
+      knownRivalHqs: (f.knownRivalHqs ?? []).slice(),
+      upgrades: (f.upgrades ?? []).slice(),
+    })),
     agents: state.agents.map((a) => ({
       ...a,
       contractIds: a.contractIds.slice(),
@@ -179,14 +186,70 @@ function applyExitBuilding(next, command) {
   return next;
 }
 
-// D38. The bank balance lives in the server ledger (D30 bank-only), so it is
-// supplied on the command — the reducer stays pure and never reads storage.
+// Buying, at a shop or a cover shop. The bank balance lives in the server
+// ledger (D30 bank-only), so it arrives on the command — the reducer stays
+// pure and never reads storage.
 function applyBuyItem(next, command) {
   const agent = next.agents[command.agentId];
   if (!agent) return reject(next, command, "no_such_agent");
-  if (command.itemIdx !== 0) return reject(next, command, "not_implemented");
-  const result = buyCover(next, agent, next.rules.combat, command.bank ?? 0);
-  if (result.error) return reject(next, command, result.error);
+  if (agent.insideBuildingId < 0) return reject(next, command, "not_inside");
+  const building = next.buildings.find((b) => b.id === agent.insideBuildingId);
+  if (!building) return reject(next, command, "no_building");
+  const payloads = next.rules.payloads;
+  if (!payloads) return reject(next, command, "no_content");
+
+  const heat = next.districts[building.districtId]?.heat ?? 0;
+  const payload = payloadFor(building, payloads, heat);
+  if (!payload || payload.kind !== "shop") return reject(next, command, "not_a_shop");
+  const item = payload.catalog[command.itemIdx];
+  if (!item) return reject(next, command, "no_such_item");
+  if ((command.bank ?? 0) < item.cost) return reject(next, command, "cannot_afford");
+
+  if (item.effect.type === "cover") {
+    const result = buyCover(next, agent, next.rules.combat, command.bank ?? 0);
+    if (result.error) return reject(next, command, result.error);
+    return next;
+  }
+  const firm = next.firms[agent.firmId];
+  const err = applyEffect(next, agent, firm, item.effect, {
+    districtId: building.districtId, conditionMax: next.rules.agents.conditionMax,
+  });
+  if (err) return reject(next, command, err);
+  next.events.push({
+    type: "itemBought", agentId: agent.id, firmId: firm.id,
+    itemKey: item.key, cost: item.cost,
+  });
+  return next;
+}
+
+// Talking to someone. Content declares the options; the engine applies them.
+function applyDialogueChoice(next, command) {
+  const agent = next.agents[command.agentId];
+  if (!agent) return reject(next, command, "no_such_agent");
+  if (agent.insideBuildingId < 0) return reject(next, command, "not_inside");
+  const building = next.buildings.find((b) => b.id === agent.insideBuildingId);
+  if (!building) return reject(next, command, "no_building");
+  const payloads = next.rules.payloads;
+  if (!payloads) return reject(next, command, "no_content");
+
+  const heat = next.districts[building.districtId]?.heat ?? 0;
+  const payload = payloadFor(building, payloads, heat);
+  if (!payload || payload.kind !== "dialogue") return reject(next, command, "not_a_dialogue");
+  const option = payload.options[command.optionIdx];
+  if (!option) return reject(next, command, "no_such_option");
+
+  if (option.exit) return applyExitBuilding(next, { agentId: agent.id });
+  if ((option.cost ?? 0) > (command.bank ?? 0)) return reject(next, command, "cannot_afford");
+
+  const firm = next.firms[agent.firmId];
+  const err = applyEffect(next, agent, firm, option.effect, {
+    districtId: building.districtId, conditionMax: next.rules.agents.conditionMax,
+  });
+  if (err) return reject(next, command, err);
+  next.events.push({
+    type: "dialogueChosen", agentId: agent.id, firmId: firm.id,
+    optionKey: option.key, cost: option.cost ?? 0,
+  });
   return next;
 }
 
@@ -313,6 +376,8 @@ export function apply(state, command) {
       return applyStandoffChoice(next, command);
     case CMD_PAY_BAIL:
       return applyPayBail(next, command);
+    case CMD_DIALOGUE_CHOICE:
+      return applyDialogueChoice(next, command);
     default:
       // A validated command whose milestone has not landed yet. Explicit, so a
       // premature call is visible in the event stream rather than silent.

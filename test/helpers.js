@@ -13,6 +13,8 @@ export function testRuleset() {
   const manifest = read("ruleset.json");
   const rules = { version: manifest.version };
   for (const file of manifest.files) rules[file.replace(/\.json$/, "")] = read(file);
+  rules.payloads = read("buildings/payloads.json");
+  rules.disguises = read("buildings/disguises.json");
   return rules;
 }
 

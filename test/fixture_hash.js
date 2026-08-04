@@ -25,6 +25,9 @@ export function hashStateLocal(state) {
     w.writeI32LE(f.cacheResources);
     w.writeI32LE(f.isAi); w.writeI32LE(f.aiPersonality);
     w.writeI32LE(f.aiNextDeployTick ?? 0); w.writeI32LE(f.graceTicks);
+    for (const h of (f.heatIntel ?? [])) { w.writeI32LE(h.districtId); w.writeI32LE(h.expiresTick); }
+    for (const id of (f.knownRivalHqs ?? [])) w.writeI32LE(id);
+    w.writeI32LE((f.upgrades ?? []).length);
   }
   for (const a of state.agents) {
     if (a.state === 0) continue;

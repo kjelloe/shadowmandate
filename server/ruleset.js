@@ -19,13 +19,17 @@ export function loadRuleset() {
   rules.agents = rules.agents ?? {};
   rules.detection = rules.detection ?? {};
   rules.combat = rules.combat ?? {};
+  rules.payloads = loadBuildingPayloads();
+  rules.disguises = loadDisguises();
   return rules;
 }
 
 export function loadBuildingPayloads() {
-  try {
-    return JSON.parse(readFileSync(DATA + "buildings/payloads.json", "utf8"));
-  } catch {
-    return { dialogues: [], shops: [] };
-  }
+  // Missing content is a real error, not a silent empty world: a shop with no
+  // catalogue looks identical to a shop nobody can buy from.
+  return JSON.parse(readFileSync(DATA + "buildings/payloads.json", "utf8"));
+}
+
+export function loadDisguises() {
+  return JSON.parse(readFileSync(DATA + "buildings/disguises.json", "utf8"));
 }
