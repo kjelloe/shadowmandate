@@ -50,6 +50,9 @@ export const COLUMNS = [
   "banked", "cacheLost", "raids", "raidsSucceeded",
   "deployments", "cleanExtracts", "emergencyExtracts",
   "heatMax", "heatLockdownTicks", "recognition", "tierReached",
+  // D11/D19 pacing columns (slice 6e): ticks per completed contract and the
+  // deployment length distribution are what the rulings are actually about.
+  "avgSortieTicks", "avgDeployTicks", "deploysToTier3",
 ];
 
 export function runWorldDay(seed, { size = SIZE, ticks = TICKS, mirror = MIRROR,
@@ -68,6 +71,12 @@ export function runWorldDay(seed, { size = SIZE, ticks = TICKS, mirror = MIRROR,
   m.offered = s.contractPool.length;
 
   const KIND = ["courier", "surveillance", "extraction", "sabotage", "acquisition"];
+  // Pacing bookkeeping (D11/D19).
+  const acceptedAt = new Map();     // contractId -> tick
+  const deployedAt = new Map();     // firmId -> tick
+  let sortieTicks = 0, sortieCount = 0;
+  let deployTicks = 0, deployCount = 0;
+  let tier3At = -1, deploysWhenTier3 = 0;
 
   for (let t = 0; t < ticks; t++) {
     // The AI acts BETWEEN ticks, exactly where a player's client would send
@@ -77,8 +86,16 @@ export function runWorldDay(seed, { size = SIZE, ticks = TICKS, mirror = MIRROR,
     s = apply(s, { type: CMD_ADVANCE_TICK });
     for (const e of [...ai.events, ...s.events]) {
       switch (e.type) {
-        case "contractAccepted": m.accepted++; break;
-        case "contractCompleted": m.completed++; m[KIND[e.kind]]++; break;
+        case "contractAccepted": m.accepted++; acceptedAt.set(e.contractId, t); break;
+        case "contractCompleted": {
+          m.completed++; m[KIND[e.kind]]++;
+          const from = acceptedAt.get(e.contractId);
+          if (from !== undefined) { sortieTicks += t - from; sortieCount++; acceptedAt.delete(e.contractId); }
+          break;
+        }
+        case "tierUnlocked":
+          if (e.tier >= 3 && tier3At < 0) { tier3At = t; deploysWhenTier3 = m.deployments; }
+          break;
         case "contractFailed": m.failed++; break;
         case "contractExpired": m.expired++; break;
         case "agentBurned": m.burns++; break;
@@ -88,11 +105,14 @@ export function runWorldDay(seed, { size = SIZE, ticks = TICKS, mirror = MIRROR,
         case "agentRescued": m.rescues++; break;
         case "cacheLooted": m.cacheLost += e.amount | 0; m.raidsSucceeded++; break;
         case "perimeterAlarm": m.raids++; break;
-        case "firmDeployed": m.deployments++; break;
-        case "firmExtracted":
+        case "firmDeployed": m.deployments++; deployedAt.set(e.firmId, t); break;
+        case "firmExtracted": {
           if (e.emergency) m.emergencyExtracts++;
           else { m.cleanExtracts++; m.banked += e.banked | 0; }
+          const from = deployedAt.get(e.firmId);
+          if (from !== undefined) { deployTicks += t - from; deployCount++; deployedAt.delete(e.firmId); }
           break;
+        }
         default: break;
       }
     }
@@ -101,6 +121,10 @@ export function runWorldDay(seed, { size = SIZE, ticks = TICKS, mirror = MIRROR,
       if (d.heat >= RULES.detection.heat.checkpointsActiveAt) m.heatLockdownTicks++;
     }
   }
+
+  m.avgSortieTicks = sortieCount ? Math.trunc(sortieTicks / sortieCount) : 0;
+  m.avgDeployTicks = deployCount ? Math.trunc(deployTicks / deployCount) : 0;
+  m.deploysToTier3 = tier3At >= 0 ? deploysWhenTier3 : 0;
 
   for (const f of s.firms) {
     if (f.state === 0 && f.recognition === 0) continue;

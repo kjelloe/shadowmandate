@@ -77,7 +77,16 @@ export function stepAgent(state, cfg, agent) {
     agent.moveProgress = 0;
     return;
   }
-  const speed = agent.state === AGENT_DOWNED ? crawlSpeed(cfg) : stepSpeed(cfg, state.map, agent);
+  let speed = agent.state === AGENT_DOWNED ? crawlSpeed(cfg) : stepSpeed(cfg, state.map, agent);
+  if (agent.state !== AGENT_DOWNED && agent.vehicleId >= 0 && state.rules) {
+    const spec = vehicleSpeedFor(agent, state, state.rules.vehicles);
+    if (spec) {
+      // Driving replaces the stance/terrain walk speed outright: a vehicle on
+      // a street is not "sneaking faster", it is a different way to travel.
+      speed = Math.max(1, Math.trunc((spec.speed * speedMultiplier(
+        tileAt(state.map, worldToCellFloor(agent.x), worldToCellFloor(agent.y)))) / 256));
+    }
+  }
   const next = route[agent.routeIdx];
   const nx = cellToWorld(next.x), ny = cellToWorld(next.y);
   const dx = nx - agent.x, dy = ny - agent.y;
@@ -130,6 +139,68 @@ export function stepPatrol(state, cfg, patrol) {
   patrol.routeIdx = (patrol.routeIdx + 1) % patrol.route.length;
   const step = patrol.route[patrol.routeIdx];
   patrol.x = step.x; patrol.y = step.y;
+}
+
+// ── Vehicles (S02, D34) ───────────────────────────────────────────────────
+//
+// A vehicle is speed bought with noise. It covers ground the stealth loadout
+// cannot, and it announces you the whole way — which is the trade the design
+// wants, not an upgrade that strictly dominates walking.
+
+export const VEHICLE_KINDS = ["lightTransport", "motorbike", "cargoVan"];
+
+export function vehicleAt(state, cellX, cellY) {
+  for (const v of state.vehicles) {
+    if (worldToCellFloor(v.x) === cellX && worldToCellFloor(v.y) === cellY
+      && v.riderAgentId < 0) return v;
+  }
+  return null;
+}
+
+export function boardVehicle(state, agent, vehiclesCfg) {
+  if (agent.vehicleId >= 0) return "already_driving";
+  const cell = { x: worldToCellFloor(agent.x), y: worldToCellFloor(agent.y) };
+  const vehicle = vehicleAt(state, cell.x, cell.y);
+  if (!vehicle) return "no_vehicle_here";
+  const spec = vehiclesCfg[VEHICLE_KINDS[vehicle.kind]];
+  if (!spec || spec.v1 !== true) return "not_available";
+  // A motorbike carries nothing — you cannot ride off with the package.
+  if (agent.carryKind !== CARRY_NONE && (spec.cargo | 0) === 0) return "no_cargo_space";
+
+  vehicle.riderAgentId = agent.id;
+  agent.vehicleId = vehicle.id;
+  state.events.push({ type: "boardedVehicle", agentId: agent.id, vehicleId: vehicle.id });
+  return null;
+}
+
+export function exitVehicle(state, agent) {
+  if (agent.vehicleId < 0) return "not_driving";
+  const vehicle = state.vehicles.find((v) => v.id === agent.vehicleId);
+  if (vehicle) {
+    vehicle.riderAgentId = -1;
+    agent.x = vehicle.x;
+    agent.y = vehicle.y;
+  }
+  agent.vehicleId = -1;
+  state.events.push({ type: "exitedVehicle", agentId: agent.id });
+  return null;
+}
+
+// A ridden vehicle moves with its agent; the agent's position IS the vehicle's.
+export function syncVehicles(state) {
+  for (const v of state.vehicles) {
+    if (v.riderAgentId < 0) continue;
+    const agent = state.agents[v.riderAgentId];
+    if (!agent || agent.vehicleId !== v.id) { v.riderAgentId = -1; continue; }
+    v.x = agent.x; v.y = agent.y; v.facing = agent.facing;
+  }
+}
+
+export function vehicleSpeedFor(agent, state, vehiclesCfg) {
+  if (agent.vehicleId < 0) return null;
+  const vehicle = state.vehicles.find((v) => v.id === agent.vehicleId);
+  if (!vehicle) return null;
+  return vehiclesCfg[VEHICLE_KINDS[vehicle.kind]] ?? null;
 }
 
 function passableFor(state, x, y) {

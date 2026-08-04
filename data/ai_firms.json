@@ -28,8 +28,8 @@
     }
   ],
   "deployment": {
-    "minGapTicks": 3000,
-    "durationTicks": 24000
+    "minGapTicks": 6000,
+    "durationTicks": 36000
   },
   "vehicles": {
     "allowed": [

@@ -45,12 +45,24 @@ export function effectiveSightRadius(cfg, map, agent, heat) {
 // Noise is transient: it is computed per tick from what agents are doing and
 // consumed by hearing checks in the same tick. Deliberately NOT stored — a
 // history of noise would be hashed state that nothing ever reads again.
-export function noiseRadiusFor(cfg, agentsCfg, agent) {
+export function noiseRadiusFor(cfg, agentsCfg, agent, vehicleSpec = null) {
   if (agent.state !== AGENT_ACTIVE) return 0;
   if (agent.moveProgress === 0 && agent.targetX === agent.x) return 0;
+  // A moving vehicle is loud whatever the driver intends — you cannot sneak
+  // a van. This is the cost that stops vehicles dominating the stealth walk.
+  if (vehicleSpec) return vehicleSpec.noiseRadius | 0;
   const stance = agent.stance === STANCE_SNEAK ? "sneak"
     : agent.stance === STANCE_HURRY ? "hurry" : "move";
   return agentsCfg.stances[stance].noiseRadius | 0;
+}
+
+// Kept local rather than importing agents.js: detection must not depend on the
+// movement module (acyclic imports, specs/02).
+function vehicleSpecFor(state, agent) {
+  const vehicle = state.vehicles.find((v) => v.id === agent.vehicleId);
+  if (!vehicle) return null;
+  const kinds = ["lightTransport", "motorbike", "cargoVan"];
+  return state.rules.vehicles[kinds[vehicle.kind]] ?? null;
 }
 
 function manhattan(ax, ay, bx, by) {
@@ -61,7 +73,9 @@ function manhattan(ax, ay, bx, by) {
 export function perceivedBy(state, cfg, agentsCfg, agent, heat) {
   const cell = agentCell(agent);
   const sight = effectiveSightRadius(cfg, state.map, agent, heat);
-  const noise = noiseRadiusFor(cfg, agentsCfg, agent);
+  const vehicleSpec = (agent.vehicleId >= 0 && state.rules)
+    ? vehicleSpecFor(state, agent) : null;
+  const noise = noiseRadiusFor(cfg, agentsCfg, agent, vehicleSpec);
   for (const p of state.patrols) {
     const d = manhattan(p.x, p.y, cell.x, cell.y);
     if (d <= sight && hasLineOfSight(state.map, p.x, p.y, cell.x, cell.y)) return p;

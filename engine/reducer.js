@@ -15,10 +15,13 @@ import {
   CMD_RESCUE, CMD_CAPTURE, CMD_DROP_IN, CMD_ACTIVATE_EVAC, CMD_CANCEL_EVAC,
   CMD_EXTRACT, CMD_ACCEPT_CONTRACT, CMD_ABANDON_CONTRACT, CMD_SITE_ACTION,
   CMD_ENTER_BUILDING, CMD_EXIT_BUILDING, CMD_BUY_ITEM, CMD_STANDOFF_CHOICE,
-  CMD_PAY_BAIL, CMD_DIALOGUE_CHOICE,
+  CMD_PAY_BAIL, CMD_DIALOGUE_CHOICE, CMD_DORMANCY_TICK,
+  CMD_ENTER_VEHICLE, CMD_EXIT_VEHICLE,
 } from "./commands.js";
 import { AGENT_ACTIVE, AGENT_DOWNED } from "./state.js";
-import { orderMove, stepAgent, stepPatrol } from "./agents.js";
+import {
+  orderMove, stepAgent, stepPatrol, boardVehicle, exitVehicle, syncVehicles,
+} from "./agents.js";
 import { stepDetection, stepHeat } from "./detection.js";
 import { rescueAgent, captureAgent, useItem, stepArrests, payBail } from "./combat.js";
 import { dropIn, activateEvac, cancelEvac, extract, stepHqs, hqOf } from "./hq.js";
@@ -30,6 +33,7 @@ import {
   enterBuilding, exitBuilding, buyCover, payloadFor, applyEffect,
 } from "./buildings.js";
 import { stepStandoffs, submitChoice } from "./standoff.js";
+import { applyDormancy } from "./dormancy.js";
 
 export function copyState(state) {
   return {
@@ -103,6 +107,23 @@ function applyMove(next, command) {
   if (agent.insideBuildingId >= 0) return reject(next, command, "agent_inside_building");
   const steps = orderMove(next, agent, command.cellX, command.cellY);
   if (steps === 0) return reject(next, command, "no_route");
+  return next;
+}
+
+function applyEnterVehicle(next, command) {
+  const agent = next.agents[command.agentId];
+  if (!agent) return reject(next, command, "no_such_agent");
+  if (agent.state !== AGENT_ACTIVE) return reject(next, command, "agent_not_active");
+  const err = boardVehicle(next, agent, next.rules.vehicles);
+  if (err) return reject(next, command, err);
+  return next;
+}
+
+function applyExitVehicle(next, command) {
+  const agent = next.agents[command.agentId];
+  if (!agent) return reject(next, command, "no_such_agent");
+  const err = exitVehicle(next, agent);
+  if (err) return reject(next, command, err);
   return next;
 }
 
@@ -263,6 +284,16 @@ function applyPayBail(next, command) {
   return next;
 }
 
+// D16. The ONLY command that carries wall-clock time, and it carries it as an
+// ordinary field so replays reproduce the sleep exactly.
+function applyDormancyTick(next, command) {
+  if (!next.rules) return reject(next, command, "no_ruleset");
+  const deployed = next.firms.some((f) => f.state !== 0);
+  if (deployed) return reject(next, command, "world_not_empty");
+  applyDormancy(next, command.elapsedMs, next.rules.detection, next.rules.contracts);
+  return next;
+}
+
 function applyStandoffChoice(next, command) {
   const agent = next.agents[command.agentId];
   if (!agent) return reject(next, command, "no_such_agent");
@@ -313,6 +344,7 @@ function applyAdvanceTick(next) {
       stepAgent(next, r.agents, agent);
     }
   }
+  syncVehicles(next);
   for (const patrol of next.patrols) stepPatrol(next, r.detection, patrol);
   stepDetection(next, r.detection, r.agents);
   // D39: attribute burns to the contracts they happened during. Done here,
@@ -378,6 +410,12 @@ export function apply(state, command) {
       return applyPayBail(next, command);
     case CMD_DIALOGUE_CHOICE:
       return applyDialogueChoice(next, command);
+    case CMD_DORMANCY_TICK:
+      return applyDormancyTick(next, command);
+    case CMD_ENTER_VEHICLE:
+      return applyEnterVehicle(next, command);
+    case CMD_EXIT_VEHICLE:
+      return applyExitVehicle(next, command);
     default:
       // A validated command whose milestone has not landed yet. Explicit, so a
       // premature call is visible in the event stream rather than silent.

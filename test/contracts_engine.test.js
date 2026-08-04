@@ -120,19 +120,54 @@ test("copyState isolates every collection, including the newer ones", () => {
   assert.equal(s.agents[0].route.length, 0, "agent route aliased");
 });
 
-test("commands that are not yet implemented reject explicitly, never silently", () => {
-  // A validated command whose milestone has not landed must say so in the
-  // event stream. Silence here would look like success to a client.
+test("every command in the vocabulary is implemented", () => {
+  // This test used to list the commands still stubbed out and assert they said
+  // so explicitly. As of M6 the list is EMPTY — every declared command has a
+  // handler. Inverted so it keeps earning its place: if someone adds a command
+  // to the vocabulary without a handler, this fails instead of quietly
+  // rejecting at runtime.
   const s = makeWorld();
-  for (const command of [
-    { type: CMD.CMD_DORMANCY_TICK, elapsedMs: 1000 },
-    { type: CMD.CMD_ENTER_VEHICLE, agentId: 0 },
-  ]) {
-    const next = apply(s, command);
-    assert.equal(next.events[0]?.type, "rejected",
-      `${CMD.COMMAND_NAMES[command.type]} did not reject`);
-    assert.equal(next.events[0].reason, "not_implemented");
+  const unimplemented = [];
+  const probe = {
+    [CMD.CMD_ADVANCE_TICK]: {},
+    [CMD.CMD_DROP_IN]: { firmId: 0, cellX: 5, cellY: 5 },
+    [CMD.CMD_ACTIVATE_EVAC]: { firmId: 0 },
+    [CMD.CMD_CANCEL_EVAC]: { firmId: 0 },
+    [CMD.CMD_EXTRACT]: { firmId: 0 },
+    [CMD.CMD_MOVE]: { agentId: 0, cellX: 5, cellY: 5 },
+    [CMD.CMD_SET_STANCE]: { agentId: 0, stance: 1 },
+    [CMD.CMD_ENTER_VEHICLE]: { agentId: 0 },
+    [CMD.CMD_EXIT_VEHICLE]: { agentId: 0 },
+    [CMD.CMD_USE_ITEM]: { agentId: 0, slot: 0, cellX: 5, cellY: 5 },
+    [CMD.CMD_RESCUE]: { agentId: 0, targetAgentId: 1 },
+    [CMD.CMD_CAPTURE]: { agentId: 0, targetAgentId: 1 },
+    [CMD.CMD_PAY_BAIL]: { firmId: 0, agentId: 0 },
+    [CMD.CMD_ENTER_BUILDING]: { agentId: 0 },
+    [CMD.CMD_EXIT_BUILDING]: { agentId: 0 },
+    [CMD.CMD_DIALOGUE_CHOICE]: { agentId: 0, optionIdx: 0 },
+    [CMD.CMD_BUY_ITEM]: { agentId: 0, itemIdx: 0 },
+    [CMD.CMD_ACCEPT_CONTRACT]: { agentId: 0, contractId: 0 },
+    [CMD.CMD_ABANDON_CONTRACT]: { agentId: 0, contractId: 0 },
+    [CMD.CMD_SITE_ACTION]: { agentId: 0, siteId: 0 },
+    [CMD.CMD_STANDOFF_CHOICE]: { agentId: 0, standoffId: 0, choice: 1 },
+    [CMD.CMD_DORMANCY_TICK]: { elapsedMs: 1000 },
+  };
+  for (const [typeStr, fields] of Object.entries(probe)) {
+    const type = Number(typeStr);
+    const next = apply(s, { type, ...fields });
+    const rejected = next.events.find((e) => e.type === "rejected");
+    if (rejected?.reason === "not_implemented") {
+      unimplemented.push(CMD.COMMAND_NAMES[type]);
+    }
   }
+  assert.deepEqual(unimplemented, [],
+    `declared but unimplemented: ${unimplemented.join(", ")}`);
+
+  // And the probe must cover the whole vocabulary, or it proves less than it
+  // claims the day a command is added.
+  const declared = Object.keys(CMD.COMMAND_NAMES).map(Number).sort((a, b) => a - b);
+  const covered = Object.keys(probe).map(Number).sort((a, b) => a - b);
+  assert.deepEqual(covered, declared, "the probe does not cover every command");
 });
 
 test("the command validator rejects malformed frames", () => {

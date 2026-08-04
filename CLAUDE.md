@@ -3,10 +3,11 @@
 Drop-in/drop-out covert-ops game. Sibling of Fireline Command
 (`~/GIT/firepower` — the fork source, never modified from here).
 
-**Status: M0–M4 complete plus M5 slices 5a–5d and 5h (sim harness, AI rival
-Firms, standoff, bail), engine only. `npm test` = 120 green.** No client exists
-yet. Remaining in M5: informant dialogue (5f) and batch-lane bring-up (5g) —
-5g needs the gaming PC, so it is the one slice that cannot be done solo.
+**Status: M0–M5 complete except slice 5g, engine only. `npm test` = 130
+green.** No client exists yet. **5g (batch-lane bring-up) needs the gaming PC
+and cannot be done solo** — runbook in `plan-implementation-order.md`. Now on
+M6: vehicles (6b), dormancy transition (6d), pacing battery (6e). 6c came free
+with 5f.
 
 ## Read first
 

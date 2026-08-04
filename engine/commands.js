@@ -88,7 +88,10 @@ export function validate(command) {
       return INT(command.agentId) && INT(command.standoffId)
         && INT(command.choice) && command.choice >= 0 && command.choice <= 2;
     case CMD_DORMANCY_TICK:
-      return INT(command.elapsedMs) && command.elapsedMs >= 0;
+      // Note the bound: a 28-day season is ~2.4e9 ms, past i32. Validate as a
+      // safe integer, never by narrowing.
+      return INT(command.elapsedMs) && command.elapsedMs >= 0
+        && command.elapsedMs <= Number.MAX_SAFE_INTEGER;
     default:
       return false;
   }

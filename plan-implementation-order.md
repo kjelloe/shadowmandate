@@ -1,8 +1,9 @@
 # Shadow Mandate — Implementation Order (M0–M7)
 
-**STATUS 2026-08-04: M0–M4 complete + M5 slices 5a–5d, 5h. Suite 120/120 green,
-pushed to `dev_night` (8fc8da5). Remaining in M5: 5f dialogue content and
-5g batch-lane bring-up (needs the gaming PC). M3/M4 client slices deferred.**
+**STATUS 2026-08-04: M0–M5 complete except 5g. Suite 130/130 green, pushed to
+`dev_night` (7c6bdba). 5g (batch lane) needs the gaming PC. M6 in progress:
+6c shipped early with 5f; remaining 6b vehicles, 6d dormancy, 6e pacing
+battery. M3/M4 client slices deferred.**
 
 *Written 2026-08-04, for the implementing agent (me). The operational plan is
 `plan-version1.md`; specs are `specs/systems/S01–S15`; this file is HOW the
@@ -119,7 +120,7 @@ downed→captured / heat rise+decay) + census shows every transition fires.
 **Gate:** scripted agent completes each type; economy census columns
 (offered/accepted/completed/expired) emitting — these become battery columns.
 
-## M5 — AI Rival Firms 🟡 IN PROGRESS (5a–5d, 5h done; 5f content + 5g lane left)
+## M5 — AI Rival Firms 🟢 DONE except 5g (batch lane — needs the gaming PC)
 
 - **5a** **Sim harness before doctrine** (instrument-first): `tools/
   sm_worldday.mjs` — runs K Firms through a world-day of deployments on a
@@ -143,7 +144,7 @@ downed→captured / heat rise+decay) + census shows every transition fires.
 **Gate:** AI-vs-AI 12–16k ticks × 5 pinned seeds, zero invariant violations,
 census complete; battery within provisional bands.
 
-## M6 — Depth & Tier 2–3 ⬜ NOT STARTED (Sabotage/Acquisition machines exist; vehicles, vendor, dormancy do not)
+## M6 — Depth & Tier 2–3 🟡 IN PROGRESS (6a machines + 6c vendor already shipped; 6b/6d/6e remain)
 
 - **6a** Sabotage + Acquisition machines; radius phases 2–3; tier unlock
   counts; risk premium on offers in heat 2–3.

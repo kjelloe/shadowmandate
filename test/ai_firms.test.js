@@ -147,7 +147,10 @@ test("firm-swap changes seats without changing the world", () => {
 
 test("the world-day harness produces the full metric row", async () => {
   const { runWorldDay, COLUMNS } = await import("../tools/sm_worldday.mjs");
-  const row = runWorldDay(1411, { ticks: 2000 });
+  // Long enough for a deployment to actually happen: the AI's deploy gap is
+  // 6000 ticks after the M6 pacing pass, so a 2000-tick sample now sees an
+  // empty world and asserts nothing.
+  const row = runWorldDay(1411, { ticks: 12000 });
   for (const col of COLUMNS) {
     assert.ok(row[col] !== undefined, `metric column '${col}' is missing`);
     assert.ok(Number.isInteger(row[col]), `metric '${col}' is not an integer: ${row[col]}`);
