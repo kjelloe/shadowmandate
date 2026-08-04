@@ -79,8 +79,16 @@ tier-appropriate contract, nearest first. The tier gate stays absolute; only
 the distance gate softens. Phase radii also scale with world size so "phase 1"
 means the same thing at 128 (D26).
 
+**D41 (pacing by content, 2026-08-05):** surveillance is three separate passes;
+sabotage plants a second charge at another site under the fuse; acquisition
+delivers to a drop-off rather than home, because the vault alarms behind you;
+and a **patrol window** blocks working an objective while a patrol is within 7
+cells. Measured effect: AI sortie 0.4 → 2.3–4.5 min, deployment 1.3 → 8.3–16.4
+min. Waiting for the window is meant to be the decision that fills the time.
+
 **NOT implemented:** `siteAction` is only wired for the courier pickup path;
-the other kinds progress from the per-tick stepper. Bail/re-drop (D17) missing.
+the other kinds progress from the per-tick stepper. `payBail` shipped (5h); the
+auto-generated Extraction contract for a held agent has not.
 
 ## To pin
 
