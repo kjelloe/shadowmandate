@@ -1,0 +1,27 @@
+{
+  "note": "S03. Radii in cells, timers in ticks (10 ticks = 1 second). Initial values seeded from Fireline alarm radii; every one is tune-by-battery.",
+  "patrolSightRadius": 6,
+  "patrolHearRadius": 4,
+  "coverSightPenalty": 2,
+  "noticedDecayTicks": 40,
+  "burnTicks": 30,
+  "burnCooldownTicks": 300,
+  "convergeRadius": 12,
+  "heat": {
+    "max": 5,
+    "decayTicks": 1800,
+    "sources": { "burn": 1, "sabotage": 2, "standoffCombat": 1, "hqRaid": 1 },
+    "checkpointsActiveAt": 4,
+    "tier1SuspendedAt": 4,
+    "informantQuietAt": 4,
+    "extraPatrolsAt": 2,
+    "sensorRadiusMulAt2": 320,
+    "riskPremiumPct": 25,
+    "fuzzBands": [2, 4]
+  },
+  "arrest": {
+    "downedAlways": true,
+    "burnedAtHeat": 3,
+    "arrestTicks": 20
+  }
+}

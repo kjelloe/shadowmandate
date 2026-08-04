@@ -1,0 +1,464 @@
+# Shadow Mandate — Design of Record
+
+**Subtitle:** *Run the mission. Don't get burned.*
+**Status:** Design of record — supersedes `starter_design_document.md` where they conflict
+**Art lineage:** Painted Low-Poly Hybrid (shared with Fireline Command)
+**Relationship:** Sibling game — forked engine, same renderer approach, same art pipeline. Different genre, different feel.
+
+---
+
+## The Pitch
+
+A drop-in / drop-out covert-ops game set in a persistent city-region. Every player is a lead agent working for a Firm.
+
+You drop in from a dropship, establish a Field HQ, run contracts outward from it, and when you are done, you call an evac and extract cleanly — or you don't.
+
+The world is always live. Other Firms are always operating — AI-run at first, human-run later. The longer you stay and the deeper you go, the more likely you are to cross paths with someone who does not want witnesses.
+
+Being seen is the real danger. Nobody dies in this world — but agents get downed, captured, interrogated, and traded, and a burned operation costs you everything you hadn't yet banked.
+
+> **Run the mission. Don't get burned.**
+
+---
+
+## Core Design Pillars
+
+| Pillar | What it means |
+|---|---|
+| **Drop in, drop out** | No lobby. No waiting. The world runs. You join it and leave it on your own terms. |
+| **Field HQ as anchor** | Your HQ is your base, your bank, your extraction zone. It exists only while you're deployed. |
+| **Mission radius expands** | First contracts are safe and close. Each completed tier unlocks further, riskier ones — and the unlocks persist in this world. |
+| **Detection is the threat** | Stealth-first: alarms, heat, and authority response are the antagonists. Combat downs, never kills. |
+| **Firm identity** | You work for a faction with a name, a color, a doctrine (V3). Your HQ flies their flag. |
+| **Evac is a mechanic** | Leaving is not a menu option. You call evac, you hold the HQ for 30 seconds, you extract. |
+| **Living world** | The world instance persists for days or weeks. Rival Firms operate whether you're deployed or not. |
+
+---
+
+## Foundational Decisions (rulings)
+
+These seven rulings resolve the open forks in the starter document and in `batch-a-refinement.md`. They are the contract for everything below.
+
+| # | Ruling |
+|---:|---|
+| **D1** | **Hybrid control.** The player directly controls one lead agent (tap-to-move, contextual actions). From V2, the player can recruit AI **support agents** who follow visible stances — the batch-a "operator" layer arrives as a later stratum on top of direct control, not instead of it. |
+| **D2** | **Fork Fireline Command.** Copy `engine/`, `shared/`, `server/`, `client/`, `test/`, `tools/` scaffolding from `~/GIT/firepower` into this repo; strip war-specific systems; diverge freely. No shared package between the games. |
+| **D3** | **Long-lived worlds.** A seeded world instance runs on the server for days/weeks. Players drop in and out across many sessions. Per-Firm progression (reputation, unlocked mission tiers, banked resources) persists per world via a world ledger. Worlds rotate on a season cadence (Q1). |
+| **D4** | **V1 is solo vs AI rivals** on the real server architecture (session seam from day one). Human multiplayer is V2. |
+| **D5** | **Title: Shadow Mandate.** Repo `multisyndicate` is the codename. |
+| **D6** | **Stealth-first, disable-only combat.** No entity is ever deleted by violence. Agents are downed → crawl → rescued or captured. NPC "assassination" missions are replaced by **Snatch** missions (capture and extract the target). Family-friendly, Roblox-compatible. |
+| **D7** | **HQ extracts with you.** Evac winches the whole HQ aboard, exactly as the drop-out sequence describes. Offline players have zero footprint and nothing raidable. What persists between sessions is the **world ledger**: reputation, tier unlocks, and banked (extracted) resources, keyed per Firm per world. |
+
+### Second decision batch (2026-08-03, from the Shadow Mandate design update — answers Q15–Q21)
+
+| # | Ruling |
+|---:|---|
+| **D8** | **Title: Shadow Mandate** (supersedes the D5 title). Terminology contract below. "Syndicate" never appears in player-facing UI, docs, filenames, or code identifiers; repo codename `multisyndicate` is the only exception. |
+| **D9** | **Exteriors only, with building entry as overlay.** No interior simulation. An agent at a building entrance can "go inside": the client opens an overlay — dialogue with options (quests/informants) or a shop menu with a static vendor portrait. The world sim sees only "agent inside building" (hidden from view, position parked at the entrance). |
+| **D10** | **Identity: no accounts at start.** Browser-stored seat token + human-typeable recovery code binds a player to their Firm ledger. Later (V2): optional email OTP confirmation to secure/recover a ledger. |
+| **D11** | **Session pacing:** one contract sortie should fit in 15–20 minutes; a normal deployment is 40–60 minutes. |
+| **D12** | **Fog resets each drop.** No explored-map persistence in the ledger. Physical world changes persist: buildings may be damaged/changed by rival Firms or world events between your deployments — the world you re-enter is recognisably altered. |
+| **D13** | **AI rivals are live actors in V1**: they run their own contracts, and HQ raids on the player can happen. |
+| **D14** | **Hosting:** an official public sample world runs on the existing VM. Self-hosted servers choose **public listing** (master index heartbeat) or **invite-only** (no heartbeat, join by code only). |
+
+### Third decision batch (2026-08-03, Q1–Q14 answers)
+
+| # | Ruling |
+|---:|---|
+| **D15** | **Seasons are fixed 4 weeks** on the official sample world; self-hosted servers can configure their own cadence. |
+| **D16** | **AI rivals act only while the world is live.** The dormancy transition covers heat decay and contract refresh only — no simulated rival progress while everyone is away. |
+| **D17** | **Capture exit — player's choice of both routes:** bail (a percentage of banked resources, scaling with tier) releases the agent; or re-drop (new callsign, flat reputation hit) — the captured agent stays in the world as a rescue contract. |
+| **D18** | **Contract economy:** the world pool holds **5 contracts per player slot** (a 16-slot world pools 80). Each present player is **shown 5**, and concurrent players receive **disjoint offers** — every player always has real options that aren't contested by the neighbour's board. |
+| **D19** | **Tier pacing band:** median 3–4 deployments (of 40–60 min, D11) to reach tier 3 — the M6 battery gate verifies this. |
+| **D20** | **Heat visibility:** fuzzy 3-step indicator by default (calm / tense / lockdown); the exact 0–5 level is intel, revealed by informants or surveillance rewards. |
+| **D21** | **Cache raids reach anywhere** while you're deployed — but the perimeter alarm gives a countdown generous enough to abort a mission and race home. The race home is the story. |
+| **D22** | **The standoff choice UI (Engage / Withdraw / Negotiate) ships in V1** against AI rivals; the AI answers by deterministic policy. V2 swaps the counterpart for a human. |
+| **D23** | **Tone: mild noir.** Bribery is named as such; no drugs/gambling imagery. A **separate Roblox content path** (reworded vice, softened framing) is planned for if/when the V3 Roblox gate opens. |
+| **D24** | **Free.** Cosmetics-only monetization door kept open per ideas.md doctrine; nothing built now. |
+| **D25** | **Shared batch lane with firepower:** same agent-mail queue and PC worker; jobs are repo-tagged, results carry per-repo labels. |
+| **D26** | **V1 ships at 64×64** — but engine, mapgen, and renderer must remain **128×128-capable**, with both sizes exercised in tests, so scaling up is a config change, not a project. |
+
+### Fourth decision batch (2026-08-04, Q22–Q29 answers)
+
+| # | Ruling |
+|---:|---|
+| **D27** | **Authority patrols arrest** (disable-only, same capture path as rivals): downed agents always; burned agents they reach while district heat ≥3. |
+| **D28** | **Evac activation is always allowed** — even with rivals inside the perimeter. The hold is the fight. |
+| **D29** | **Board rules:** max **2** simultaneously active contracts per agent; the board shows **one greyed next-tier teaser row** with its reward visible. |
+| **D30** | **Vendor purchases are bank-only.** The at-risk cache cannot be spent — you must extract before you can shop. |
+| **D31** | **Disconnect grace: 120 seconds.** Agent holds position; AI Firms do not *initiate* a raid on that player's HQ during grace (a running raid continues). After grace, the agent is idle until reconnect — the world never pauses. |
+| **D32** | **Identity token + recovery code are per-server** (one code covers all your Firms/worlds on that server). |
+| **D33** | **Season end:** bank and tier unlocks reset with the world; **recognition carries as a lifetime honor score**. V3 requirement registered: players must be able to **build their Firm/faction over time** across seasons — the V3 meta layer designs this. |
+| **D34** | **V1 AI Firms use motorbikes only; full vehicle use (agents and AI, incl. armored car) arrives in V2.** |
+
+### Fifth decision batch (2026-08-04, Q30–Q35 — raised while building M1–M4)
+
+| # | Ruling |
+|---:|---|
+| **D35** | **Both halves of the offer fix.** The board fills from the Firm's radius phase first and falls back to tier-appropriate work anywhere, nearest first (the D18 promise outranks the geometry) — **and** drop-in seeds extra Contract Sites near a new HQ so there is genuinely enough close work to make phase 1 mean something. Neither alone was sufficient: the fallback alone quietly erodes the expanding-radius fantasy, and near-HQ seeding alone can still be starved by a bad seed. |
+| **D36** | **Site density stays 16–24 per map.** |
+| **D37** | **Auto drop-zone selection is priority-ordered:** (a) the district with the most tier-appropriate contracts, then (b) at least N cells clear of the map edge, then (c) maximally far from patrol routes. A corner is technically safe and miserable to play. |
+| **D38** | **Buildings do not launder a burn — except a Cover Shop.** Entering a building while BURNED is allowed but does not clear it; patrols converge on the entrance and wait. A **Cover Shop** is a paid exception: for a fee the agent changes appearance, clears the burn, and leaves by a different exit — the GTA2 re-spray, for people. Paid from the bank (D30), so it is a reason to extract and bank rather than a free panic button. |
+| **D39** | **Recognition rewards craft, not payout.** It accrues from contract tier, plus a bonus for finishing unseen, minus burns taken during the contract — the lifetime honor score reflects how well you work, not how many hours you log. |
+| **D40** | **Capture starts a grace window (2–3 minutes) rather than failing contracts instantly.** A rescue or a paid bail inside the window restores the contract; after it, the contract fails. This makes rescuing a captured colleague mid-contract genuinely valuable, and matters most in V2 squads. |
+
+---
+
+## Terminology Contract (D8)
+
+Use these terms consistently in design docs, UI copy, and code identifiers:
+
+| Term | Meaning | Player-facing? |
+|---|---|---|
+| **Shadow Mandate** | Game title / project title | Yes |
+| **Firm** | A player employer / operational faction | Yes |
+| **Agent** | Player-controlled character | Yes |
+| **Field HQ** | Player/Firm base deployed after drop-in | Yes |
+| **Contract** | Mission offered from the Field HQ | Yes |
+| **Mandate** | The wider corporate/legal directive behind operations | Lore/UI flavor |
+| **Burned** | Failed, exposed, abandoned, or compromised | Flavor/debrief |
+| **Extraction** | Successful departure via dropship | Yes |
+
+---
+
+## The World
+
+### Setting
+
+A near-future city-region. Corporate towers, industrial zones, port districts, transit lines, research campuses, and rural outskirts. The Firms operate in the gaps between official authority.
+
+### World lifecycle
+
+- A **world** is created from a seed and runs continuously on the server: 10Hz sim while any Firm is deployed; while empty, a single deterministic dormancy transition on next drop-in covers heat decay and contract refresh only — AI rivals do not progress while everyone is away (D16).
+- Worlds last a **season** — fixed 4 weeks on the official sample world, configurable on self-hosts (D15) — then archive. Season-end standings feed a meta layer (V3).
+- The seed defines the city's identity, per batch-a: block/road/alley structure, transit lines, district traits (industrial, residential, commercial, government, research, port), security density and patrol routes, corporation-owned and neutral sites. A good seed produces a *recognisable* city — "the divided waterfront with three bridges", "the surveillance-heavy business grid" — not just random terrain.
+- The evolving state is the story: district heat, contract history, reputation standings, temporary closures and damaged facilities. Buildings can be changed or damaged by rival Firms and world events, and those changes persist — the world you re-enter is recognisably altered (D12).
+- **Fog resets each drop (D12).** Nothing you scouted last deployment is remembered for you; only the ledger (reputation, tiers, bank) persists. Re-learning the current state of the city is part of every drop-in.
+
+### Districts
+
+The world is divided into **Districts** (3–5 per map). Each District has:
+
+- A set of **Contract Sites** (mission targets)
+- **Neutral infrastructure** (roads, transit lines, safe houses)
+- **Rival Firm presence** (HQs of currently-deployed rivals, their agents)
+- **Civilian traffic** (ambient NPCs — reuse of Fireline convoy/farmhand logic)
+- **Authority patrols** (NPC guards — alarm-first doctrine)
+- A **heat level** (see Detection & Heat)
+
+### Scale
+
+| Parameter | Value |
+|---|---|
+| Map size | **64×64 at V1 ship**; engine/mapgen/renderer stay 128×128-capable and tested at both (D26). Fireline grid: 256 fixed-point units/cell, entities at cell centres |
+| Active Firms per world | 2–6 (V1: player + 2–3 AI rivals) |
+| Agents per Firm | 1 lead (V1); 1 lead + up to 3 support or human squadmates (V2) |
+| Contract sites per map | 12–20 |
+| Districts per map | 3–5 |
+| Tick rate | 10 Hz fixed |
+
+---
+
+## Control Model (D1)
+
+### The lead agent (V1)
+
+The player IS one agent. Direct, grid-based control:
+
+- **Tap terrain** — move cautiously (default gait, low noise).
+- **Double-tap terrain** — hurry (faster, noisier, wider detection profile).
+- **Tap a site/NPC/object in range** — contextual action menu (infiltrate, plant, pick up, talk, bribe…).
+- **Tap own HQ** — mission board, loadout, evac beacon.
+- A persistent stance selector: `Sneak / Move / Hurry` governs the noise/speed tradeoff.
+
+Movement, pathfinding, facing, and footprint reuse the Fireline systems unchanged.
+
+### Support agents (V2)
+
+Recruited AI teammates commanded batch-a style — high-level intents, never micromanagement:
+
+- Tap support agent, then destination/target: they pathfind and act autonomously.
+- Each support agent shows a visible **stance**: `Conceal / Return to HQ / Defend HQ / Follow lead / Low-risk route only`.
+- When the player evacs or disconnects, support agents follow regency doctrine (default: return to HQ, then extract with it). This is the Fireline `ai_regency` module wearing a trenchcoat.
+
+---
+
+## Detection, Heat & Stealth (D6 — the core antagonist system)
+
+This is the game's replacement for Fireline's front line. It is new design, built on the existing alarm-radius logic.
+
+### Agent detection states
+
+| State | Meaning | Trigger |
+|---|---|---|
+| **Unseen** | Nothing knows you're there | Default in fog / out of sensor radii |
+| **Noticed** | A patrol or sensor has a contact; investigating | Entering a detection radius while moving; noise events |
+| **Burned** | Identified and reported; alarm raised | Lingering while Noticed; taking hostile action while observed |
+
+- Noticed decays back to Unseen if the agent breaks contact (leaves radius, stops moving in cover terrain).
+- Burned triggers a **district alarm**: patrols converge, the agent is revealed through fog to Authority (and to any rival with intel taps in that district, V2+).
+
+### District heat
+
+Each district has a heat level (0–5) that rises with burned events, sabotage, snatches, and standoffs, and decays slowly over real time.
+
+| Heat | Effect |
+|---:|---|
+| 0–1 | Baseline patrols on fixed routes |
+| 2–3 | Extra patrols, wider sensor radii, some contracts pay more (risk premium) |
+| 4–5 | District lockdown: checkpoints on roads, Tier 1 contracts suspended, informants go quiet |
+
+Heat is world state — a rival Firm burning a district affects your operations there too. Heat is the shared consequence system that makes the world feel inhabited even before humans arrive.
+
+**Visibility (D20):** players see a fuzzy 3-step indicator by default (calm / tense / lockdown). The exact 0–5 level is intel — revealed by informants or as a surveillance-contract reward.
+
+### Disable-only combat
+
+- Combat is short, risky, and loud (always raises heat; usually burns you).
+- Damage downs an agent: **downed → crawl → rescued by a teammate OR captured by whoever reaches them** (direct reuse of the Fireline downed/recovery loop).
+- Captured player agents are held at an Authority **Holding Site** or a rival HQ (reuse of the prisons module). Getting them out is an Extraction mission.
+- A captured lead agent with no squad — player's choice of both exits (D17): **bail** (a tier-scaled percentage of banked resources; agent released) or **re-drop** (new callsign, flat reputation hit; the captured agent stays in the world as a rescue contract).
+- NPCs are likewise only ever subdued (Snatch) or bypassed — never killed. Authority patrol figures that are subdued wake after a timer.
+
+---
+
+## Drop-In: The Dropship Sequence
+
+Unchanged from the starter document, and confirmed as designed:
+
+1. **Firm briefing** (10s, skippable) — terminal screen: firm, callsign, target district, objective.
+2. **Drop zone selection** (15s) — fog-filtered top-down district view; valid zones marked clear of rival HQs and patrols; auto-select on timeout.
+3. **Dropship animation** (~5s) — low-poly dropship on a scripted path; door, rappel, HQ crate deploys. Presentation-layer only; the server just registers HQ placement.
+4. **Field HQ established** — command tent, flag, perimeter markers, mission board.
+
+On a **return visit to a world** (D3/D7): the briefing screen additionally shows your ledger (reputation, banked resources, unlocked tier) and the world's news since last visit (heat changes, rival activity headlines).
+
+---
+
+## Field HQ
+
+The HQ exists only while its Firm is deployed (D7).
+
+| Component | Function |
+|---|---|
+| Command Tent | Visual anchor, mission board access |
+| Firm Flag | Faction identity, visible when fog-revealed |
+| Perimeter Sensors | Alarm-only (V1); alert the owner through fog on rival/patrol approach |
+| Safe House Slots | Up to 3 additional agents bunk here (V2) |
+| Resource Cache | Holds **unbanked** mission rewards — lost if the HQ is compromised, banked only on clean evac |
+| Evac Beacon | Triggers the 30-second extraction sequence |
+
+### HQ vulnerability
+
+- Rival agent enters perimeter → alarm to owner through fog.
+- Rival agent reaches the tent → HQ compromised, cache looted.
+- HQ destroyed → emergency evac rules apply.
+- The risk window is **only while you're deployed** — the raider must beat you in real time, not farm your sleep.
+- Raids can hit your cache **wherever you are on the map** (D21) — but the perimeter alarm's countdown is generous enough to abort a mission and race home. The race home is the story.
+
+**The cache/bank split is the session's tension arc:** everything you earn this deployment is at risk until you extract it. Stay longer for more, or bank what you have.
+
+---
+
+## Missions (Contracts)
+
+### Structure
+
+Contracts appear at **Contract Sites**. Each has a type, a difficulty tier (1–4), a reward (resources, intel, recognition), and optionally a time window.
+
+**Economy (D18):** the world maintains a pool of **5 contracts per player slot** (a 16-slot world pools 80). Each present player's board shows **5 offers**, and concurrent players receive **disjoint offers** — nobody's board is the neighbour's leftovers, and a returning player always finds tier-appropriate work.
+
+**Pacing (D11):** a single contract sortie — accept, travel, execute, return — should fit in 15–20 minutes. A normal deployment (drop-in to extraction) targets 40–60 minutes and 2–3 contracts. Tier 1 contracts sit at the short end so a tight-on-time player can still run one and bank it.
+
+### Mission radius expansion
+
+| Phase | Distance from HQ | Contract types | Risk |
+|---|---|---|---|
+| **1 — Local** | 0–8 cells | Courier, Surveillance, Extraction | Low |
+| **2 — District** | 8–20 cells | Sabotage, Acquisition, Intimidation | Medium |
+| **3 — Deep** | 20–40 cells | Vault Raid, Lab Infiltration, Snatch | High |
+| **4 — Cross-District** | 40+ cells | Firm War, Territory Seizure | Very high (V2+) |
+
+Completing contracts in a phase unlocks the next tier. **Tier unlocks persist in the world ledger** (D3) — a returning player resumes at their earned tier; the radius is measured from wherever their current HQ stands.
+
+### Contract types
+
+| Type | Loop | Reward | Version |
+|---|---|---|---|
+| **Courier** | Carry a package A→B without being burned | Resources | V1 |
+| **Surveillance** | Reach site, hold N seconds unseen, extract with intel | Resources + intel | V1 |
+| **Extraction** | Rescue a contact (or captured agent) from a guarded site — POW-rescue loop | Resources + agent back | V1 |
+| **Sabotage** | Reach site, plant charge, extract before it blows | Resources + district effect | V1 (M6) |
+| **Acquisition** | Steal an item from a guarded vault | Resources + tech nudge | V1 (M6) |
+| **Intimidation** | Hold a rival-aligned site N seconds to send a message | Rep + heat | V2 |
+| **Vault Raid** | Full heist — breach, loot, extract under pressure | Large payout | V2 |
+| **Lab Infiltration** | Escort a scientist out of a guarded lab | Tech nudge | V2 |
+| **Snatch** (replaces Assassination, per D6) | Subdue a target NPC, carry them out, extract | Recognition + rival debuff | V2 |
+| **Firm War** | Open conflict with a rival HQ while both are deployed | Territory | V2/V3 |
+
+### Mission board UI
+
+```
+AVAILABLE CONTRACTS                      DISTRICT HEAT: ▂▂▄░░
+
+[TIER 1] Courier — Dockside → Warehouse 7         ★☆☆☆  12 min  +80 res
+[TIER 1] Surveillance — Transit Hub Alpha          ★☆☆☆  open    +40 res +intel
+[TIER 2] Sabotage — Rival Relay Station 3          ★★☆☆  8 min   +120 res
+[TIER 3] Vault Raid — Corporate Tower B            ★★★☆  open    +300 res
+
+SELECT CONTRACT (ENTER) | LOADOUT (L) | BACK (ESC)
+```
+
+---
+
+## Firms
+
+A Firm has a **name** (curated list below), a **color scheme** (HQ, flag, vehicles, uniform), a **doctrine** (V3 passive modifier), and a **reputation** per world (grows with completions, decays with failures and burns).
+
+### Doctrines (V3)
+
+| Doctrine | Passive effect | Playstyle |
+|---|---|---|
+| **Ghost** | Faster in fog; longer perimeter sensor range | Stealth, surveillance |
+| **Iron** | Higher HQ HP; sensors suppress | Defensive, vault raids |
+| **Blade** | Snatch missions pay double recognition | Targeted strikes |
+| **Coin** | Courier/acquisition +25% resources | Economic play |
+| **Veil** | HQ hidden from rival map intel | Counter-intelligence |
+
+### Names (curated)
+
+- **Authoritarian/Corporate:** The Directorate*, Iron Veil, The Consensus Bureau, Apex Standard, The Mandate Group
+- **Insurgent/Independent:** The Outliers*, Freehold Collective, The Current, Wayfarers Inc., The Breakers
+- **Neutral/Mercenary:** Greyline Solutions, The Compact, Dusk Operators, Frontier Associates, The Arrangement
+
+*Shared with Fireline Command lore — see The Lore Bridge.
+
+---
+
+## Agents
+
+| Attribute | Detail |
+|---|---|
+| Movement | Grid-based, Fireline cell system, stance-modified speed/noise |
+| Visibility | Fog of war; agents have a sensor radius; detection per the stealth system |
+| Equipment | Loadout selected at HQ before each sortie |
+| Downed state | Crawl, await rescue or capture (Fireline crew loop) |
+| Capture | Held at rival HQ or Authority Holding Site; rescued via Extraction |
+
+### Loadouts
+
+| Slot | Options |
+|---|---|
+| Primary | Suppressor (stealth takedown), Disruptor (disables alarms/sensors), Sidearm (loud, downs at range) |
+| Tool | Satchel charge, Sensor jammer, Medkit, Grapple line |
+| Vehicle | Light transport, Armored car, Motorbike (speed), Cargo van (carry capacity) |
+
+Vehicles are painted-low-poly Fireline chassis, smaller and faster. Dropship is NPC-only.
+
+---
+
+## Drop-Out: The Evac Sequence
+
+Unchanged from the starter document and confirmed: agent must return to HQ; beacon starts a 30-second hold; the beacon is **visible to nearby rivals through fog** (intentional interception window); timer pauses if the agent leaves the perimeter; HQ destruction downgrades to emergency evac (10s, cache lost); a downed agent cancels evac.
+
+Dropship arrives, agent boards, **HQ crate folds and is winched aboard** (D7), debrief screen shows the session summary and writes the ledger: cache → bank, recognition, reputation delta, tier progress.
+
+### Emergency evac
+
+HQ destroyed while afield: 60 seconds to reach any safe zone (neutral site or map edge). Cache lost to the raider; recognition preserved; minor reputation hit.
+
+### Squad evac (V2)
+
+All squad agents must be inside the perimeter when the dropship lands. Anyone left behind is downed in place and becomes an Extraction contract for a future drop-in. One paid return trip is available (60s + resource fee). "Don't leave anyone behind" is a real decision under pressure — this is the emotional beat of the squad game.
+
+---
+
+## Crossing Paths: Rival Encounters
+
+Encounters happen at contested contract sites, HQ raids, roads, and rival territory transit. Proximity does not mean automatic combat:
+
+| Option | Effect |
+|---|---|
+| **Ignore** | Continue; fog applies — you saw them, they may not have seen you |
+| **Shadow** | Follow without triggering alarm; earn intel |
+| **Intercept** | Block their path; forces a standoff |
+| **Engage** | Disable-only combat; loud; heat |
+| **Negotiate** | Propose a timed non-aggression pact (both must agree) |
+
+### Standoff (choice UI from V1, per D22)
+
+Two agents in the same/adjacent cells → 10-second standoff timer; both see the other's Firm and reputation; both choose Engage / Withdraw / Negotiate. Both engage → combat. One withdraws → clean exit. Both negotiate → 5-minute pact. The standoff is this game's front line — the moment of maximum tension and agency.
+
+In V1 the player gets the full choice UI and the AI rival answers by deterministic policy; V2 swaps the counterpart for a human without changing the protocol.
+
+---
+
+## NPC World
+
+Same doctrine as Fireline: NPCs add texture without stealing the show.
+
+### Building entry (D9)
+
+The world is exteriors-only, but interactive buildings have an entrance cell. An agent at the entrance can **enter**: their figure disappears inside (parked at the entrance, hidden from rival view), and the client opens an overlay — a **dialogue panel** with options (quest givers, informants, officials) or a **shop menu** with a static portrait (vendors). Time keeps running in the world while you're inside; the perimeter can still be watched. No interior maps, rooms, or indoor combat — interiors as simulated spaces are a separate V2+ decision (Vault Raid presentation).
+
+| NPC | Behaviour | Effect | Version |
+|---|---|---|---|
+| **Authority Patrols** | Fixed routes, alarm-first | Detection pressure; the stealth antagonist | V1 |
+| **Civilian Traffic** | Roads, flee from incidents | Fleeing civilians reveal movement to everyone | V1 |
+| **Informant** | In a safe house (enter building, dialogue) | Reveals a rival HQ location (when one is deployed) | V1 (M5) |
+| **Street Vendor** | In a market building (enter building, shop menu) | Trade banked/cache resources for equipment upgrades | V1 (M6) |
+| **Neutral Trader** | Fixed cross-map route | First Firm to escort gets a resource packet | V2 |
+| **Corrupt Official** | Authority building (enter, dialogue) | Bribe: patrols disabled in district for 3 min | V2 |
+| **Scientist** | Lab site | Escort to HQ for a tech nudge | V2 |
+
+---
+
+## Art Direction
+
+Painted Low-Poly Hybrid, shared pipeline with Fireline Command: same terrain tile system (extended with urban tiles), same building silhouettes adapted to corporate/urban context, same color token system, same procedural-sprite/asset-strip tooling.
+
+### New art required
+
+Dropship; Field HQ compound; agent figures (3 variants per faction); Firm vehicles (light transport, armored car, motorbike, cargo van); contract-site markers per type; urban tiles (corporate tower, alley, transit hub, market, checkpoint); Authority patrol figure.
+
+### Firm palettes
+
+| Type | Primary | Secondary | Accent |
+|---|---|---|---|
+| Corporate/Authoritarian | Slate gray | Police blue | White |
+| Insurgent/Independent | Terracotta | Sun-bleached tan | Teal |
+| Mercenary/Neutral | Charcoal | Warm gray | Amber |
+| Ghost doctrine | Deep navy | Pale cyan | Silver |
+| Blade doctrine | Dark red | Black | Gold |
+
+### Splash
+
+Command-boot-sequence terminal (Fireline Concept 2 adapted):
+
+```
+SHADOW MANDATE
+FIELD TERMINAL v1.0
+
+WORLD ................... [SEED NAME]   DAY 12 OF SEASON
+ACTIVE FIRMS ....... 4
+CONTRACTS AVAILABLE ..... 17
+YOUR FIRM .......... [NAME]        REP ████████░░
+FIELD STATUS ............ UNDEPLOYED
+
+DROP IN? (ENTER)
+```
+
+---
+
+## i18n
+
+Key-identical `en`/`no` catalogs from day one, enforced by test (Fireline practice — a missing key in one locale is a red suite).
+
+---
+
+## The Lore Bridge
+
+Shadow Mandate and Fireline Command share a world. The Directorate and The Outliers fight the open war in Fireline Command; in Shadow Mandate they operate the covert layer behind it. Shared universe, no shared server. The same map seed can appear in both games with different activity layers visible to each.
+
+> **In Fireline Command, you hold the front.**
+> **In Shadow Mandate, you work the shadows behind it.**

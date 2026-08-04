@@ -1,0 +1,65 @@
+# S14 — Testing & Validation
+
+*Feeds: M0 and every gate · Depends on: — · Status: pinned (doctrine inherited)*
+
+## Purpose
+
+The layered gate system, retargeted from firepower. Each layer catches what
+the layer below can't; every plan-version1 milestone gate maps onto these.
+
+## Layers
+
+1. **Unit tests** — per engine subsystem, `node --test`, no deps.
+2. **The pinned fixture** — M0 re-pins firepower's 1A pattern for Shadow
+   Mandate: a fixed command script with every intermediate hash, duplicated
+   hash function in the test (two-file conscious change), re-pin tool with
+   event-drift abort. New subsystems land hash-inert; silent state changes
+   preferred for routine ticks.
+3. **Headless sim campaigns** — the standard gate: 5 pinned seeds × 12–16k
+   ticks, outcome + systems-fired census. **Every gameplay slice ends here.**
+4. **Batteries** — `tools/sim_sweep.mjs` retargeted: one CSV row per simulated
+   world-day. On the **shared batch lane** (D25): repo-tagged jobs to the
+   agent-mail queue, worker refuses red suites, results name commit + repo.
+5. **Client smoke + UI acceptance** — Playwright/SwiftShader per S12.
+6. **Server tests** — real ws clients per S11; poll-waits only.
+7. **(V3) twins gate** — dormant until the Roblox decision.
+
+## Battery metric set (V1 — pinned columns)
+
+Per world-day row: contracts offered/accepted/completed/expired (per type,
+tier); burns per deployment; heat trajectory (max, time≥4 per district);
+captures, bails, re-drops, rescues; cache banked vs lost; raid attempts /
+successes; standoff count + outcome distribution; AI Firm rep spread;
+deployment length distribution (D11 check); deployments-to-tier-3 (D19 check).
+
+## Fairness instruments
+
+- **Mirror**: world reflection must mirror every positional subsystem — HQs,
+  contract sites, patrol routes, holding sites, buildings. The transform is
+  maintained code (firepower lesson: a new positional system that the mirror
+  doesn't learn silently voids every mirror battery).
+- **Firm-swap**: AI personality assignment swapped across seeds to separate
+  personality strength from seed geometry.
+- Verdict rules: never tune or convict on 5 seeds; n=300+ decides; era
+  discipline — baselines re-pinned per ruleset version (S13), old numbers void.
+
+## Standing invariants (suite-enforced, every run)
+
+No entity-deletion events (D6); no floats/`Math.random`/wall-clock in
+`shared/`+`engine/` (the only clock entry is `dormancyTick.elapsedMs`); view
+payload assertions (fog, D18 offer privacy, D20 heat intel); i18n parity; D8
+"syndicat" grep; copyState deep-copy audit for each new nested state.
+
+## Probe library
+
+`debugging/dbg_*.mjs` one-offs kept forever; instrument-first doctrine —
+verify a probe's event-field names against the reducer before trusting zeros;
+config self-checks print what war 1 actually starts with.
+
+## Milestone gate map
+
+M0 fixture+layout · M1 probe corpus (S01, both sizes) · M2 detection census ·
+M3 loop e2e (headless+browser) · M4 economy census + disjoint-boards test ·
+M5 AI campaign + first battery · M6 pacing battery + dormancy replay · M7
+full acceptance + native perf (WSL Playwright is correctness-only; FPS via
+`tools/perf_native.ps1`).

@@ -1,0 +1,7 @@
+{
+  "note": "S02 + D34. V1 roster; armoredCar arrives in V2.",
+  "lightTransport": { "speed": 220, "noiseRadius": 6, "cargo": 1, "v1": true },
+  "motorbike":      { "speed": 300, "noiseRadius": 7, "cargo": 0, "v1": true },
+  "cargoVan":       { "speed": 160, "noiseRadius": 6, "cargo": 3, "v1": true },
+  "armoredCar":     { "speed": 140, "noiseRadius": 8, "cargo": 1, "v1": false }
+}

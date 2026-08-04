@@ -1,0 +1,16 @@
+{
+  "note": "S02. Speeds are fixed-point world units per tick (256 units = 1 cell). Stance multipliers are /256. All values marked tune-by-battery in S02.",
+  "baseSpeed": 96,
+  "stances": {
+    "sneak": { "speedMul": 128, "noiseRadius": 0, "detectionBias": -1 },
+    "move": { "speedMul": 256, "noiseRadius": 2, "detectionBias": 0 },
+    "hurry": { "speedMul": 410, "noiseRadius": 5, "detectionBias": 1 }
+  },
+  "carry": {
+    "stanceCap": 1,
+    "speedMul": 205
+  },
+  "conditionMax": 100,
+  "conditionBands": { "healthy": 70, "hurt": 35, "downedAt": 0 },
+  "crawlSpeed": 32
+}

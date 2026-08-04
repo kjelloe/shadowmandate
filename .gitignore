@@ -5,3 +5,7 @@ node_modules/
 .claude
 dev-log.md
 dev-questions.md
+
+# Batch lane results (mail is the only channel — S14/D25)
+reports/
+.agent-mail/

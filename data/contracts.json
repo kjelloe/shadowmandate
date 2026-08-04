@@ -1,0 +1,74 @@
+{
+  "note": "S06 + D18/D19/D29. Pool = poolPerSlot x world slots; each present Firm sees offersShown, disjoint across Firms.",
+  "poolPerSlot": 5,
+  "offersShown": 5,
+  "teaserRow": true,
+  "maxActivePerAgent": 2,
+  "phases": [
+    {
+      "tier": 1,
+      "minCells": 0,
+      "maxCells": 8
+    },
+    {
+      "tier": 2,
+      "minCells": 8,
+      "maxCells": 20
+    },
+    {
+      "tier": 3,
+      "minCells": 20,
+      "maxCells": 40
+    },
+    {
+      "tier": 4,
+      "minCells": 40,
+      "maxCells": 999
+    }
+  ],
+  "unlockCompletions": [
+    2,
+    3,
+    4,
+    5
+  ],
+  "types": {
+    "courier": {
+      "tier": 1,
+      "reward": 80,
+      "expiryTicks": 7200
+    },
+    "surveillance": {
+      "tier": 1,
+      "reward": 40,
+      "holdTicks": 300,
+      "expiryTicks": 0
+    },
+    "extraction": {
+      "tier": 1,
+      "reward": 120,
+      "expiryTicks": 0
+    },
+    "sabotage": {
+      "tier": 2,
+      "reward": 120,
+      "plantTicks": 100,
+      "fuseTicks": 300,
+      "expiryTicks": 4800
+    },
+    "acquisition": {
+      "tier": 3,
+      "reward": 300,
+      "crackTicks": 200,
+      "expiryTicks": 0
+    }
+  },
+  "captureGraceTicks": 1800,
+  "nearHqSites": 3,
+  "recognition": {
+    "perTier": 20,
+    "unseenBonus": 15,
+    "perBurn": -10
+  },
+  "nearHqMinDistance": 4
+}

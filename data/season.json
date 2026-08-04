@@ -1,0 +1,9 @@
+{
+  "note": "S10 + D15/D32/D33. Official world: 4 weeks. Self-hosts configurable; 0 = never rotate.",
+  "days": 28,
+  "slots": 16,
+  "worldSize": 64,
+  "carriesAcrossSeasons": ["recognition"],
+  "resetsWithWorld": ["bank", "tierUnlocked", "reputation"],
+  "reconnectGraceTicks": 1200
+}

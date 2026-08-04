@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>plan-version2</title>
+  <style>
+    /* ── Base ── */
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.7;
+      color: #24292e;
+      background: #fff;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* ── Typography ── */
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.5em;
+      margin-bottom: 0.5em;
+      font-weight: 600;
+      line-height: 1.25;
+    }
+    h1 { font-size: 2em; border-bottom: 1px solid #eaecef; padding-bottom: .3em; }
+    h2 { font-size: 1.5em; border-bottom: 1px solid #eaecef; padding-bottom: .3em; }
+    p  { margin: 0 0 1em; }
+    a  { color: #0366d6; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Code ── */
+    code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 0.9em;
+      background: #f6f8fa;
+      padding: .2em .4em;
+      border-radius: 3px;
+    }
+    pre {
+      background: #f6f8fa;
+      border-radius: 6px;
+      padding: 1em;
+      overflow-x: auto;
+    }
+    pre code { background: none; padding: 0; }
+
+    /* ── Tables ── */
+    table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
+    th, td { border: 1px solid #dfe2e5; padding: .5em .75em; }
+    th { background: #f6f8fa; font-weight: 600; }
+    tr:nth-child(even) { background: #fafbfc; }
+
+    /* ── Blockquote ── */
+    blockquote {
+      margin: 0 0 1em;
+      padding: .5em 1em;
+      color: #6a737d;
+      border-left: 4px solid #dfe2e5;
+    }
+
+    /* ── Mermaid diagrams ── */
+    .mermaid {
+      background: #fafbfc;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      padding: 1.5rem;
+      margin: 1.5em 0;
+      overflow-x: auto;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Shadow Mandate — Version 2 Plan: &quot;The Squad&quot;</h1>
+<p><em>Created 2026-08-03. Status: <strong>planned — starts after V1 ships</strong>. HTML twin:
+<code>plan-version2.html</code>. Prerequisite: <code>plan-version1.md</code> complete.
+Design of record: <code>specs/01_design_of_record.md</code> (rulings D1–D26).</em></p>
+<h2>Version 2 definition</h2>
+<p><strong>Humans in the world.</strong> Squads of up to 4 under one Firm flag, rival human
+Firms in the same long-lived worlds, the standoff as a real player-vs-player
+decision, AI support agents completing the hybrid control model, and the full
+ten-contract set. Ships when two friends can drop into a stranger&#39;s world, run
+a heist together, get intercepted by a rival squad at the evac beacon — and
+talk about it afterwards.</p>
+<p>V2 changes no game rules that V1 proved: it swaps AI counterparts for humans
+(same standoff protocol per D22), scales the HQ for squads, and fills out the
+contract and NPC sets.</p>
+<h2>Key parameters</h2>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+<th>Ruling</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Agents per Firm</td>
+<td>1 lead + up to 3 support agents or human squadmates</td>
+<td>D1</td>
+</tr>
+<tr>
+<td>Active Firms per world</td>
+<td>up to 6 (humans + AI mixed)</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Join flow</td>
+<td>no-lobby: world code / QR / LAN, mid-session</td>
+<td>D4 heritage</td>
+</tr>
+<tr>
+<td>Identity upgrade</td>
+<td>optional email OTP attaches to a Firm ledger</td>
+<td>D10</td>
+</tr>
+<tr>
+<td>Standoff</td>
+<td>same protocol as V1; counterpart now human</td>
+<td>D22</td>
+</tr>
+<tr>
+<td>World size</td>
+<td>64×64 default; 128×128 available for big worlds</td>
+<td>D26</td>
+</tr>
+<tr>
+<td>Vehicles</td>
+<td>full roster incl. armored car; AI Firms graduate from motorbikes to full use</td>
+<td>D34</td>
+</tr>
+<tr>
+<td>Snatch, not assassination</td>
+<td>disable-only doctrine unchanged</td>
+<td>D6</td>
+</tr>
+</tbody></table>
+<h2>Features IN</h2>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Features</th>
+<th>Rulings</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Humans online</strong></td>
+<td>No-lobby join (tokens, world codes, QR/LAN); reconnect grace; disconnect regency (agent returns to HQ and holds); per-seat fog-filtered views; solo remains the same code path</td>
+<td>D10</td>
+</tr>
+<tr>
+<td><strong>Squads</strong></td>
+<td>Up to 4 humans under one flag; scaled shared HQ (perimeter, safe-house slots, cache); shared mission board; squad fog markers; pings; squad evac — all aboard or left behind; left-behind agents become Extraction contracts; one paid return trip</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>Standoff vs humans</strong></td>
+<td>Simultaneous-choice resolution over the network; timed non-aggression pacts enforced both ways; Shadow and Intercept encounter options; one protocol for mixed human/AI worlds</td>
+<td>D22</td>
+</tr>
+<tr>
+<td><strong>Support agents</strong></td>
+<td>Recruit up to 3 at the HQ; intent-based command (tap agent, tap target); visible stances (Conceal / Return / Defend HQ / Follow / Low-risk only); regency on evac/disconnect; the solo player&#39;s squad in a world of human squads</td>
+<td>D1</td>
+</tr>
+<tr>
+<td><strong>Full contract set</strong></td>
+<td>Intimidation, Vault Raid, Lab Infiltration, Snatch, Firm War v1 (HQ raid while both deployed); Vault Raid presentation decides the interiors question (overlay vs simulated spaces)</td>
+<td>D6, D9</td>
+</tr>
+<tr>
+<td><strong>NPC ecology</strong></td>
+<td>Scientist (escort → tech nudge); Corrupt Official (D9 dialogue, bribe disables patrols); Neutral Trader (escort race); vendor catalog expansion</td>
+<td>D9, D23</td>
+</tr>
+<tr>
+<td><strong>Full vehicle use</strong></td>
+<td>Armored car chassis (combat/HQ defence); AI Firms use the full vehicle roster; vehicle play in raids and Firm War</td>
+<td>D34</td>
+</tr>
+<tr>
+<td><strong>Identity &amp; robustness</strong></td>
+<td>Email OTP to secure/recover ledgers (no passwords, no profiles); server caps, per-IP limits, allowlist frame validation, save rotation; hosted + LAN parity</td>
+<td>D10</td>
+</tr>
+<tr>
+<td><strong>Fairness &amp; scale</strong></td>
+<td>Batteries at human-shaped loads (mixed human/AI, 6 Firms); mirror + firm-swap instruments extended to squad HQs and war targets — on the shared batch lane</td>
+<td>D25</td>
+</tr>
+</tbody></table>
+<h2>Features OUT (deferred to V3+)</h2>
+<p>Doctrines; seasons meta, standings, and territory as persistent map state;
+world events and full NPC interlocks; public-world master index (public
+listing vs invite-only is a V3 discovery feature — V2 self-hosts are join-by-code);
+spectators; Roblox gate and its D23 content path; cross-game lore events;
+monetization (D24 door stays closed).</p>
+<h2>Milestones</h2>
+<table>
+<thead>
+<tr>
+<th align="right">#</th>
+<th>Name</th>
+<th>Scope</th>
+<th>Gate</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="right">M8</td>
+<td>Humans Online</td>
+<td>No-lobby join, reconnect grace, disconnect regency, per-seat views verified against server views</td>
+<td>Server tests with real ws clients: join/play/drop/reconnect/tamper-reject; two-device LAN session completes a full loop</td>
+</tr>
+<tr>
+<td align="right">M9</td>
+<td>Squads</td>
+<td>Shared scaled HQ, squad board and markers, pings, squad evac with left-behind loop and paid return trip</td>
+<td>4-client Playwright flow: squad drop-in, joint contract, deliberate leave-behind, later rescue</td>
+</tr>
+<tr>
+<td align="right">M10</td>
+<td>Standoff vs Humans</td>
+<td>Networked simultaneous choice, pacts enforced both ways, Shadow/Intercept options, one mixed-world protocol</td>
+<td>Acceptance flows for every choice combination; battery: standoffs within pacing band, AI honours pacts</td>
+</tr>
+<tr>
+<td align="right">M11</td>
+<td>Support Agents</td>
+<td>Recruitment, intent commands, stances, regency; carry/rescue duties</td>
+<td>Census: support agents complete courier legs, rescues, HQ defense; a solo player clears a tier-3 contract that a lone agent cannot</td>
+</tr>
+<tr>
+<td align="right">M12</td>
+<td>Full Contract Set</td>
+<td>Five new contract types incl. Firm War v1; Scientist/Official/Trader NPCs; vendor expansion; interiors decision at Vault Raid</td>
+<td>Every type fires in census; heist and war loops pass 5-seed gates; economy battery: no contract type &gt;35% of optimal play</td>
+</tr>
+<tr>
+<td align="right">M13</td>
+<td>Fairness &amp; Scale</td>
+<td>n=600 mixed-load batteries; extended mirror/firm-swap instruments; server robustness; email OTP; LAN/hosted parity</td>
+<td>Battery in fairness tolerances; server soak under churn; OTP recovers a ledger end-to-end; deploy runbook updated</td>
+</tr>
+</tbody></table>
+<h2>Acceptance criteria</h2>
+<ul>
+<li><input disabled="" type="checkbox"> A friend joins my world and squad from a code/QR in under a minute, mid-session.</li>
+<li><input disabled="" type="checkbox"> Squad evac pressure is real: leaving someone behind is possible, visible, and recoverable.</li>
+<li><input disabled="" type="checkbox"> A human-vs-human standoff presents real choices; pacts are enforced on both sides.</li>
+<li><input disabled="" type="checkbox"> Support agents make solo play viable in a world of human squads.</li>
+<li><input disabled="" type="checkbox"> All ten contract types live; Snatch everywhere, no lethality anywhere (D6).</li>
+<li><input disabled="" type="checkbox"> Reconnect never loses an agent or a cache to a network blip.</li>
+<li><input disabled="" type="checkbox"> An email-OTP-secured ledger survives token loss; an unsecured one still works via recovery code.</li>
+<li><input disabled="" type="checkbox"> n=600 mixed human/AI battery within fairness tolerances on both map sizes.</li>
+</ul>
+<h2>Working practices</h2>
+<p>Unchanged from V1: slices, 5-seed gates per gameplay slice, shared batch lane
+(D25) for batteries, mirror + firm-swap on every new positional system (squad
+HQs and war targets are new positional state — remember the four places:
+mirror transform, copyState, both hash functions, view projection), dev-log
+per slice, decisions verbatim in <code>dev-prompts.md</code>, rulings in <code>specs/</code>.</p>
+
+
+<!-- Mermaid: renders all .mermaid divs client-side -->
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'default',
+    securityLevel: 'loose'
+  });
+</script>
+
+</body>
+</html>

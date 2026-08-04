@@ -1,0 +1,102 @@
+{
+  "era": "sm-era-0",
+  "reason": "D35/D38/D39/D40: near-HQ site seeding, cover shops with back doors, disguiseId, contract grace+burn fields",
+  "seed": 20260804,
+  "size": 64,
+  "steps": [
+    {
+      "step": -1,
+      "command": "init",
+      "hash": "66396da4626db776",
+      "events": []
+    },
+    {
+      "step": 0,
+      "command": 1,
+      "hash": "7ad9cbbafa11e487",
+      "events": []
+    },
+    {
+      "step": 1,
+      "command": 1,
+      "hash": "641de0db03589d94",
+      "events": []
+    },
+    {
+      "step": 2,
+      "command": 1,
+      "hash": "7208d2514830269d",
+      "events": []
+    },
+    {
+      "step": 3,
+      "command": 21,
+      "hash": "7208d2514830269d",
+      "events": [
+        "rejected"
+      ]
+    },
+    {
+      "step": 4,
+      "command": 1,
+      "hash": "5abcf641eb2788d2",
+      "events": []
+    },
+    {
+      "step": 5,
+      "command": 1,
+      "hash": "edab25e93126dac3",
+      "events": []
+    },
+    {
+      "step": 6,
+      "command": 21,
+      "hash": "edab25e93126dac3",
+      "events": [
+        "rejected"
+      ]
+    },
+    {
+      "step": 7,
+      "command": 1,
+      "hash": "ff8e89099a52d930",
+      "events": []
+    },
+    {
+      "step": 8,
+      "command": 1,
+      "hash": "765989eab1e9e719",
+      "events": []
+    },
+    {
+      "step": 9,
+      "command": 1,
+      "hash": "79f0cfd95fb173ae",
+      "events": []
+    },
+    {
+      "step": 10,
+      "command": 1,
+      "hash": "595f7d509bd8971f",
+      "events": []
+    },
+    {
+      "step": 11,
+      "command": 1,
+      "hash": "e2c412ca6656650c",
+      "events": []
+    },
+    {
+      "step": 12,
+      "command": 1,
+      "hash": "6fac64554bf8a515",
+      "events": []
+    },
+    {
+      "step": 13,
+      "command": 1,
+      "hash": "4536bb08da1e322a",
+      "events": []
+    }
+  ]
+}

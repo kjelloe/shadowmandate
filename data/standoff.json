@@ -1,0 +1,8 @@
+{
+  "note": "S08 + D22. Choice UI ships in V1 against AI policy.",
+  "timerTicks": 100,
+  "disengageCells": 3,
+  "noPursueTicks": 100,
+  "pactTicks": 3000,
+  "triggerRequiresMutualAwareness": true
+}

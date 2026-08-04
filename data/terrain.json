@@ -1,0 +1,16 @@
+{
+  "note": "S01/S02. Mirrors engine/terrain.js. Speed and cover are fixed-point (256 = 1.0); cover tier 0 none / 1 partial / 2 strong.",
+  "tiles": {
+    "open":       { "id": 0,  "speed": 256, "cover": 0, "passable": true },
+    "street":     { "id": 1,  "speed": 358, "cover": 0, "passable": true },
+    "alley":      { "id": 2,  "speed": 256, "cover": 2, "passable": true },
+    "plaza":      { "id": 3,  "speed": 332, "cover": 0, "passable": true },
+    "block":      { "id": 4,  "speed": 0,   "cover": 0, "passable": false },
+    "entrance":   { "id": 5,  "speed": 256, "cover": 1, "passable": true },
+    "transit":    { "id": 6,  "speed": 384, "cover": 0, "passable": true },
+    "checkpoint": { "id": 7,  "speed": 256, "cover": 0, "passable": true },
+    "yard":       { "id": 8,  "speed": 179, "cover": 2, "passable": true },
+    "rough":      { "id": 9,  "speed": 128, "cover": 1, "passable": true },
+    "water":      { "id": 10, "speed": 0,   "cover": 0, "passable": false }
+  }
+}

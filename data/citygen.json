@@ -1,0 +1,41 @@
+{
+  "note": "S01. Ship size 64 (D26); 128 must stay exercised. Counts scale with area. Site floor raised to 16 (M4): 12 sites on a 64-world left phase-1 radii empty.",
+  "sizes": [
+    64,
+    128
+  ],
+  "defaultSize": 64,
+  "districts": {
+    "min": 3,
+    "max": 5
+  },
+  "traits": [
+    "industrial",
+    "residential",
+    "commercial",
+    "government",
+    "research",
+    "port"
+  ],
+  "sites": {
+    "min": 16,
+    "max": 24,
+    "minSpacing": 5
+  },
+  "buildings": {
+    "safeHousesPerDistrict": 1,
+    "marketsPerDistrict": 1,
+    "coverShopsPerDistrict": 1
+  },
+  "holdingSitePerDistrict": true,
+  "dropZones": {
+    "minPerDistrict": 3,
+    "minClearRadius": 8
+  },
+  "patrols": {
+    "perDistrictBase": 2,
+    "routeLengthMin": 8
+  },
+  "streetSpacing": 8,
+  "alleyChance": 96
+}

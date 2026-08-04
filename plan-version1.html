@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>plan-version1</title>
+  <style>
+    /* ── Base ── */
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.7;
+      color: #24292e;
+      background: #fff;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* ── Typography ── */
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.5em;
+      margin-bottom: 0.5em;
+      font-weight: 600;
+      line-height: 1.25;
+    }
+    h1 { font-size: 2em; border-bottom: 1px solid #eaecef; padding-bottom: .3em; }
+    h2 { font-size: 1.5em; border-bottom: 1px solid #eaecef; padding-bottom: .3em; }
+    p  { margin: 0 0 1em; }
+    a  { color: #0366d6; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Code ── */
+    code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 0.9em;
+      background: #f6f8fa;
+      padding: .2em .4em;
+      border-radius: 3px;
+    }
+    pre {
+      background: #f6f8fa;
+      border-radius: 6px;
+      padding: 1em;
+      overflow-x: auto;
+    }
+    pre code { background: none; padding: 0; }
+
+    /* ── Tables ── */
+    table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
+    th, td { border: 1px solid #dfe2e5; padding: .5em .75em; }
+    th { background: #f6f8fa; font-weight: 600; }
+    tr:nth-child(even) { background: #fafbfc; }
+
+    /* ── Blockquote ── */
+    blockquote {
+      margin: 0 0 1em;
+      padding: .5em 1em;
+      color: #6a737d;
+      border-left: 4px solid #dfe2e5;
+    }
+
+    /* ── Mermaid diagrams ── */
+    .mermaid {
+      background: #fafbfc;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      padding: 1.5rem;
+      margin: 1.5em 0;
+      overflow-x: auto;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Shadow Mandate — Version 1 Plan: &quot;The Operative&quot;</h1>
+<p><em>Created 2026-08-03. Status: <strong>pre-code — design complete</strong> (rulings D1–D26 locked,
+all 21 design questions answered). HTML twin: <code>plan-version1.html</code>.
+Design of record: <code>specs/01_design_of_record.md</code>. Fork source: <code>~/GIT/firepower</code>.</em></p>
+<h2>Version 1 definition</h2>
+<p><strong>Solo covert ops against live AI rival Firms in one long-lived browser world.</strong>
+A player drops in by dropship, establishes a Field HQ, runs contracts outward,
+and extracts — while 2–3 AI Firms run their own contracts, raise heat, and
+sometimes raid. Ships when a player can visit the same world across several
+evenings, feel it moved while they were away, and choose &quot;one more contract&quot;
+over a safe evac because the unbanked cache is worth the risk.</p>
+<p>V1 runs on the real server architecture (session seam from day one) so V2
+human multiplayer is an unlock, not a rewrite.</p>
+<h2>Key parameters</h2>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+<th>Ruling</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>World size at ship</td>
+<td>64×64 cells (128×128-capable, tested at both)</td>
+<td>D26</td>
+</tr>
+<tr>
+<td>Tick rate</td>
+<td>10 Hz fixed, deterministic reducer</td>
+<td>stack</td>
+</tr>
+<tr>
+<td>Season</td>
+<td>4 weeks (official world); self-host configurable</td>
+<td>D15</td>
+</tr>
+<tr>
+<td>AI rival Firms</td>
+<td>2–3, active only while the world is live</td>
+<td>D13, D16</td>
+</tr>
+<tr>
+<td>Contract pool</td>
+<td>5 per player slot; 5 disjoint offers shown per player</td>
+<td>D18</td>
+</tr>
+<tr>
+<td>Sortie / deployment length</td>
+<td>15–20 min / 40–60 min</td>
+<td>D11</td>
+</tr>
+<tr>
+<td>Tier pacing</td>
+<td>median 3–4 deployments to tier 3</td>
+<td>D19</td>
+</tr>
+<tr>
+<td>Combat</td>
+<td>stealth-first, disable-only; Snatch not assassination</td>
+<td>D6</td>
+</tr>
+<tr>
+<td>Identity</td>
+<td>seat token + recovery code, no accounts</td>
+<td>D10</td>
+</tr>
+<tr>
+<td>Hosting</td>
+<td>official public sample world on existing VM</td>
+<td>D14, D21</td>
+</tr>
+<tr>
+<td>Tone</td>
+<td>mild noir; &quot;Syndicate&quot; banned from UI/code</td>
+<td>D8, D23</td>
+</tr>
+</tbody></table>
+<h2>Features IN</h2>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Features</th>
+<th>Rulings</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>World</strong></td>
+<td>Seeded urban mapgen with district identity (3–5 districts); contract sites; drop zones; patrol routes; validation probes; two pinned reference seeds</td>
+<td>D26</td>
+</tr>
+<tr>
+<td><strong>Agent &amp; stealth</strong></td>
+<td>Direct lead-agent control (Sneak/Move/Hurry); fog of war; detection states Unseen→Noticed→Burned; district heat 0–5 with decay; fuzzy heat display, exact via intel; disable-only combat; downed→crawl→rescue/capture; Holding Sites</td>
+<td>D1, D6, D20</td>
+</tr>
+<tr>
+<td><strong>HQ &amp; session loop</strong></td>
+<td>Drop-zone selection; dropship sequences (in/out); Field HQ (tent, flag, perimeter sensors, cache, evac beacon); 30s evac hold with interruption rules; emergency evac; debrief; cache-vs-bank tension (banked only on clean extraction)</td>
+<td>D7</td>
+</tr>
+<tr>
+<td><strong>Contracts</strong></td>
+<td>D18 economy (pool per slot, disjoint offers); Courier, Surveillance, Extraction (tier 1); Sabotage, Acquisition (tier 2–3); mission radius phases 1–3; tier unlocks persist in ledger; capture exits: bail or re-drop</td>
+<td>D17, D18, D19</td>
+</tr>
+<tr>
+<td><strong>AI rivals &amp; standoff</strong></td>
+<td>2–3 AI Firms running real contract loops (drop in, operate, evac, return); HQ raids with race-home alarm window; <strong>standoff choice UI</strong> (Engage/Withdraw/Negotiate) vs deterministic AI policy</td>
+<td>D13, D21, D22</td>
+</tr>
+<tr>
+<td><strong>NPCs &amp; buildings</strong></td>
+<td>Authority patrols (alarm-first); civilian traffic; building entry overlay: Informant dialogue (rival HQ tips, exact heat), Street Vendor shop (equipment upgrades — the bank&#39;s sink)</td>
+<td>D9, D20</td>
+</tr>
+<tr>
+<td><strong>Persistence</strong></td>
+<td>Long-lived world (10Hz live, deterministic dormancy transition: heat decay + contract refresh only); world ledger per (world, Firm): reputation, tier unlocks, bank; fog resets each drop, physical building changes persist; seat token + recovery code</td>
+<td>D3, D10, D12, D15, D16</td>
+</tr>
+<tr>
+<td><strong>Presentation</strong></td>
+<td>Painted Low-Poly Hybrid art (agent figures, HQ, dropship, urban tiles, vehicles, site markers); 2.5D three.js diorama; splash terminal (SHADOW MANDATE / FIRMS strings per contract); mobile touch; <code>en</code>/<code>no</code> catalogs</td>
+<td>D8, D23</td>
+</tr>
+<tr>
+<td><strong>Ops</strong></td>
+<td>Single VM, systemd, caddy; official public sample world at a known URL; world rotation on the 4-week season</td>
+<td>D14, D15</td>
+</tr>
+</tbody></table>
+<h2>Features OUT (deferred)</h2>
+<table>
+<thead>
+<tr>
+<th>Deferred to</th>
+<th>Features</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>V2</strong></td>
+<td>Human multiplayer, squads, shared HQ, squad evac; support agents (hybrid control layer); human-vs-human standoffs and pacts; Intimidation, Vault Raid, Lab Infiltration, Snatch, Firm War; Scientist/Corrupt Official/Neutral Trader NPCs; email OTP; interiors decision</td>
+</tr>
+<tr>
+<td><strong>V3</strong></td>
+<td>Doctrines (Ghost/Iron/Blade/Coin/Veil); seasons meta + territory; full NPC ecology and world events; public-world master index with public/invite-only listing; Roblox gate (with D23 content path); cross-game lore events</td>
+</tr>
+<tr>
+<td><strong>Never (V1 doctrine)</strong></td>
+<td>Lethal combat; accounts/passwords; pay-for-power (free per D24, cosmetics door open)</td>
+</tr>
+</tbody></table>
+<h2>Milestones</h2>
+<table>
+<thead>
+<tr>
+<th align="right">#</th>
+<th>Name</th>
+<th>Scope</th>
+<th>Gate</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="right">M0</td>
+<td>Fork &amp; Strip</td>
+<td>Copy firepower skeleton; drop war modules (standards, supply, mines, caltrops, drones, drops, basewalls, bridges, war maps, premium); D8 terminology from first commit</td>
+<td>Trimmed suite double-run green; new pinned fixture replays byte-identical; dev-log records every dropped module</td>
+</tr>
+<tr>
+<td align="right">M1</td>
+<td>Urban World</td>
+<td>Seeded city mapgen, districts, contract sites, patrol routes, drop zones; validation probes</td>
+<td>20-seed corpus passes probes at 64×64 AND 128×128; two reference seeds pinned</td>
+</tr>
+<tr>
+<td align="right">M2</td>
+<td>The Agent</td>
+<td>Stance movement, fog, detection states, heat (fuzzy display), patrols, disable-only combat, capture to Holding Site</td>
+<td>Headless probe: sneak past unseen / burned by hurrying / downed→captured; heat rises and decays; census shows every state fires</td>
+</tr>
+<tr>
+<td align="right">M3</td>
+<td>HQ &amp; The Loop</td>
+<td>Drop-zone select, HQ deploy, perimeter alarm, evac beacon rules, emergency evac, dropship presentation, debrief; ledger with bank-on-evac</td>
+<td>Full loop headless AND in browser; re-drop shows persisted ledger; client smoke + UI acceptance green</td>
+</tr>
+<tr>
+<td align="right">M4</td>
+<td>Tier 1 Contracts</td>
+<td>D18 contract economy + board UI; Courier/Surveillance/Extraction; capture exits (bail / re-drop); loadouts</td>
+<td>5-seed campaign completes each type; contract economy census (offered/accepted/completed/expired)</td>
+</tr>
+<tr>
+<td align="right">M5</td>
+<td>AI Rival Firms</td>
+<td>2–3 AI Firms with real loops; informant (tips + exact heat); civilians; standoff choice UI vs AI policy; HQ raids with race-home window</td>
+<td>AI-vs-AI worlds 12–16k ticks × 5 seeds, zero invariant violations; first n=300 battery: burn rates, heat trajectories, rep spread in tolerance</td>
+</tr>
+<tr>
+<td align="right">M6</td>
+<td>Depth &amp; Tier 2–3</td>
+<td>Sabotage, Acquisition; radius phases 2–3; vehicles (transport, motorbike, van); building overlay (informant dialogue + vendor shop); dormancy transition; return-visit world news</td>
+<td>Battery confirms D19 pacing (3–4 deployments to tier 3); dormancy deterministic under replay</td>
+</tr>
+<tr>
+<td align="right">M7</td>
+<td>Presentation &amp; Ship</td>
+<td>Full art set; splash; mobile pass; en/no complete; GPU perf pass; VM deploy with official public sample world + 4-week season config; seat-token identity</td>
+<td>V1 acceptance list below; ≥60fps on reference hardware; a stranger plays on a phone without instruction</td>
+</tr>
+</tbody></table>
+<h2>Acceptance criteria</h2>
+<ul>
+<li><input disabled="" type="checkbox"> Join without lobby; dropship plays; HQ at chosen zone.</li>
+<li><input disabled="" type="checkbox"> Tier 1 contracts complete; tier 2 unlocks and persists in the ledger.</li>
+<li><input disabled="" type="checkbox"> Detection states and heat observably change how a sortie plays; heat shows fuzzy, informant sells exact.</li>
+<li><input disabled="" type="checkbox"> Downed leads to capture; bail and re-drop both work; an Extraction contract recovers a captured agent.</li>
+<li><input disabled="" type="checkbox"> Evac: 30s hold, interruption rules, cache banks only on clean extraction.</li>
+<li><input disabled="" type="checkbox"> AI rivals visibly operate; an HQ raid triggers the alarm with a winnable race home.</li>
+<li><input disabled="" type="checkbox"> A standoff with an AI rival presents Engage/Withdraw/Negotiate and honours the outcome.</li>
+<li><input disabled="" type="checkbox"> Every present player&#39;s board shows 5 offers, disjoint from other players&#39; boards (headless multi-seat test).</li>
+<li><input disabled="" type="checkbox"> Returning after a day: changed world, intact ledger, fog reset, persistent building changes.</li>
+<li><input disabled="" type="checkbox"> A sortie fits 15–20 min; a 2–3 contract deployment fits 40–60 (battery-verified).</li>
+<li><input disabled="" type="checkbox"> Vendor sells ≥3 meaningful upgrades; bank has a purpose.</li>
+<li><input disabled="" type="checkbox"> Cleared browser + recovery code restores the Firm ledger.</li>
+<li><input disabled="" type="checkbox"> Replays exact; pinned fixture stable; sim gate + battery pass on shipping ruleset.</li>
+<li><input disabled="" type="checkbox"> Desktop + mobile browser; en/no; painted low-poly consistent with Fireline; zero &quot;Syndicate&quot; strings.</li>
+</ul>
+<h2>Working practices (inherited from firepower)</h2>
+<p>Slices with tests-first and double-run green suites; every gameplay slice ends
+with the 5-seed sim gate; batteries (n=300+) on the <strong>shared batch lane</strong>
+(repo-tagged jobs, per-repo labels — D25); never tune on 5 seeds; mirror +
+firm-swap fairness instruments maintained for every positional subsystem;
+telemetry records failure; dev-log every slice; product decisions verbatim in
+<code>dev-prompts.md</code>, rulings in <code>specs/</code>.</p>
+
+
+<!-- Mermaid: renders all .mermaid divs client-side -->
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'default',
+    securityLevel: 'loose'
+  });
+</script>
+
+</body>
+</html>

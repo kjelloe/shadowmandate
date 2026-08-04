@@ -1,0 +1,41 @@
+{
+  "note": "S07 + D13/D34. Personalities give worlds texture; every number tune-by-battery.",
+  "countPerWorld": {
+    "min": 2,
+    "max": 3
+  },
+  "personalities": [
+    {
+      "name": "cautious",
+      "riskWeight": 200,
+      "raidThreshold": 0,
+      "standoffPolicy": "withdraw",
+      "abortAtHeat": 3
+    },
+    {
+      "name": "greedy",
+      "riskWeight": 128,
+      "raidThreshold": 120,
+      "standoffPolicy": "negotiate",
+      "abortAtHeat": 4
+    },
+    {
+      "name": "aggressive",
+      "riskWeight": 80,
+      "raidThreshold": 60,
+      "standoffPolicy": "engage",
+      "abortAtHeat": 5
+    }
+  ],
+  "deployment": {
+    "minGapTicks": 3000,
+    "durationTicks": 24000
+  },
+  "vehicles": {
+    "allowed": [
+      "motorbike"
+    ]
+  },
+  "cacheEvacTarget": 260,
+  "decisionCadence": 10
+}

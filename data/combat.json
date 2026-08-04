@@ -1,0 +1,59 @@
+{
+  "note": "S04. Disable-only doctrine (D6): nothing is ever deleted. Bail/re-drop per D17.",
+  "items": {
+    "suppressor": {
+      "range": 1,
+      "subdue": true,
+      "requiresUnobserved": true,
+      "noise": 0,
+      "ticks": 15
+    },
+    "disruptor": {
+      "range": 3,
+      "disableTicks": 600,
+      "noise": 1,
+      "ticks": 20
+    },
+    "sidearm": {
+      "range": 4,
+      "damage": 45,
+      "noise": 6,
+      "alwaysBurns": true,
+      "ticks": 10
+    }
+  },
+  "tools": {
+    "satchelCharge": {
+      "fuseTicks": 300,
+      "noise": 8
+    },
+    "sensorJammer": {
+      "radius": 4,
+      "ticks": 400
+    },
+    "medkit": {
+      "restore": 40,
+      "ticks": 30
+    },
+    "grappleLine": {
+      "range": 3
+    }
+  },
+  "downed": {
+    "crawlSpeed": 32,
+    "rescueTicks": 30,
+    "captureTicks": 25,
+    "bleedoutTicks": 0
+  },
+  "npcWakeTicks": 900,
+  "bail": {
+    "pctOfBankTier1": 15,
+    "pctPerTier": 10,
+    "redropReputationHit": 8
+  },
+  "coverShop": {
+    "cost": 150,
+    "ticks": 60,
+    "note": "D38 \u2014 appearance change: clears the burn and moves you to the alternate exit. Bank-only (D30)."
+  }
+}
