@@ -430,3 +430,19 @@ test("the overlay does not rebuild under the player's cursor", () => {
   const wipe = fn.indexOf('list.textContent = ""');
   assert.ok(guard >= 0 && guard < wipe, "the change check must precede the rebuild");
 });
+
+test("the drop-zone screen ranks districts by work, then by how hot they are", async () => {
+  const { districtChoices } = await import("../client/js/models.js");
+  const ranked = districtChoices([
+    { id: 0, trait: 0, contracts: 2, heatBand: 0 },
+    { id: 1, trait: 1, contracts: 7, heatBand: 2 },
+    { id: 2, trait: 2, contracts: 7, heatBand: 0 },
+  ]);
+  assert.equal(ranked[0].id, 2, "most work and coolest should lead");
+  assert.equal(ranked[1].id, 1, "equal work, hotter, comes second");
+  assert.equal(ranked[2].id, 0, "least work last");
+  for (const d of ranked) {
+    assert.ok(d.traitKey in EN, `trait key ${d.traitKey} is not translated`);
+    assert.ok(d.heatKey in EN, `heat key ${d.heatKey} is not translated`);
+  }
+});

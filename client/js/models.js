@@ -151,6 +151,24 @@ export function reputationBar(value, max = 40) {
   return "█".repeat(filled) + "░".repeat(10 - filled);
 }
 
+export const TRAIT_KEYS = [
+  "trait.industrial", "trait.residential", "trait.commercial",
+  "trait.government", "trait.research", "trait.port",
+];
+
+// Districts ranked the way a player would choose: most work first, then
+// coolest. The same ordering D37 uses for the auto-pick, so the highlighted
+// zone and the top of the list agree.
+export function districtChoices(districts) {
+  return [...(districts ?? [])]
+    .map((d) => ({
+      ...d,
+      traitKey: TRAIT_KEYS[d.trait] ?? "trait.industrial",
+      heatKey: HEAT_KEYS[d.heatBand ?? 0],
+    }))
+    .sort((a, b) => (b.contracts - a.contracts) || (a.heatBand - b.heatBand) || (a.id - b.id));
+}
+
 export const BUILDING_KIND = { SAFEHOUSE: 0, MARKET: 1, COVERSHOP: 2 };
 
 // What conversation or catalogue this building is offering right now. Mirrors

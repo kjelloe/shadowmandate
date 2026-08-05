@@ -83,6 +83,7 @@ export function createRemoteSession({ url, token }) {
           session.dropZones = msg.zones;
           session.autoZone = msg.auto;
           session.tiles = msg.tiles;
+          session.zoneDistricts = msg.districts ?? [];
           emit([{ type: "dropZonesReady" }]);
           break;
         case "claimed":

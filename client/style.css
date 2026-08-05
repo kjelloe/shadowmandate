@@ -99,3 +99,17 @@ button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal)
 #building-options li { display: flex; justify-content: space-between; gap: .6rem;
   align-items: center; padding: .45rem 0; border-bottom: 1px solid var(--line); }
 #building-options .cost { color: var(--amber); font-size: .82rem; }
+
+#zone-layout { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap;
+  justify-content: center; }
+#zone-map { max-width: min(62vw, 512px); height: auto; border: 1px solid var(--line);
+  border-radius: 5px; cursor: crosshair; }
+#zone-districts { list-style: none; margin: 0; padding: 0; min-width: 15rem; }
+#zone-districts li { display: flex; justify-content: space-between; gap: .8rem;
+  padding: .5rem .6rem; border: 1px solid var(--line); border-radius: 5px;
+  margin-bottom: .4rem; cursor: pointer; min-height: 44px; align-items: center; }
+#zone-districts li:hover { border-color: var(--slate); }
+#zone-districts li.recommended { border-color: var(--amber); }
+#zone-districts .meta { color: var(--dim); font-size: .78rem; }
+#zone-districts .lockdown { color: var(--alarm); }
+#zone-districts .tense { color: var(--amber); }

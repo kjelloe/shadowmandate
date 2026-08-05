@@ -115,5 +115,13 @@
   "disguise.pinkGlasses": "Big pink glasses",
   "disguise.courier": "Hi-vis and a clipboard",
   "disguise.tourist": "Sun hat and a terrible shirt",
-  "disguise.executive": "A borrowed suit"
+  "disguise.executive": "A borrowed suit",
+  "trait.industrial": "Industrial",
+  "trait.residential": "Residential",
+  "trait.commercial": "Commercial",
+  "trait.government": "Government",
+  "trait.research": "Research",
+  "trait.port": "Port",
+  "dropzone.contracts": "contracts",
+  "dropzone.recommended": "RECOMMENDED"
 }

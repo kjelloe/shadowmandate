@@ -159,6 +159,22 @@ export class World {
     return Array.from(this.state.map.cells);
   }
 
+  districtSummary(firmId) {
+    const firm = this.state.firms[firmId];
+    const tier = firm?.tierUnlocked ?? 1;
+    const counts = new Map();
+    for (const c of this.state.contractPool) {
+      if (c.acceptedBy >= 0 || c.tier > tier) continue;
+      counts.set(c.districtId, (counts.get(c.districtId) ?? 0) + 1);
+    }
+    const bands = this.rules.detection.heat.fuzzBands;
+    return this.state.districts.map((d) => ({
+      id: d.id, trait: d.trait, coreX: d.coreX, coreY: d.coreY,
+      contracts: counts.get(d.id) ?? 0,
+      heatBand: d.heat >= bands[1] ? 2 : d.heat >= bands[0] ? 1 : 0,
+    }));
+  }
+
   viewFor(firmId) {
     return buildView(this.state, firmId, this.rules.detection);
   }

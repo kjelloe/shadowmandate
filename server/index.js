@@ -146,7 +146,13 @@ wss.on("connection", (socket) => {
         // the client only needs enough to choose between.
         const zones = world.dropZones().slice(0, 400);
         const auto = world.autoDropZone(firmId);
-        return send({ type: "dropZones", zones, auto, tiles: world.clientTiles() });
+        return send({
+          type: "dropZones", zones, auto, tiles: world.clientTiles(),
+          // Districts with their trait, heat band and how much tier-appropriate
+          // work is in them: a choice between 240 identical squares is not a
+          // choice (D37 picks well, but the player should see WHY).
+          districts: world.districtSummary(firmId),
+        });
       }
       default:
         return send({ type: "error", reason: "unknown_frame" });

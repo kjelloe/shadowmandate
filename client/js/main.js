@@ -9,7 +9,8 @@ import {
   STANCES, DETECTION_KEYS, DETECTION_CLASS, HEAT_KEYS, HEAT_CLASS,
   ownAgent, heatDisplay, districtUnder, boardRows, activeRows, objectiveFor,
   objectiveBearing, evacDisplay, toastsFor, debriefRows, reputationBar,
-  payloadForBuilding, overlayRows, disguiseFor, heatDisplay as heatOf,
+  payloadForBuilding, overlayRows, disguiseFor, districtChoices,
+  HEAT_CLASS as HEAT_CLASSES,
 } from "./models.js";
 
 const $ = (sel) => document.querySelector(sel);
@@ -413,6 +414,31 @@ function showZonePicker() {
   if (session.autoZone) {
     ctx.strokeStyle = "#D9A441"; ctx.lineWidth = 2;
     ctx.strokeRect(session.autoZone.cellX * px - 3, session.autoZone.cellY * px - 3, px + 6, px + 6);
+  }
+
+  // The district list: choosing between 240 identical squares is not a choice.
+  const list = $("#zone-districts");
+  list.textContent = "";
+  for (const d of districtChoices(session.zoneDistricts)) {
+    const li = document.createElement("li");
+    if (session.autoZone && d.id === session.autoZone.districtId) li.className = "recommended";
+    const left = document.createElement("div");
+    const name = document.createElement("div");
+    name.textContent = t(d.traitKey);
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent = `${d.contracts} ${t("dropzone.contracts")}`;
+    left.append(name, meta);
+    const right = document.createElement("span");
+    right.className = HEAT_CLASSES[d.heatBand ?? 0];
+    right.textContent = t(d.heatKey);
+    li.append(left, right);
+    li.addEventListener("click", () => {
+      // Drop into the best zone inside the district they picked.
+      const inDistrict = (session.dropZones ?? []).filter((z) => z.districtId === d.id);
+      deployAt(inDistrict[Math.floor(inDistrict.length / 2)] ?? session.autoZone);
+    });
+    list.appendChild(li);
   }
 
   let left = 15;

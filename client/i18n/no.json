@@ -115,5 +115,13 @@
   "disguise.pinkGlasses": "Store rosa briller",
   "disguise.courier": "Vernevest og skriveplate",
   "disguise.tourist": "Solhatt og forferdelig skjorte",
-  "disguise.executive": "En lånt dress"
+  "disguise.executive": "En lånt dress",
+  "trait.industrial": "Industri",
+  "trait.residential": "Bolig",
+  "trait.commercial": "Handel",
+  "trait.government": "Myndighet",
+  "trait.research": "Forskning",
+  "trait.port": "Havn",
+  "dropzone.contracts": "oppdrag",
+  "dropzone.recommended": "ANBEFALT"
 }
