@@ -65,3 +65,31 @@ M3 loop e2e (headless+browser) · M4 economy census + disjoint-boards test ·
 M5 AI campaign + first battery · M6 pacing battery + dormancy replay · M7
 full acceptance + native perf (WSL Playwright is correctness-only; FPS via
 `tools/perf_native.ps1`).
+
+
+## The fixture coverage hole (found and closed 2026-08-05)
+
+`fixture.test.js` builds its world with `createInitialState({seed, size})` — no
+ruleset, no city. That world has no sites, no buildings and an empty contract
+pool, and because hashing is deliberately **hash-inert for empty collections**
+(an empty list writes no bytes, so fixtures do not churn as the game grows),
+none of the contract or site code in `engine/snapshot.js` or its deliberate twin
+`test/fixture_hash.js` was ever executed by the paired-hash test.
+
+So the project's strongest guarantee had a hole exactly where the paired-hash
+rule was supposed to bite: add a field to one hasher's contract writer, forget
+the other, and every test stayed green.
+
+`test/fixture_populated.test.js` closes it by running the same comparison
+against a fully populated world. It **pins no hashes on purpose** — pinned eras
+catch intended-versus-unintended behaviour drift, whereas the risks here (the
+twins splitting, and the world not replaying identically) are provable from the
+run itself, so the file costs nothing to keep green when balance numbers move.
+
+It was verified the only way a guard should be: by deliberately breaking what it
+watches. With an extra field written on one side only, the new file fails 2 of
+4 tests while `fixture.test.js` stays completely green.
+
+**The general lesson, now twice-learned:** a guard that has never been observed
+to fail is not yet a guard. Previously it was guards matching prose in comments
+instead of code; this time it was a test whose subject was empty.
