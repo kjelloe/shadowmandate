@@ -20,7 +20,7 @@ import {
 import { agentCell, districtAt } from "./detection.js";
 import { orderMove } from "./agents.js";
 import { hqOf, dropIn, activateEvac, extract } from "./hq.js";
-import { acceptContract } from "./contracts.js";
+import { acceptContract, KIND_NAMES } from "./contracts.js";
 import { findDropZones, autoSelectDropZone } from "./citygen.js";
 import { findPath } from "./pathfind.js";
 import { inStandoff, aiStandoffChoice, CHOICE_NONE } from "./standoff.js";
@@ -201,7 +201,7 @@ export function aiDecide(state, firmId, rules) {
   // ── Working a contract: walk to whatever it wants next ──
   if (view.myContracts.length) {
     const contract = view.myContracts[0];
-    const target = targetCellFor(state, contract, view);
+    const target = targetCellFor(state, contract, view, rules);
     if (target) {
       const here = agentCell(agent);
       if (!reachable(state, here, target)) {
@@ -269,12 +269,19 @@ function reachable(state, here, target) {
   return findPath(state.map, here.x, here.y, target.x, target.y).length > 0;
 }
 
-function targetCellFor(state, contract, view) {
+// Where a contract currently wants the operative. This MUST agree with
+// engine/contracts.js — when D41 gave acquisition a separate drop-off and this
+// function was not told, the AI walked home while the contract waited at the
+// drop, and acquisition completed 0% of the time across 24 world-days. A rule
+// the actor does not know is a rule nobody follows.
+function targetCellFor(state, contract, view, rules) {
   const site = state.sites.find((s) => s.id === contract.siteId);
   const siteB = state.sites.find((s) => s.id === contract.siteIdB);
+  const spec = rules?.contracts?.types?.[KIND_NAMES[contract.kind]] ?? null;
   // stage: 1 TRAVEL, 2 WORK, 3 RETURN
   if (contract.stage === 3) {
-    if (contract.kind === 0 && siteB) return { x: siteB.cellX, y: siteB.cellY };
+    const deliversToSiteB = contract.kind === 0 || spec?.dropOff === true;
+    if (deliversToSiteB && siteB) return { x: siteB.cellX, y: siteB.cellY };
     if (view.hq) return { x: view.hq.cellX, y: view.hq.cellY };
   }
   return site ? { x: site.cellX, y: site.cellY } : null;

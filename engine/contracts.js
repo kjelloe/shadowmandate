@@ -381,8 +381,12 @@ export function stepContracts(state, cfg, detCfg) {
               type: "chargePlanted", contractId: contract.id, agentId: agent.id,
               leg: contract.legsDone, of: spec.legs ?? 1,
             });
-            // D41: a second charge, on a different site, under the fuse.
+            // D41: a second charge, on a DIFFERENT site, under the fuse. The
+            // sites swap so leg 2 is a journey rather than standing still.
             if (contract.legsDone < (spec.legs ?? 1) && contract.siteIdB >= 0) {
+              const first = contract.siteId;
+              contract.siteId = contract.siteIdB;
+              contract.siteIdB = first;
               contract.stage = STAGE_TRAVEL;
             } else {
               contract.stage = STAGE_RETURN;
