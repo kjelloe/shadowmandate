@@ -88,3 +88,14 @@ button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal)
   filter: drop-shadow(0 0 3px rgba(83,214,198,.7)); }
 #objective-distance { position: absolute; color: var(--teal); font-size: .72rem;
   transform: translate(-50%, -50%); text-shadow: 0 0 4px #0F1114; }
+
+/* The building overlay. The portrait is the D38 joke made visible — you should
+   be able to see the moustache you paid for. */
+#portrait { width: 84px; height: 84px; float: right; margin: 0 0 .6rem .8rem;
+  border: 1px solid var(--line); border-radius: 5px; background: var(--bg);
+  display: grid; place-items: center; font-size: 2.4rem; }
+#building-greet { color: var(--dim); font-style: italic; margin: .2rem 0 .8rem; }
+#building-options { list-style: none; margin: 0 0 .8rem; padding: 0; clear: both; }
+#building-options li { display: flex; justify-content: space-between; gap: .6rem;
+  align-items: center; padding: .45rem 0; border-bottom: 1px solid var(--line); }
+#building-options .cost { color: var(--amber); font-size: .82rem; }

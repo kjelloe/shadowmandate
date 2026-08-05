@@ -151,6 +151,46 @@ export function reputationBar(value, max = 40) {
   return "█".repeat(filled) + "░".repeat(10 - filled);
 }
 
+export const BUILDING_KIND = { SAFEHOUSE: 0, MARKET: 1, COVERSHOP: 2 };
+
+// What conversation or catalogue this building is offering right now. Mirrors
+// engine/buildings.js payloadFor — an informant goes quiet in a locked-down
+// district, and the client must show that rather than a dead menu.
+export function payloadForBuilding(content, building, heatBand) {
+  if (!content?.payloads || !building) return null;
+  const { payloads } = content;
+  if (building.kind === BUILDING_KIND.COVERSHOP) {
+    return payloads.shops.find((s) => s.id === "covershop") ?? null;
+  }
+  if (building.kind === BUILDING_KIND.MARKET) {
+    return payloads.shops.find((s) => s.id === "vendor") ?? null;
+  }
+  const dialogue = payloads.dialogues.find((d) => d.id === "informant") ?? null;
+  if (!dialogue) return null;
+  // heatBand 2 is lockdown (D20 fuzz bands); the informant stops talking.
+  if (heatBand >= 2) {
+    return { ...dialogue, quiet: true, options: [dialogue.options[dialogue.options.length - 1]] };
+  }
+  return dialogue;
+}
+
+// The rows an overlay renders, whether it is a conversation or a shop.
+export function overlayRows(payload) {
+  if (!payload) return [];
+  if (payload.kind === "shop") {
+    return payload.catalog.map((item, idx) => ({
+      idx, key: item.key, cost: item.cost, kind: "buy",
+    }));
+  }
+  return payload.options.map((o, idx) => ({
+    idx, key: o.key, cost: o.cost ?? 0, kind: o.exit ? "leave" : "talk",
+  }));
+}
+
+export function disguiseFor(content, disguiseId) {
+  return content?.disguises?.disguises?.find((d) => d.id === (disguiseId | 0)) ?? null;
+}
+
 // Events worth interrupting the player for. Everything else is noise.
 const TOASTS = {
   perimeterAlarm: { key: "alarm.perimeter", alarm: true },

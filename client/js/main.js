@@ -9,6 +9,7 @@ import {
   STANCES, DETECTION_KEYS, DETECTION_CLASS, HEAT_KEYS, HEAT_CLASS,
   ownAgent, heatDisplay, districtUnder, boardRows, activeRows, objectiveFor,
   objectiveBearing, evacDisplay, toastsFor, debriefRows, reputationBar,
+  payloadForBuilding, overlayRows, disguiseFor, heatDisplay as heatOf,
 } from "./models.js";
 
 const $ = (sel) => document.querySelector(sel);
@@ -119,6 +120,7 @@ function paint(s, events) {
   renderBoard(view);
   renderActive(view);
   renderObjectiveArrow(view);
+  renderBuilding(view);
   renderStandoff(view);
   renderEvac(view);
   for (const toast of toastsFor(events)) addToast(t(toast.key), toast.alarm);
@@ -267,6 +269,68 @@ function renderObjectiveArrow(view) {
   label.style.top = `${Math.sin(bearing.angle) * (radius - 26)}px`;
 }
 
+// Portrait glyphs stand in until there is art. The point of the cover shop is
+// that you can SEE what you paid for, so a placeholder that changes with the
+// disguise is worth more than a blank square.
+const PORTRAIT_GLYPH = ["🕶", "🥸", "🤓", "🦺", "🧢", "🤵"];
+
+let buildingSignature = "";
+function renderBuilding(view) {
+  // The "go inside" button appears only when standing on a door.
+  const enter = $("#enter-btn");
+  enter.hidden = !view.atDoor || !!view.inside;
+
+  const panel = $("#building");
+  if (!view.inside) {
+    panel.hidden = true;
+    buildingSignature = "";
+    return;
+  }
+  const agent = ownAgent(view);
+  const district = view.districts.find((d) => d.id === view.inside.districtId);
+  const payload = payloadForBuilding(session.content, view.inside, district?.heatBand ?? 0);
+  const rows = overlayRows(payload);
+  const signature = `${view.inside.id}:${payload?.quiet ? 1 : 0}:${rows.length}:${agent?.disguiseId ?? 0}`;
+  panel.hidden = false;
+  if (signature === buildingSignature) return;    // do not rebuild under the cursor
+  buildingSignature = signature;
+
+  const disguise = disguiseFor(session.content, agent?.disguiseId ?? 0);
+  $("#portrait").textContent = PORTRAIT_GLYPH[(agent?.disguiseId ?? 0) % PORTRAIT_GLYPH.length];
+  $("#portrait").title = disguise ? t(disguise.key) : "";
+  $("#building-title").textContent = t(
+    view.inside.kind === 0 ? "building.informant"
+      : view.inside.kind === 1 ? "building.market" : "building.coverShop");
+  $("#building-greet").textContent = payload
+    ? t(payload.quiet ? payload.quietKey : payload.greetKey) : "";
+
+  const list = $("#building-options");
+  list.textContent = "";
+  for (const row of rows) {
+    const li = document.createElement("li");
+    const label = document.createElement("span");
+    label.textContent = t(row.key);
+    li.appendChild(label);
+    if (row.cost > 0) {
+      const cost = document.createElement("span");
+      cost.className = "cost";
+      cost.textContent = `${row.cost}`;
+      li.appendChild(cost);
+    }
+    const go = document.createElement("button");
+    go.textContent = t(row.kind === "buy" ? "board.accept" : "common.confirm");
+    go.addEventListener("click", () => {
+      const a = ownAgent(session.view);
+      if (!a) return;
+      if (row.kind === "leave") session.send({ type: 35, agentId: a.id });
+      else if (row.kind === "buy") session.send({ type: 37, agentId: a.id, itemIdx: row.idx });
+      else session.send({ type: 36, agentId: a.id, optionIdx: row.idx });
+    });
+    li.appendChild(go);
+    list.appendChild(li);
+  }
+}
+
 function renderStandoff(view) {
   const panel = $("#standoff");
   if (!view.standoff) { panel.hidden = true; return; }
@@ -376,6 +440,10 @@ $("#zone-map").addEventListener("pointerdown", (ev) => {
     if (d < bestD) { bestD = d; best = z; }
   }
   if (best && bestD <= 6) deployAt(best);
+});
+$("#enter-btn").addEventListener("click", () => {
+  const a = ownAgent(session.view);
+  if (a) session.send({ type: 34, agentId: a.id });
 });
 $("#board-btn").addEventListener("click", () => { $("#board").hidden = !$("#board").hidden; });
 $("#evac-btn").addEventListener("click", () => session.send({ type: 11, firmId: session.firmId }));

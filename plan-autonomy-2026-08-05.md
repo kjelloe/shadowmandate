@@ -66,4 +66,8 @@ shapes per marker type, district tinting, better building variation.
 - **2. Debrief screen — DONE.** Server delivers on extraction; screen prints
   banked / contracts / recognition / HQ intact / ledger totals and a reputation
   bar. 2 new tests.
-- **3–8** — in progress; see dev-log for what lands.
+- **3. Dialogue and shop overlays — DONE.** Content ships on welcome; view
+  gained `atDoor`/`inside`; GO INSIDE button, portrait, options and catalogue;
+  informant visibly quiet at lockdown; disguise portrait changes. 4 new tests,
+  plus six untranslated disguise names found and fixed.
+- **4–8** — in progress; see dev-log.

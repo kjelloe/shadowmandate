@@ -40,6 +40,7 @@
         <div id="cache" class="pill"></div>
         <div id="objective" class="pill" hidden></div>
         <button id="board-btn" class="primary" data-i18n="board.title"></button>
+        <button id="enter-btn" data-i18n="building.enter" hidden></button>
         <button id="evac-btn" data-i18n="evac.beaconActive"></button>
       </div>
       <div id="objective-arrow" hidden><span></span></div>
@@ -63,6 +64,14 @@
         <button data-choice="1" data-i18n="standoff.withdraw"></button>
         <button data-choice="2" data-i18n="standoff.negotiate"></button>
       </div>
+    </div>
+
+    <div id="building" class="overlay" hidden>
+      <div id="portrait"></div>
+      <h2 id="building-title"></h2>
+      <p id="building-greet"></p>
+      <ul id="building-options"></ul>
+      <button class="close" data-i18n="dialog.common.leave"></button>
     </div>
 
     <div id="evac" class="overlay" hidden>

@@ -106,6 +106,9 @@ wss.on("connection", (socket) => {
           // reply: a RECONNECTING player never asks for drop zones, so without
           // this their map would render blank forever.
           tiles: world.clientTiles(),
+          // Dialogue and shop content, plus the disguise portraits. Static
+          // content, so it ships once with the welcome rather than per tick.
+          content: { payloads: rules.payloads, disguises: rules.disguises },
           ruleset: rules.version,
         });
         return;

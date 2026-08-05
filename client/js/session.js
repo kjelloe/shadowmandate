@@ -20,6 +20,7 @@ export function createRemoteSession({ url, token }) {
     connected: false,
     recoveryCode: null,
     debrief: null,
+    content: null,
     dropZones: null,
     autoZone: null,
     tiles: null,
@@ -63,6 +64,7 @@ export function createRemoteSession({ url, token }) {
           session.briefing = msg.briefing;
           session.view = msg.view;
           if (msg.tiles) session.tiles = msg.tiles;
+          if (msg.content) session.content = msg.content;
           if (msg.token) localStorage.setItem("sm.token", msg.token);
           // Shown once, and only once — after this the server only has a hash.
           if (msg.recoveryCode) session.recoveryCode = msg.recoveryCode;

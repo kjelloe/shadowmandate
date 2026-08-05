@@ -105,5 +105,15 @@
   "stage.failed": "failed",
   "board.none": "No contracts running",
   "hud.objective": "OBJECTIVE",
-  "debrief.bank": "BANKED TOTAL"
+  "debrief.bank": "BANKED TOTAL",
+  "building.enter": "GO INSIDE",
+  "building.informant": "SAFE HOUSE",
+  "building.market": "MARKET",
+  "building.coverShop": "COVER SHOP",
+  "disguise.none": "Your own face",
+  "disguise.moustache": "An enormous moustache",
+  "disguise.pinkGlasses": "Big pink glasses",
+  "disguise.courier": "Hi-vis and a clipboard",
+  "disguise.tourist": "Sun hat and a terrible shirt",
+  "disguise.executive": "A borrowed suit"
 }

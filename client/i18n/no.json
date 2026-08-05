@@ -105,5 +105,15 @@
   "stage.failed": "mislyktes",
   "board.none": "Ingen pågående oppdrag",
   "hud.objective": "MÅL",
-  "debrief.bank": "BANKET TOTALT"
+  "debrief.bank": "BANKET TOTALT",
+  "building.enter": "GÅ INN",
+  "building.informant": "SKJULESTED",
+  "building.market": "MARKED",
+  "building.coverShop": "FORKLEDNINGSBUTIKK",
+  "disguise.none": "Ditt eget ansikt",
+  "disguise.moustache": "En enorm bart",
+  "disguise.pinkGlasses": "Store rosa briller",
+  "disguise.courier": "Vernevest og skriveplate",
+  "disguise.tourist": "Solhatt og forferdelig skjorte",
+  "disguise.executive": "En lånt dress"
 }

@@ -281,6 +281,34 @@ test("extraction delivers a debrief to the extracting seat", () => {
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
+test("the view tells the client when it is standing on a door, and inside one", () => {
+  // The client cannot offer "go inside" without knowing there is an inside.
+  const { world } = hostedWorld();
+  const zone = centralDropZone(world.state, findDropZones(world.state, RULES.citygen));
+  world.submit({ type: CMD_DROP_IN, firmId: 0, cellX: zone.cellX, cellY: zone.cellY });
+  world.tick();
+  const agent = world.state.agents.find((a) => a.firmId === 0 && a.state === 1);
+  const building = world.state.buildings.find((b) => b.kind === 0);
+
+  assert.equal(world.viewFor(0).atDoor, null, "not on a door yet");
+
+  // Stand on the safe house door (walking there is a real 100 seconds at the
+  // D41 pace, which is a pacing fact, not something to assert in a unit test).
+  agent.x = building.entranceX * 256 + 128;
+  agent.y = building.entranceY * 256 + 128;
+  const atDoor = world.viewFor(0).atDoor;
+  assert.ok(atDoor, "standing on a door was not reported");
+  assert.equal(atDoor.kind, 0);
+
+  world.submit({ type: 34, agentId: agent.id });   // enterBuilding
+  world.drain();
+  const inside = world.viewFor(0).inside;
+  assert.ok(inside, "being inside was not reported");
+  assert.equal(inside.id, building.id);
+  assert.equal(world.viewFor(0).atDoor, null, "you are not at the door once inside");
+  world.stop();
+});
+
 test("events are routed to the Firm they concern, not broadcast to everyone", () => {
   const { world } = hostedWorld();
   const a = [], b = [];

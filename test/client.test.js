@@ -41,6 +41,16 @@ test("every i18n key the client uses exists in BOTH catalogs", () => {
   const html = readFileSync(join(ROOT, "client/index.html"), "utf8");
   for (const m of html.matchAll(/data-i18n="([^"]+)"/g)) keys.add(m[1]);
 
+  // CONTENT references keys too. The code-only scan missed every disguise
+  // name, and six of them shipped with no translation in either locale — the
+  // exact failure this guard exists to prevent, hiding one directory over.
+  for (const file of ["buildings/payloads.json", "buildings/disguises.json"]) {
+    const raw = readFileSync(join(ROOT, "data", file), "utf8");
+    for (const m of raw.matchAll(/"(?:key|greetKey|quietKey)":\s*"([a-z][\w.]*)"/g)) {
+      keys.add(m[1]);
+    }
+  }
+
   assert.ok(keys.size > 15, `only found ${keys.size} keys — the scan is not working`);
   const missingEn = [...keys].filter((k) => !(k in EN));
   const missingNo = [...keys].filter((k) => !(k in NO));
@@ -368,4 +378,55 @@ test("the debrief prints the numbers that make an extraction feel like one", asy
   assert.equal(reputationBar(0).replace(/░/g, "").length, 0);
   assert.equal(reputationBar(40).replace(/█/g, "").length, 0);
   assert.equal(reputationBar(20).length, 10, "the bar is always ten cells wide");
+});
+
+// ── Building overlays ─────────────────────────────────────────────────────
+
+const CONTENT = JSON.parse(readFileSync(join(ROOT, "data/buildings/payloads.json"), "utf8"));
+const DISGUISES = JSON.parse(readFileSync(join(ROOT, "data/buildings/disguises.json"), "utf8"));
+
+test("the overlay resolves the right content for each building kind", async () => {
+  const { payloadForBuilding, overlayRows, BUILDING_KIND } = await import("../client/js/models.js");
+  const content = { payloads: CONTENT, disguises: DISGUISES };
+
+  const informant = payloadForBuilding(content, { kind: BUILDING_KIND.SAFEHOUSE }, 0);
+  assert.equal(informant.kind, "dialogue");
+  assert.ok(overlayRows(informant).length > 1, "a calm informant should have things to say");
+
+  const market = payloadForBuilding(content, { kind: BUILDING_KIND.MARKET }, 0);
+  assert.equal(market.kind, "shop");
+  assert.ok(overlayRows(market).every((r) => r.kind === "buy"));
+
+  const cover = payloadForBuilding(content, { kind: BUILDING_KIND.COVERSHOP }, 0);
+  assert.equal(cover.id, "covershop");
+});
+
+test("the informant visibly goes quiet in a lockdown, not just silently", async () => {
+  const { payloadForBuilding, overlayRows, BUILDING_KIND } = await import("../client/js/models.js");
+  const content = { payloads: CONTENT, disguises: DISGUISES };
+  const hot = payloadForBuilding(content, { kind: BUILDING_KIND.SAFEHOUSE }, 2);
+  assert.ok(hot.quiet, "the informant kept talking through a lockdown");
+  const rows = overlayRows(hot);
+  assert.equal(rows.length, 1, "only leaving should remain");
+  assert.equal(rows[0].kind, "leave");
+});
+
+test("every disguise the engine can assign has a portrait the client can show", async () => {
+  const { disguiseFor } = await import("../client/js/models.js");
+  const content = { payloads: CONTENT, disguises: DISGUISES };
+  for (let id = 0; id < DISGUISES.disguises.length; id++) {
+    const d = disguiseFor(content, id);
+    assert.ok(d, `no disguise entry for id ${id}`);
+    assert.ok(d.key in EN, `disguise ${id} has no i18n name`);
+  }
+});
+
+test("the overlay does not rebuild under the player's cursor", () => {
+  // Same trap that made the contract button unclickable at 10Hz.
+  const src = readFileSync(join(JS_DIR, "main.js"), "utf8");
+  const fn = src.slice(src.indexOf("function renderBuilding"), src.indexOf("function renderStandoff"));
+  assert.ok(/buildingSignature/.test(fn), "renderBuilding has no change check");
+  const guard = fn.indexOf("=== buildingSignature) return");
+  const wipe = fn.indexOf('list.textContent = ""');
+  assert.ok(guard >= 0 && guard < wipe, "the change check must precede the rebuild");
 });

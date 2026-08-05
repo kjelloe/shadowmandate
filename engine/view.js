@@ -96,7 +96,28 @@ export function buildView(state, firmId, detCfg) {
     })),
     buildings: state.buildings.map((b) => ({
       id: b.id, kind: b.kind, cellX: b.entranceX, cellY: b.entranceY,
+      exitX: b.exitX ?? -1, exitY: b.exitY ?? -1,
     })),
+
+    // The door the operative is standing on, if any — the client cannot offer
+    // "go inside" without knowing there is an inside to go into.
+    atDoor: (() => {
+      const lead = own.find((a) => a.state === AGENT_ACTIVE);
+      if (!lead) return null;
+      const cell = agentCell(lead);
+      const b = state.buildings.find((x) =>
+        (x.entranceX === cell.x && x.entranceY === cell.y)
+        || (x.exitX === cell.x && x.exitY === cell.y));
+      return b ? { id: b.id, kind: b.kind, districtId: b.districtId } : null;
+    })(),
+
+    // Which building the operative is INSIDE, so the overlay knows to open.
+    inside: (() => {
+      const lead = own.find((a) => a.insideBuildingId >= 0);
+      if (!lead) return null;
+      const b = state.buildings.find((x) => x.id === lead.insideBuildingId);
+      return b ? { id: b.id, kind: b.kind, districtId: b.districtId, agentId: lead.id } : null;
+    })(),
     holdingSites: state.holdingSites.map((h) => ({
       id: h.id, cellX: h.cellX, cellY: h.cellY,
       // You know your OWN people are in there; not who else is.
