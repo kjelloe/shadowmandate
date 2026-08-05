@@ -60,6 +60,11 @@ zero literal "Syndicate" (D8) — suite greps the client tree.
 DO things — elementFromPoint hit-testing, manual event dispatch under
 SwiftShader) per milestone; parse/import check on every client file.
 
+**STATUS: neither exists yet.** Playwright is the house tool (both siblings
+depend on it and its browsers are already installed on this machine), so this
+is a port, not a research task. Until it lands, every client claim rests on a
+human loading the page.
+
 ## AS BUILT (M7, 2026-08-05)
 
 Session seam, i18n, HUD, mission board, standoff panel, evac overlay,
@@ -85,9 +90,23 @@ Without it, accepting a contract looked like nothing happening.
 - Nothing may fog or clip the scene out of existence — depth constants derive
   from `CAMERA_DISTANCE`, not from guesses.
 
-**NOT implemented:** art assets (everything is primitives), the debrief screen,
-building/dialogue overlays in the UI, the drop-zone screen's district labels,
-and a mobile pass beyond the 44px touch targets and responsive minimap.
+**Also shipped (2026-08-05):** the drop-zone picker names each district with
+its trait and how many of your offers sit inside it; the evac overlay has its
+countdown; and the active-contract rows carry a **work-stage progress bar**.
+That last one is a client consequence of a balance change — every contract type
+now has time-on-objective, so a player can stand still for 90 seconds, and a
+HUD that shows nothing moving during that reads as a hung game. The bar is
+built ONCE per row and only its width is mutated per tick: putting progress
+into the row signature would rebuild the list at 10Hz, which is the exact
+defect that made the contract button unclickable in playtest 5.
+
+**NOT implemented:** art assets (everything is primitives), a mobile pass beyond
+the 44px touch targets and responsive minimap, and — noted here because the
+spec claimed otherwise for a while — the `client_smoke.mjs` / `ui_acceptance.mjs`
+browser gates below. `test/headless/` is an empty directory. Both sibling
+projects have these (`../firepower/tools/`), and their absence is the plainest
+explanation for why five playtests each found a defect that a green suite could
+not see. Highest-value client work available.
 
 ## To pin
 

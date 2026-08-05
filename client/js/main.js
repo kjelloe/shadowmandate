@@ -184,6 +184,7 @@ function renderBoard(view) {
 }
 
 let activeSignature = "";
+const progressBars = new Map();   // contractId -> the fill element
 function renderActive(view) {
   const rows = activeRows(view);
   const signature = rows.map((r) => `${r.id}:${r.stageKey}:${r.atRisk}`).join("|");
@@ -196,6 +197,7 @@ function renderActive(view) {
       li.textContent = t("board.none");
       list.appendChild(li);
     }
+    progressBars.clear();
     for (const row of rows) {
       const li = document.createElement("li");
       if (row.atRisk) li.className = "at-risk";
@@ -204,8 +206,25 @@ function renderActive(view) {
       const right = document.createElement("span");
       right.textContent = `+${row.reward}`;
       li.append(label, right);
+      if (row.working) {
+        // Built ONCE here and only its width mutated below. Putting progress in
+        // the signature above would rebuild this list ten times a second, which
+        // is the defect that made the contract button unclickable in playtest 5.
+        const track = document.createElement("span");
+        track.className = "prog";
+        const fill = document.createElement("i");
+        track.appendChild(fill);
+        li.appendChild(track);
+        progressBars.set(row.id, fill);
+      }
       list.appendChild(li);
     }
+  }
+
+  // Per-tick, structure untouched.
+  for (const row of rows) {
+    const fill = progressBars.get(row.id);
+    if (fill) fill.style.width = `${Math.round(row.progress * 100)}%`;
   }
 
   // Point at the current objective, so an accepted contract is not a mystery.

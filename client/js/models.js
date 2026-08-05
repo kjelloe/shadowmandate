@@ -70,6 +70,14 @@ export function activeRows(view) {
     tier: c.tier, reward: c.reward,
     stageKey: STAGE_KEYS[c.stage] ?? "stage.travel",
     atRisk: (c.graceTicks ?? 0) > 0,
+    // Work-stage progress, 0..1. Every contract type now has time-on-site, so
+    // without this the player stands still for up to 90 seconds with nothing
+    // moving on screen — indistinguishable from a hung game.
+    working: (c.stageTarget ?? 0) > 0,
+    progress: (c.stageTarget ?? 0) > 0
+      ? Math.max(0, Math.min(1, (c.stageTicks ?? 0) / c.stageTarget))
+      : 0,
+    legsDone: c.legsDone ?? 0,
   }));
 }
 

@@ -13,6 +13,7 @@
 import { AGENT_ACTIVE, AGENT_DOWNED, AGENT_INSIDE, AGENT_HELD } from "./state.js";
 import { heatBandFor, agentCell } from "./detection.js";
 import { hasHeatIntel } from "./buildings.js";
+import { stageTargetTicks } from "./contracts.js";
 import { worldToCellFloor } from "../shared/fixedmath.js";
 
 const SIGHT = 10;          // what your own agent can make out, in cells
@@ -134,6 +135,7 @@ export function buildView(state, firmId, detCfg) {
         id: c.id, kind: c.kind, tier: c.tier, districtId: c.districtId,
         siteId: c.siteId, siteIdB: c.siteIdB, reward: c.reward,
         stage: c.stage, stageTicks: c.stageTicks,
+        stageTarget: stageTargetTicks(c, state.rules?.contracts ?? null),
         legsDone: c.legsDone ?? 0, graceTicks: c.graceTicks ?? 0,
       }));
     })(),

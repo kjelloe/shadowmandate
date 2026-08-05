@@ -113,3 +113,10 @@ button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal)
 #zone-districts .meta { color: var(--dim); font-size: .78rem; }
 #zone-districts .lockdown { color: var(--alarm); }
 #zone-districts .tense { color: var(--amber); }
+
+/* Work-stage progress. Built once per contract row and only its width changes,
+   so the list is never rebuilt mid-click. */
+.prog { display: block; width: 100%; height: 4px; margin-top: .35rem;
+  background: #2A2E36; border-radius: 2px; overflow: hidden; }
+.prog i { display: block; height: 100%; width: 0; background: #53D6C6;
+  transition: width .1s linear; }
