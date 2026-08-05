@@ -94,3 +94,47 @@ auto-generated Extraction contract for a held agent has not.
 
 `⚙ tune` everything listed — all in data, battery-verdicted. (Teaser row and
 max-2-active ruled: D29.)
+
+
+## AS BUILT — pricing and the D19 measurement (2026-08-05)
+
+Rewards are priced by EFFORT, not flavour. The first table was not: surveillance
+paid 40 for 3600 ticks of standing still while extraction paid 120 for no work
+at all, so extraction strictly dominated and surveillance fell to 1.8% of
+contracts taken. Work is converted to cell-equivalents at the Move rate
+(256 units per cell, baseSpeed 9, so ~28 ticks per cell) and priced against
+distance in the same currency.
+
+**Extraction gained `secureTicks`.** It was the only type with no work stage:
+step on the cell and the contact was yours. That made it both the least
+interesting type to play and the cheapest way to earn.
+
+**Two bugs the battery found**, both cases of a rule the actor did not know:
+acquisition completed 0.0% of the time because `ai_firms.targetCellFor` sent
+non-courier contracts home while D41 had moved the delivery to a drop-off site;
+and sabotage's second leg kept the original `siteId`, so a "second charge
+elsewhere" was planted in the same square.
+
+**How D19 is measured (see Q37).** Raw completion share cannot answer "is any
+type dominant":
+
+- a SHORT contract finishes more often per unit time whatever anyone prefers, so
+  completion share over-reports it;
+- tier gating means a tier-1 Firm only ever sees the three tier-1 types, and
+  uniform choice among three is 33.3% — already at D19's 35% ceiling.
+
+`debugging/analyze_pacing.py` therefore reports offered / accepted / completed
+share plus a **preference ratio** (accepted over offered; 1.0x = taken exactly
+as often as shown). Caveat recorded in the tool: "offered" samples board
+residence, and a popular contract leaves the board sooner *because* it was
+taken, so the ratio overstates popular types. Direction and ordering are solid;
+the multiplier is not.
+
+Current state: extraction ~2.66x over-chosen, surveillance ~0.47x ignored,
+despite extraction being the type offered LEAST. Awaiting the Q37 ruling — no
+price tried so far makes danger appealing, so this likely needs a design answer
+rather than another tuning pass.
+
+**The reward table and the progression curve are one system.** Every reward
+change moved "deploys to tier 3" in or out of its 3-4 band; check both whenever
+either moves.

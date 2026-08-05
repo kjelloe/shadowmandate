@@ -45,6 +45,8 @@ function commitName() {
 export const COLUMNS = [
   "seed", "size", "mirror", "firmswap", "ticks",
   "offered", "accepted", "completed", "failed", "expired",
+  "acc_courier", "acc_surveillance", "acc_extraction", "acc_sabotage", "acc_acquisition",
+  "off_courier", "off_surveillance", "off_extraction", "off_sabotage", "off_acquisition",
   "courier", "surveillance", "extraction", "sabotage", "acquisition",
   "burns", "downs", "captures", "arrests", "rescues",
   "banked", "cacheLost", "raids", "raidsSucceeded",
@@ -84,9 +86,26 @@ export function runWorldDay(seed, { size = SIZE, ticks = TICKS, mirror = MIRROR,
     const ai = stepAiFirms(s, RULES, apply);
     s = ai.state;
     s = apply(s, { type: CMD_ADVANCE_TICK });
+    // Sample what was actually ON the boards. Acceptance share alone cannot
+    // separate preference from availability: tier gating means most Firms only
+    // ever see the three tier-1 types, so a type can look dominant purely
+    // because it is one of the few on offer.
+    if (t % 600 === 0) {
+      for (const o of s.offers ?? []) {
+        for (const id of o.contractIds ?? []) {
+          const c = s.contractPool.find((x) => x.id === id);
+          if (c) m[`off_${KIND[c.kind]}`]++;
+        }
+      }
+    }
     for (const e of [...ai.events, ...s.events]) {
       switch (e.type) {
-        case "contractAccepted": m.accepted++; acceptedAt.set(e.contractId, t); break;
+        case "contractAccepted": {
+          m.accepted++;
+          acceptedAt.set(e.contractId, t);
+          if (e.kind !== undefined) m[`acc_${KIND[e.kind]}`]++;
+          break;
+        }
         case "contractCompleted": {
           m.completed++; m[KIND[e.kind]]++;
           const from = acceptedAt.get(e.contractId);

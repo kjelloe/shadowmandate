@@ -35,24 +35,25 @@
   "types": {
     "courier": {
       "tier": 1,
-      "reward": 80,
+      "reward": 69,
       "expiryTicks": 48000
     },
     "surveillance": {
       "tier": 1,
-      "reward": 40,
+      "reward": 191,
       "holdTicks": 1200,
       "expiryTicks": 0,
       "passes": 3
     },
     "extraction": {
       "tier": 1,
-      "reward": 120,
-      "expiryTicks": 0
+      "reward": 69,
+      "expiryTicks": 0,
+      "secureTicks": 900
     },
     "sabotage": {
       "tier": 2,
-      "reward": 120,
+      "reward": 191,
       "plantTicks": 600,
       "fuseTicks": 1800,
       "expiryTicks": 24000,
@@ -60,7 +61,7 @@
     },
     "acquisition": {
       "tier": 3,
-      "reward": 300,
+      "reward": 139,
       "crackTicks": 1200,
       "expiryTicks": 0,
       "dropOff": true

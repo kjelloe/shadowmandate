@@ -272,6 +272,23 @@ export function siteAction(state, agent, siteId, cfg) {
   return "not_actionable_here";
 }
 
+// How many ticks the CURRENT work stage needs. The client cannot compute this
+// — the timers live in the ruleset, which never crosses the wire — so the view
+// carries it and the HUD can draw a real progress bar. Without it a player
+// stands still for 90 seconds with nothing on screen moving, which reads as a
+// hung game rather than a contract in progress.
+export function stageTargetTicks(contract, cfg) {
+  const spec = cfg?.types?.[KIND_NAMES[contract.kind]];
+  if (!spec || contract.stage !== STAGE_WORK) return 0;
+  switch (contract.kind) {
+    case KIND_SURVEILLANCE: return spec.holdTicks ?? 300;
+    case KIND_SABOTAGE: return spec.plantTicks ?? 100;
+    case KIND_ACQUISITION: return spec.crackTicks ?? 600;
+    case KIND_EXTRACTION: return spec.secureTicks ?? 900;
+    default: return 0;
+  }
+}
+
 // Per-tick progress for every accepted contract.
 export function stepContracts(state, cfg, detCfg) {
   for (const contract of state.contractPool) {
@@ -355,10 +372,28 @@ export function stepContracts(state, cfg, detCfg) {
         break;
       }
       case KIND_EXTRACTION: {
+        // D41/Q37: extraction was the ONE type with no work stage — step on the
+        // cell and the contact was yours. That made it both the least
+        // interesting contract to play and, because the AI scores reward over
+        // (distance + work), the one with a tiny denominator and therefore wild
+        // score variance. Selection takes the MAX of five offers, so extraction
+        // won the draw ~50% of the time no matter how its reward was tuned;
+        // equalising averages cannot fix an argmax. The contact now has to be
+        // talked out of the building, which costs time on site with the meter
+        // running.
         if (contract.stage === STAGE_TRAVEL && atSite(state, agent, contract.siteId)) {
-          contract.stage = STAGE_RETURN; contract.stageTicks = 0;
-          agent.carryKind = 3; agent.carryRef = contract.id;   // CARRY_AGENT
-          state.events.push({ type: "contactSecured", contractId: contract.id, agentId: agent.id });
+          contract.stage = STAGE_WORK; contract.stageTicks = 0;
+          state.events.push({ type: "siteWorkStarted", contractId: contract.id, agentId: agent.id });
+        } else if (contract.stage === STAGE_WORK) {
+          // Leaving the contact mid-persuasion loses the progress; being seen
+          // does not, because a grab is a risk you take, not a stealth reset.
+          if (!atSite(state, agent, contract.siteId)) {
+            contract.stageTicks = 0;
+          } else if (contract.stageTicks >= (spec.secureTicks ?? 900)) {
+            contract.stage = STAGE_RETURN; contract.stageTicks = 0;
+            agent.carryKind = 3; agent.carryRef = contract.id;   // CARRY_AGENT
+            state.events.push({ type: "contactSecured", contractId: contract.id, agentId: agent.id });
+          }
         } else if (contract.stage === STAGE_RETURN) {
           const hq = hqOf(state, agent.firmId);
           const here = agentCell(agent);

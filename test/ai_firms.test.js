@@ -10,7 +10,7 @@ import { CMD_ADVANCE_TICK } from "../engine/commands.js";
 import { createInitialState, FIRM_UNDEPLOYED } from "../engine/state.js";
 import { generateCity } from "../engine/citygen.js";
 import { refillPool, rebuildOffers } from "../engine/contracts.js";
-import { spawnAiFirms, stepAiFirms, aiLawfulView, aiDecide } from "../engine/ai_firms.js";
+import { spawnAiFirms, stepAiFirms, aiLawfulView, aiDecide, scoreContract, workTicksFor, personalityOf } from "../engine/ai_firms.js";
 import { COMMAND_NAMES } from "../engine/commands.js";
 import { RULES } from "./helpers.js";
 
@@ -156,4 +156,38 @@ test("the world-day harness produces the full metric row", async () => {
     assert.ok(Number.isInteger(row[col]), `metric '${col}' is not an integer: ${row[col]}`);
   }
   assert.ok(row.deployments > 0, "a 2000-tick world-day saw no deployment");
+});
+
+// The scorer is an INSTRUMENT: D11 pacing is verdicted from AI runs, so a
+// scorer blind to time-on-objective produces confident, wrong balance numbers.
+// It was blind — surveillance's three 1200-tick stationary holds priced as
+// free, and a second leg cost nothing.
+test("contract scoring prices time-on-objective and second legs", () => {
+  const s = aiWorld(4711);
+  const view = { hq: { cellX: 10, cellY: 10 } };
+  const site = s.sites[0];
+  const p = personalityOf(RULES, 0);
+  // Identical pay, site and district. The ONLY difference is that one demands
+  // three 1200-tick holds and the other demands nothing.
+  const base = { siteId: site.id, siteIdB: -1, districtId: site.districtId, reward: 100 };
+  const quick = scoreContract(s, view, { ...base, kind: 2 }, p, RULES);
+  const slow = scoreContract(s, view, { ...base, kind: 1 }, p, RULES);
+  assert.ok(quick > slow,
+    `3600 ticks of standing still must score below identically-paid idleness-free work (quick=${quick} slow=${slow})`);
+
+  // A second site is a second journey, so it must cost something.
+  const far = s.sites.find((x) => Math.abs(x.cellX - site.cellX) + Math.abs(x.cellY - site.cellY) > 12);
+  if (far) {
+    const oneLeg = scoreContract(s, view, { ...base, kind: 0 }, p, RULES);
+    const twoLeg = scoreContract(s, view, { ...base, kind: 0, siteIdB: far.id }, p, RULES);
+    assert.ok(oneLeg > twoLeg, "a courier's second leg must not be free");
+  }
+
+  assert.equal(workTicksFor(RULES.contracts.types.surveillance), 3600, "holdTicks * passes");
+  // Extraction gained a secure timer (Q37) — it used to be the one type with no
+  // work at all, which is what let its score run away. It still costs far less
+  // than three surveillance passes, which is what the ordering above rests on.
+  assert.equal(workTicksFor(RULES.contracts.types.extraction), 900, "secureTicks");
+  assert.ok(workTicksFor(RULES.contracts.types.surveillance)
+    > workTicksFor(RULES.contracts.types.extraction));
 });

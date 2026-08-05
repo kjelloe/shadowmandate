@@ -94,15 +94,43 @@ export function spawnAiFirms(state, rules, count, { swap = false } = {}) {
   return seated;
 }
 
+// The work a contract demands beyond walking: holds, plants, cracks and the
+// fuse you must outrun. Measured in ticks so it can be priced against distance.
+export function workTicksFor(spec) {
+  if (!spec) return 0;
+  const legs = spec.legs ?? 1;
+  return ((spec.holdTicks ?? 0) * (spec.passes ?? 1))
+    + ((spec.plantTicks ?? 0) * legs)
+    + (spec.crackTicks ?? 0)
+    + (spec.secureTicks ?? 0)
+    + (spec.fuseTicks ?? 0);
+}
+
 // Score a contract the way a Firm with this temperament would: payoff against
 // distance and danger. riskWeight is the temperament — a cautious Firm prices
 // heat heavily, an aggressive one barely notices it.
-function scoreContract(state, view, contract, personality, rules) {
+//
+// The score MUST see time-on-objective. The first version priced only distance
+// and heat, so surveillance's 3x1200 ticks of standing still in the open cost
+// the AI nothing it could perceive, and a second leg was free. That made the
+// AI a liar about its own preferences — and since we verdict human pacing (D11)
+// from AI runs, a blind scorer produces confident, wrong balance numbers. Work
+// ticks are converted to cell-equivalents at the Move rate so the two costs are
+// in the same currency.
+export function scoreContract(state, view, contract, personality, rules) {
   const site = state.sites.find((s) => s.id === contract.siteId);
   if (!site || !view.hq) return -1;
-  const distance = Math.abs(view.hq.cellX - site.cellX) + Math.abs(view.hq.cellY - site.cellY);
+  let distance = Math.abs(view.hq.cellX - site.cellX) + Math.abs(view.hq.cellY - site.cellY);
+  // A second site is a second journey, not a free stop on the way.
+  const siteB = state.sites.find((s) => s.id === contract.siteIdB);
+  if (siteB) distance += Math.abs(siteB.cellX - site.cellX) + Math.abs(siteB.cellY - site.cellY);
+  const spec = rules?.contracts?.types?.[KIND_NAMES[contract.kind]] ?? null;
+  // Derived, not guessed: 256 world units make a cell and Move stance walks
+  // baseSpeed units per tick.
+  const ticksPerCell = Math.max(1, Math.trunc(256 / Math.max(1, rules?.agents?.baseSpeed ?? 9)));
+  const workCells = Math.trunc(workTicksFor(spec) / ticksPerCell);
   const heat = state.districts[contract.districtId]?.heat ?? 0;
-  const risk = 1 + distance + (heat * personality.riskWeight) / 32;
+  const risk = 1 + distance + workCells + (heat * personality.riskWeight) / 32;
   return Math.trunc((contract.reward * 256) / Math.max(1, risk));
 }
 
