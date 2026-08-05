@@ -91,9 +91,12 @@ button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal)
 
 /* The building overlay. The portrait is the D38 joke made visible — you should
    be able to see the moustache you paid for. */
+/* A canvas since D47: the portrait is drawn from feature layers, so a disguise
+   is a diff on the stack rather than a different picture. image-rendering keeps
+   the chunky look intact when the 96px buffer scales to 84 CSS px. */
 #portrait { width: 84px; height: 84px; float: right; margin: 0 0 .6rem .8rem;
   border: 1px solid var(--line); border-radius: 5px; background: var(--bg);
-  display: grid; place-items: center; font-size: 2.4rem; }
+  display: block; image-rendering: pixelated; }
 #building-greet { color: var(--dim); font-style: italic; margin: .2rem 0 .8rem; }
 #building-options { list-style: none; margin: 0 0 .8rem; padding: 0; clear: both; }
 #building-options li { display: flex; justify-content: space-between; gap: .6rem;

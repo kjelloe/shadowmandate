@@ -42,8 +42,8 @@
   },
   "note_body": "Body colours are the PAINTED part \u2014 the part a tint never touches. Keeping them separate from marks is what lets detection state stay readable: the coat stays the coat while the state band changes colour.",
   "body": {
-    "coat": "#2E3238",
-    "coatDark": "#22262B",
+    "coat": "#3C424A",
+    "coatDark": "#2C3138",
     "trouser": "#1C1F24",
     "skin": "#C9A98B",
     "visor": "#141619",

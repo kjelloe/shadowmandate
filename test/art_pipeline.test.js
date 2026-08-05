@@ -20,6 +20,9 @@ import {
 import {
   manifestEntry, resolveVisual, tintFor, firmToken, detectionMark,
 } from "../client/js/asset_resolver.js";
+import {
+  portraitLayers, layerDiff, disguiseCount, drawableLayers,
+} from "../client/js/portraits.js";
 
 const root = new URL("../", import.meta.url);
 const tokens = JSON.parse(readFileSync(new URL("client/assets/metadata/style_tokens.json", root)));
@@ -115,4 +118,55 @@ test("the renderer carries no colours of its own — tokens are the source of tr
   const hexes = scene.match(/0x[0-9A-Fa-f]{6}/g) ?? [];
   assert.deepEqual(hexes, [],
     `scene.js still hardcodes colours (${hexes.join(", ")}) — they belong in style_tokens.json`);
+});
+
+// ── Portraits (D47) ────────────────────────────────────────────────────────
+// The design promise is comic and specific: it is the SAME agent wearing one
+// absurd thing. That is only true if the layer stacks actually share their
+// base, so it is testable — and worth testing, because "six unrelated
+// pictures" is exactly what a fixed image set would silently produce.
+
+test("every disguise in the ruleset has a portrait layer stack", () => {
+  const disguises = JSON.parse(readFileSync(new URL("data/buildings/disguises.json", root))).disguises;
+  assert.equal(disguiseCount(), disguises.length,
+    `ruleset has ${disguises.length} disguises, portraits.js knows ${disguiseCount()}`);
+  for (const d of disguises) {
+    const p = portraitLayers(d.id);
+    assert.ok(p.layers.length > 0, `disguise ${d.id} (${d.key}) produced no layers`);
+  }
+});
+
+test("a disguise is a DIFF: the moustache changes exactly one thing", () => {
+  // "An enormous moustache and nothing else changed" — the ruleset's own words.
+  assert.deepEqual(layerDiff(0, 1), ["moustache"],
+    "the moustache disguise must change the moustache and nothing else, or it is not the same person");
+});
+
+test("the pink glasses swap the glasses, not the face", () => {
+  const diff = layerDiff(0, 2);
+  assert.deepEqual(diff, ["eyes"],
+    `pink glasses should differ from the house look in the eyes layer alone, got ${diff.join(", ")}`);
+  // ...and they must actually LOOK different, or the Cover Shop sold nothing.
+  const base = portraitLayers(0).layers.find((l) => l.id === "eyes");
+  const pink = portraitLayers(2).layers.find((l) => l.id === "eyes");
+  assert.notEqual(base.variant, pink.variant);
+});
+
+test("every disguise is visibly different from the house look", () => {
+  // A disguise that changes no layer is one the player paid for and cannot see.
+  for (let id = 1; id < disguiseCount(); id++) {
+    assert.ok(layerDiff(0, id).length > 0, `disguise ${id} is indistinguishable from the base`);
+  }
+});
+
+test("no portrait layer is silently unrenderable", () => {
+  // A layer in the stack with no draw routine is a disguise that quietly does
+  // nothing — the failure mode that looks like a design choice.
+  const drawable = new Set(drawableLayers());
+  for (let id = 0; id < disguiseCount(); id++) {
+    for (const layer of portraitLayers(id).layers) {
+      assert.ok(drawable.has(layer.id),
+        `disguise ${id} stacks layer "${layer.id}", which has no draw routine`);
+    }
+  }
 });

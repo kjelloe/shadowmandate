@@ -15,7 +15,8 @@
     "sweep": "node tools/sm_worldday.mjs",
     "smoke": "node tools/client_smoke.mjs",
     "ui": "node tools/ui_acceptance.mjs",
-    "mobile": "node tools/mobile_check.mjs"
+    "mobile": "node tools/mobile_check.mjs",
+    "gallery": "node tools/render_gallery.mjs"
   },
   "devDependencies": {
     "playwright": "^1.62.1"

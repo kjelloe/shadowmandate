@@ -3,6 +3,7 @@
 
 import { loadLocale, t, applyStatic } from "./i18n.js";
 import { loadArt } from "./assets.js";
+import { drawPortrait, portraitLayers } from "./portraits.js";
 import { createRemoteSession } from "./session.js";
 import { createScene } from "./scene.js";
 import { createMinimap } from "./minimap.js";
@@ -321,7 +322,6 @@ function renderObjectiveArrow(view) {
 // Portrait glyphs stand in until there is art. The point of the cover shop is
 // that you can SEE what you paid for, so a placeholder that changes with the
 // disguise is worth more than a blank square.
-const PORTRAIT_GLYPH = ["🕶", "🥸", "🤓", "🦺", "🧢", "🤵"];
 
 let buildingSignature = "";
 function renderBuilding(view) {
@@ -344,9 +344,18 @@ function renderBuilding(view) {
   if (signature === buildingSignature) return;    // do not rebuild under the cursor
   buildingSignature = signature;
 
-  const disguise = disguiseFor(session.content, agent?.disguiseId ?? 0);
-  $("#portrait").textContent = PORTRAIT_GLYPH[(agent?.disguiseId ?? 0) % PORTRAIT_GLYPH.length];
-  $("#portrait").title = disguise ? t(disguise.key) : "";
+  // D47: the portrait is composed from feature layers, so a disguise is a DIFF
+  // on the stack rather than a different picture. That is what makes the Cover
+  // Shop legible — the moustache changes and the person does not.
+  const disguiseId = agent?.disguiseId ?? 0;
+  const disguise = disguiseFor(session.content, disguiseId);
+  const canvas = $("#portrait");
+  try {
+    drawPortrait(canvas.getContext("2d"), disguiseId, canvas.width);
+  } catch (err) {
+    fatal("portrait", err);
+  }
+  canvas.title = disguise ? t(disguise.key) : "";
   $("#building-title").textContent = t(
     view.inside.kind === 0 ? "building.informant"
       : view.inside.kind === 1 ? "building.market" : "building.coverShop");

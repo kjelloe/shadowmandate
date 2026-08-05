@@ -167,10 +167,12 @@ census complete; battery within provisional bands.
 
 ## M7 — Presentation & Ship 🟡 IN PROGRESS (views + world host + identity done; transport, client, art, deploy remain)
 
-- **7a** 🟡 **PARTIAL (2026-08-05)** — silhouette pass done within primitives:
-  distinct shapes per marker role (pure, unit-tested mapping in `models.js`),
-  per-instance building tint and footprint variation. **The asset pipeline and
-  painted art are NOT done** and remain the largest V1 gap.
+- **7a** 🟢 **DONE (2026-08-05)** — the procedural pipeline is forked and live
+  (D46), portraits are feature-layer stacks so a disguise is a diff (D47), and
+  `npm run gallery` renders the review surface. Art ships as CODE: no binary
+  blobs, no artist in the loop, unit-tested. **Only Q41c remains — the final
+  look, which is the owner's judgement and is now a token file rather than a
+  rewrite.**
 - **7b** ✅ **DONE (2026-08-05)** — mobile pass MEASURED, not asserted:
   `npm run mobile` drives two phone viewports with touch emulation. All checks
   passed first time; mutation-verified by shrinking `min-height`.

@@ -65,10 +65,11 @@ function place(mesh, x, y, z) { mesh.position.set(x, y, z); return mesh; }
 function buildAgent() {
   const g = new THREE.Group();
   const C = body();
-  g.add(place(box(0.34, 0.46, 0.24, C.coat), 0, 0.46, 0));
+  g.add(place(box(0.34, 0.30, 0.24, C.coat), 0, 0.38, 0));
   g.add(place(box(0.30, 0.22, 0.22, C.trouser), 0, 0.14, 0));
-  g.add(place(tintable(box(0.38, 0.11, 0.27, "#ffffff", "firmPanel")), 0, 0.70, 0));
-  g.add(place(sphere(0.13, 8, 6, C.skin), 0, 0.86, 0));
+  // A full shoulder yoke, not a pinstripe: this is the detection readout.
+  g.add(place(tintable(box(0.40, 0.22, 0.28, "#ffffff", "firmPanel")), 0, 0.64, 0));
+  g.add(place(sphere(0.125, 8, 6, C.skin), 0, 0.86, 0));
   return g;
 }
 
@@ -77,10 +78,10 @@ function buildAgent() {
 function buildRival() {
   const g = new THREE.Group();
   const C = body();
-  g.add(place(box(0.34, 0.46, 0.24, C.coatDark), 0, 0.46, 0));
+  g.add(place(box(0.34, 0.30, 0.24, C.coatDark), 0, 0.38, 0));
   g.add(place(box(0.30, 0.22, 0.22, C.trouser), 0, 0.14, 0));
-  g.add(place(tintable(box(0.38, 0.11, 0.27, "#ffffff", "firmPanel")), 0, 0.70, 0));
-  g.add(place(sphere(0.13, 8, 6, C.skin), 0, 0.86, 0));
+  g.add(place(tintable(box(0.40, 0.22, 0.28, "#ffffff", "firmPanel")), 0, 0.64, 0));
+  g.add(place(sphere(0.125, 8, 6, C.skin), 0, 0.86, 0));
   return g;
 }
 
@@ -89,11 +90,14 @@ function buildRival() {
 function buildPatrol() {
   const g = new THREE.Group();
   const C = body();
-  g.add(place(box(0.36, 0.44, 0.26, C.coatDark), 0, 0.44, 0));
+  g.add(place(box(0.36, 0.26, 0.26, C.coatDark), 0, 0.35, 0));
   g.add(place(box(0.32, 0.22, 0.24, C.trouser), 0, 0.13, 0));
-  g.add(place(sphere(0.13, 8, 6, C.skin), 0, 0.82, 0));
-  g.add(place(tintable(cone(0.20, 0.26, 7, "#ffffff", "firmPanel")), 0, 1.00, 0));
-  g.add(place(box(0.26, 0.06, 0.10, C.visor), 0, 0.86, 0.12));
+  // Tinted torso AND cap: an alerted patrol has to be unmissable across a
+  // street, which a hat brim alone is not.
+  g.add(place(tintable(box(0.40, 0.20, 0.30, "#ffffff", "firmPanel")), 0, 0.60, 0));
+  g.add(place(sphere(0.125, 8, 6, C.skin), 0, 0.80, 0));
+  g.add(place(tintable(cone(0.21, 0.24, 7, "#ffffff", "firmPanel")), 0, 0.98, 0));
+  g.add(place(box(0.26, 0.06, 0.10, C.visor), 0, 0.84, 0.12));
   return g;
 }
 

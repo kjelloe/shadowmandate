@@ -88,10 +88,56 @@ Procedural means art ships as CODE: deterministic, diffable, no binary blobs,
 no artist in the loop, and testable headlessly — which is why it suits this
 project's constraints better than authored models would.
 
-## To pin — **this is Q41**
+## AS BUILT (7a-1/2/3, 2026-08-05) — the pipeline exists now
 
-`❑` whether to fork the sibling's procedural pipeline (S15 assumes yes; nobody
-has done it) · `❑` how portraits are produced, given they are currently glyphs
-and D38 wants combinatorial disguise variety rather than a fixed set of images ·
-`❑` final tile/figure look, which needs the owner's eye on samples ·
-`❑` splash styling.
+**D46 (Q41a): the pipeline is forked and live.** Art ships as code.
+
+```
+client/assets/metadata/style_tokens.json    materials, marks, body palette,
+                                            Firm identity, triangle budgets, lighting
+client/assets/metadata/asset_manifest.json  role -> builder, and the tint it takes
+client/js/asset_factory.js                  builders, applyTint, countTriangles
+client/js/asset_resolver.js                 role -> visual, manifest access
+client/js/assets.js                         load once, share with both surfaces
+client/js/portraits.js                      feature-layer portraits (D47)
+client/gallery.html + client/js/gallery.js  the review surface
+tools/render_gallery.mjs                    `npm run gallery` -> reports/gallery.png
+test/art_pipeline.test.js                   the guarantees
+```
+
+**The manifest is the seam.** Swapping a procedural stand-in for a painted model
+later is a manifest edit, never a renderer edit.
+
+**The tint rule.** Only meshes named `tint` are recoloured at runtime, so an
+agent's detection state stays legible without repainting the figure. The test
+fails if the manifest claims a tint the model has no slot for — a visual that
+accepts a tint and shows nothing is the failure mode that looks like a design
+decision.
+
+**Colours left the renderer.** They lived in `scene.js` as literal hex AND were
+duplicated into `minimap.js` as separate string literals. The minimap's own
+comment said "two views that disagree about what a thing looks like are worse
+than one view" — which duplicated constants cannot guarantee. Lighting moved
+too: it is art direction, not renderer plumbing, so a look candidate changes the
+mood without touching `scene.js`. A guard fails the suite if a colour creeps
+back in.
+
+**D47 (Q41b): portraits are feature-layer stacks**, and a disguise is a DIFF on
+the stack. The comic requirement — "same agent, big moustache" / "big pink
+instead of agent lean black" — is combinatorial, not illustrative: a fixed image
+set can only produce six unrelated pictures. Tests assert the promise directly:
+the moustache disguise changes *exactly* the moustache layer, the pink glasses
+change *exactly* the eyes layer, and no disguise is invisible against the base.
+
+**Found by looking at the gallery, which is why the gallery exists:** the first
+figures read as dark blobs and the tintable state band was a pinstripe too thin
+to see. Detection state is gameplay information, not styling — if UNSEEN and
+BURNED are not tellable apart at a glance the figure has failed at its only job.
+Figures now carry a full shoulder yoke, an alerted patrol tints torso and cap,
+and the coats were lifted off the night background.
+
+## To pin — **Q41c, the owner's call**
+
+`❑` **final tile/figure look.** The pipeline makes this cheap to answer: a
+candidate look is a token file, not a rewrite. Run `npm run gallery` and look at
+`reports/gallery.png`. · `❑` splash styling.
