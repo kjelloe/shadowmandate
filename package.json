@@ -2,7 +2,7 @@
   "name": "shadow-mandate",
   "version": "0.1.0",
   "type": "module",
-  "description": "Shadow Mandate — drop into a living city, run covert contracts for your Firm, and extract before you're burned.",
+  "description": "Shadow Mandate \u2014 drop into a living city, run covert contracts for your Firm, and extract before you're burned.",
   "license": "MIT",
   "dependencies": {
     "three": "^0.165.0",
@@ -12,6 +12,11 @@
     "start": "node server/index.js",
     "test": "node --test --test-concurrency=4 test/*.test.js",
     "gate": "bash debugging/sim_campaign.sh",
-    "sweep": "node tools/sm_worldday.mjs"
+    "sweep": "node tools/sm_worldday.mjs",
+    "smoke": "node tools/client_smoke.mjs",
+    "ui": "node tools/ui_acceptance.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.62.1"
   }
 }

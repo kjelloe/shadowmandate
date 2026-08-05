@@ -60,10 +60,31 @@ zero literal "Syndicate" (D8) — suite greps the client tree.
 DO things — elementFromPoint hit-testing, manual event dispatch under
 SwiftShader) per milestone; parse/import check on every client file.
 
-**STATUS: neither exists yet.** Playwright is the house tool (both siblings
-depend on it and its browsers are already installed on this machine), so this
-is a port, not a research task. Until it lands, every client claim rests on a
-human loading the page.
+**STATUS: both shipped 2026-08-05 (slice 7h).** `npm run smoke` / `npm run ui`,
+Playwright, ~25s each, each starting its own server. `HEADED=1` to watch.
+
+They run the world at `TICK_MS=250` rather than 10Hz. Headless software
+rendering cannot draw the diorama and service automation simultaneously, so at
+10Hz every interaction queues behind a frame and the gate takes minutes; at
+250ms it takes 25 seconds. This changes no simulation outcome — the reducer
+counts ticks and never reads a clock — and still reproduces the defects the
+gates exist for, since a list that rebuilds per view update rebuilds at any
+pacing.
+
+Both were verified by reintroducing the historical defect they guard:
+
+- removing the `[hidden] { display: none !important }` rule stacks every screen
+  and `smoke` fails naming the stacked screens;
+- breaking the importmap path makes `smoke` fail on the 404 and the missing
+  world screen;
+- removing the `boardSignature` early return makes `ui` fail with "the row was
+  replaced mid-interaction — the list is rebuilding per tick".
+
+The client gained `window.__smDebug`, a read-only derived snapshot (tick, own
+agent, current screen, open overlays, board/active counts). The gates need to
+assert on what the client RECEIVED, not only what it painted — "the world
+ticked" and "the stance the server agrees I have" are not readable from the
+DOM. Nothing on it is an input path, so it cannot become a cheat surface.
 
 ## AS BUILT (M7, 2026-08-05)
 
@@ -100,13 +121,20 @@ built ONCE per row and only its width is mutated per tick: putting progress
 into the row signature would rebuild the list at 10Hz, which is the exact
 defect that made the contract button unclickable in playtest 5.
 
-**NOT implemented:** art assets (everything is primitives), a mobile pass beyond
-the 44px touch targets and responsive minimap, and — noted here because the
-spec claimed otherwise for a while — the `client_smoke.mjs` / `ui_acceptance.mjs`
-browser gates below. `test/headless/` is an empty directory. Both sibling
-projects have these (`../firepower/tools/`), and their absence is the plainest
-explanation for why five playtests each found a defect that a green suite could
-not see. Highest-value client work available.
+**Perf note found by the gates:** the diorama was drawing at full rate behind
+the splash and drop-zone screens, where it is completely invisible — a 3D frame
+ten times a second for nobody. `paint()` now skips the draw when `#world` is
+hidden. On a real GPU this costs battery rather than seconds, which is why it
+went unnoticed until automation made the page latency measurable.
+
+**Still open:** with an overlay open over the diorama, page interactions under
+software rendering cost several seconds each. On a real GPU compositing is
+cheap, so this is largely a SwiftShader artefact — but it is worth a look during
+the 7f perf pass and the mobile pass, since low-end devices composite in
+software too.
+
+**NOT implemented:** art assets (everything is primitives), and a mobile pass
+beyond the 44px touch targets and responsive minimap.
 
 ## To pin
 

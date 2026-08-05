@@ -4,7 +4,7 @@
 green, pushed to `dev_night`. M7 in progress and PLAYABLE in a browser: views,
 hosted worlds, identity, the 2.5D diorama, objective marking, debrief, building
 overlays, drop-zone picker and the deploy runbook have all landed. Remaining in
-M7: the browser test gates (7h, new), the art pass (7a), the mobile pass (7b),
+M7: the art pass (7a), the mobile pass (7b),
 season rotation (7d), the VM deploy itself (7e), perf (7f) and the V1 acceptance
 sweep (7g). M8 added for S16 opposition — the difficulty layer D42 says the
 balance depends on.**
@@ -181,13 +181,17 @@ census complete; battery within provisional bands.
   check (D26).
 - **7g** Full V1 acceptance sweep (the 14 checkboxes in `plan-version1.md`),
   each verified and logged.
-- **7h** **Browser test gates — DO THIS FIRST.** `tools/client_smoke.mjs` and
+- **7h** ✅ **DONE (2026-08-05) — Browser test gates.** `tools/client_smoke.mjs` and
   `tools/ui_acceptance.mjs`, ported from `../firepower/tools/`. S12 has claimed
   these since M3 and `test/headless/` is an empty directory; every one of the
   five playtest defects was invisible to a green suite and obvious within ten
   seconds of a real page load. Playwright is the house tool in both sibling
   projects and its browsers are already installed on this machine, so this is a
-  port, not research. **Needs the owner's yes to add the dependency.**
+  port, not research. Shipped as `npm run smoke` / `npm run ui`, ~25s each,
+  both mutation-tested against the historical defects they guard. Found two
+  real things on the way in: the diorama rendered at full rate behind the
+  splash screen, and `TICK_MS` needed to be ops-overridable because headless
+  software rendering cannot keep up with a 10Hz diorama.
 
 ---
 

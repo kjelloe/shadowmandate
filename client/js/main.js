@@ -79,6 +79,22 @@ session.onChange((s, events) => {
   const deployed = s.view.agents.some((a) => a.state !== 0);
   if (deployed && $("#world").hidden) { show("world"); renderer?.resize(); }
   paint(s, events ?? []);
+  // Test-only observation surface. The browser gates (tools/client_smoke.mjs,
+  // tools/ui_acceptance.mjs) need to assert on what the client actually
+  // received, not merely on what it painted — "the tick advanced" and "the
+  // stance the SERVER agrees I have" are not readable from the DOM. Read-only
+  // and derived; nothing here is an input path, so it cannot become a cheat
+  // surface. The sibling project carries the same hook for the same reason.
+  window.__smDebug = {
+    tick: s.view.tick,
+    firmId: session.firmId ?? null,
+    agent: ownAgent(s.view) ?? null,
+    screen: ["splash", "dropzone", "debrief", "world"].find((id) => !$(`#${id}`).hidden) ?? null,
+    openOverlays: ["board", "standoff", "building", "evac"].filter((id) => !$(`#${id}`).hidden),
+    boardCount: (s.view.board?.contracts ?? []).length,
+    activeCount: (s.view.active ?? []).length,
+    lastEvents: (events ?? []).map((e) => e.type),
+  };
 });
 
 function paint(s, events) {
@@ -92,8 +108,16 @@ function paint(s, events) {
       renderer.setTerrain(session.tiles, view.size, view.worldSeed ?? 1);
       minimap.setTiles(session.tiles, view.size);
     }
-    renderer.draw(view);
-    minimap.draw(view);
+    // Only draw the diorama when it is on screen. Until now it rendered at
+    // 10Hz behind the splash and drop-zone screens, where it is completely
+    // invisible — a full 3D frame, ten times a second, for nobody. Found by
+    // tools/ui_acceptance.mjs, where every page interaction was taking seconds
+    // under software rendering; it costs real devices battery rather than
+    // seconds, which is why it went unnoticed.
+    if (!$("#world").hidden) {
+      renderer.draw(view);
+      minimap.draw(view);
+    }
   } catch (err) {
     fatal("render", err);
   }

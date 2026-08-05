@@ -23,6 +23,8 @@ deploy remain.
 
 ```bash
 npm test                                    # the whole suite (node --test)
+npm run smoke                               # real browser: loads, drops in, ticks
+npm run ui                                  # real browser: the controls DO things
 node --test test/citygen.test.js            # one file
 node tools/render_city.mjs 4711 64          # eyeball a generated city
 node tools/render_city.mjs 4711 16 5        # the microscope config
@@ -110,7 +112,14 @@ is undeclared. A missed mirror field silently invalidates every future battery.
 - **A UI claim is not verified until the flow runs against a live server.**
   Playtest 1 was unplayable — stacked screens, a dead button, invisible
   rejections — while the suite was green, because nothing exercised the client
-  end to end.
+  end to end. `npm run smoke` and `npm run ui` (Playwright, 7h) now do exactly
+  that and both mutation-test clean against the historical defects.
+- **Three times in one session, a mutation test failed to apply and I nearly
+  concluded the guard was broken.** The `.screen{display:flex}` mutation could
+  not beat the `!important` already in the CSS; the board-signature mutation
+  targeted an `if`-block that is actually an early `return`. **Assert that the
+  mutation changed the file** before drawing any conclusion from it — a
+  mutation that silently no-ops looks exactly like a guard with no teeth.
 - Test bugs and engine bugs look identical from the outside. When a probe and
   the game disagree, **check the instrument first** — two of M1's three "bugs"
   were in my own probes, and M5's AI telemetry was itself silently dropping

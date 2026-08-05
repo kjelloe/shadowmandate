@@ -15,7 +15,12 @@ import { refillPool, rebuildOffers } from "../engine/contracts.js";
 import { spawnAiFirms, stepAiFirms } from "../engine/ai_firms.js";
 import { worldNews } from "../engine/dormancy.js";
 
-export const TICK_MS = 100;   // 10 Hz
+// 10 Hz. Overridable for OPS ONLY — the browser gates run slower because
+// headless software rendering cannot keep up with a 10Hz diorama and every
+// automated interaction then queues behind a frame. This is wall-clock pacing,
+// not simulation: the reducer counts ticks and never reads a clock, so a
+// different rate replays identically and changes no outcome.
+export const TICK_MS = Number(process.env.TICK_MS ?? 100);
 
 export class World {
   constructor({ id, seed, size, rules, ledger, aiCount = 3, now = () => Date.now() }) {
