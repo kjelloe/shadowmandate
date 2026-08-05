@@ -216,9 +216,16 @@ Ordered so each slice is playable and measurable on its own.
 - **8f** **Secured facilities.** Wire 8a–8e into acquisition and extraction:
   the crack timer elapses inside a facility with an alarm climbing, and the
   contact sits behind access control. **This is the slice D42 is waiting for.**
+  Showcase content is the **defended snatch** — D6 already turns the reference
+  corpus's assassination family into capture-and-extract, and a defended one
+  exercises access control, staged alarm and a rival arrival together
+  (`specs/08_reference_mission_taxonomy.md`).
 - **8g** **Contested contracts.** A contract offered to more than one Firm,
   flagged on the board, with a telegraphed rival arrival (S05 dropship
   choreography). Pairwise-in-pinned-order standoffs rather than N-way.
+- **8i** *(pending Q39)* **Defend contracts** — the one whole family the
+  reference corpus has and we do not; every current type is outbound. Needs 8g
+  first, since defending is meaningless without rivals who arrive.
 - **8h** **Re-run the pacing battery and re-read D19** on the preference ratio.
   Only now is a dominance number a verdict (D43). Expect extraction's ratio to
   fall without a single reward change; if it does not, THEN the price is wrong.

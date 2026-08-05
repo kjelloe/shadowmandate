@@ -33,6 +33,19 @@ contract (D8): that title must never reach a shipped artifact. It is a
 reference in design docs only, and `test/guards.test.js` scans `engine/`,
 `shared/`, `server/`, `client/`, `data/`, `tools/` and `debugging/` for it.
 
+The full mission corpus is surveyed in `specs/08_reference_mission_taxonomy.md`.
+Two findings from it bear directly on this spec:
+
+- **A defended snatch is the contract S16 unlocks.** D6 already replaces the
+  reference's largest mission family (assassination) with Snatch — capture and
+  extract the target. A *defended* snatch needs every part of the opposition
+  layer at once: access control to reach the target, a staged alarm while you
+  get them out, and a plausible reason for a rival team to be there too. It is
+  the natural showcase for slice 8f.
+- **The reference's best missions are all guarded-facility variants**, which is
+  independent confirmation that the security layer is the prerequisite for the
+  content, not the other way round.
+
 ---
 
 ## (a) Live opposition — contested contracts

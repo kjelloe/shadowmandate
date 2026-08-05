@@ -15,6 +15,7 @@
 | 5 | `05_roadmap_v3.md` | V3 "The World" — doctrines, living world, seasons, Roblox gate |
 | 6 | `06_open_questions.md` | Numbered design questions queue (Q1…), answered in batches — currently empty (all 21 answered) |
 | 7 | `07_spec_map.md` | The spec structure: how design docs, plans, and system specs relate; milestone → spec matrix |
+| `08_reference_mission_taxonomy.md` | Bullfrog mission corpus mapped to our contract types; the Eliminate-family collision with D6; funding/research/upgrade meta-layer | research note |
 | 8 | `systems/S01…S15` | **System specs (implementation contracts)** — state shapes, commands, ruleset keys, behaviour tables per system |
 | — | `../dev-questions.md` | **Live question queue (Q22+)** — pending decisions with proposals; answers become rulings and move to `06` |
 | — | `../plan-version1.md` (+ `.html`) | **The operational V1 plan** — features in/out, milestones M0–M7, gates, acceptance (supersedes `03` for day-to-day work) |
