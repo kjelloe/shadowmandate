@@ -104,5 +104,6 @@
   "stage.done": "done",
   "stage.failed": "failed",
   "board.none": "No contracts running",
-  "hud.objective": "OBJECTIVE"
+  "hud.objective": "OBJECTIVE",
+  "debrief.bank": "BANKED TOTAL"
 }

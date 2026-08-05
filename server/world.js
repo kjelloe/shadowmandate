@@ -84,6 +84,23 @@ export class World {
 
   tick() {
     const events = this.drain();
+    for (const e of events) {
+      if (e.type === "firmExtracted") {
+        this.sendDebrief(e.firmId, {
+          firmId: e.firmId, banked: e.banked | 0, emergency: e.emergency | 0,
+          recognition: this.state.firms[e.firmId]?.recognition | 0,
+          reputationDelta: e.emergency
+            ? this.rules.hq.reputation.emergencyEvac : this.rules.hq.reputation.cleanExtract,
+          tierUnlocked: this.state.firms[e.firmId]?.tierUnlocked | 0,
+          contractsCompleted: this.completedFor?.get(e.firmId) ?? 0,
+        });
+        this.completedFor?.set(e.firmId, 0);
+      }
+      if (e.type === "contractCompleted") {
+        if (!this.completedFor) this.completedFor = new Map();
+        this.completedFor.set(e.firmId, (this.completedFor.get(e.firmId) ?? 0) + 1);
+      }
+    }
     const ai = stepAiFirms(this.state, this.rules, apply);
     this.state = ai.state;
     for (const e of ai.events) events.push(e);
@@ -144,6 +161,18 @@ export class World {
 
   viewFor(firmId) {
     return buildView(this.state, firmId, this.rules.detection);
+  }
+
+  // A debrief is the payoff beat the whole session builds toward (S05). It is
+  // delivered directly to the extracting seat, because by the time it exists
+  // that Firm has no agent and no HQ, so nothing else would carry it.
+  sendDebrief(firmId, debrief) {
+    const seat = this.seats.get(firmId);
+    if (!seat) return;
+    const led = this.ledger ? this.ledger.applyDebrief(this.id, debrief, this.state.tick) : null;
+    try {
+      seat.send({ type: "debrief", debrief, ledger: led });
+    } catch { this.seats.delete(firmId); }
   }
 
   broadcast(events) {

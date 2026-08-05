@@ -19,6 +19,7 @@ export function createRemoteSession({ url, token }) {
     briefing: null,
     connected: false,
     recoveryCode: null,
+    debrief: null,
     dropZones: null,
     autoZone: null,
     tiles: null,
@@ -70,6 +71,11 @@ export function createRemoteSession({ url, token }) {
         case "view":
           session.view = msg.view;
           emit(msg.events ?? []);
+          break;
+        case "debrief":
+          session.debrief = msg.debrief;
+          session.briefing = { ...(session.briefing ?? {}), ledger: msg.ledger };
+          emit([{ type: "debriefReady" }]);
           break;
         case "dropZones":
           session.dropZones = msg.zones;

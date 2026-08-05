@@ -292,3 +292,80 @@ test("PLAYTEST 5: interactive lists must not rebuild every tick", () => {
   assert.ok(guardAt >= 0 && guardAt < wipeAt,
     "the change check must come BEFORE the list is wiped");
 });
+
+// ── Objective marking (owner request, 2026-08-05) ─────────────────────────
+
+test("sites are colour-coded by what they mean to this player", async () => {
+  const { siteRoles } = await import("../client/js/models.js");
+  const view = {
+    board: { contracts: [{ id: 1, siteId: 10, siteIdB: -1 }], teaser: null },
+    active: [{ id: 2, siteId: 20, siteIdB: 21 }],
+  };
+  const roles = siteRoles(view);
+  assert.equal(roles.get(10), "offered");
+  assert.equal(roles.get(20), "active");
+  assert.equal(roles.get(21), "active", "a courier destination is part of the job");
+  assert.equal(roles.get(99), undefined, "an unrelated site should be scenery");
+});
+
+test("an active contract outranks an offered one at the same site", async () => {
+  const { siteRoles } = await import("../client/js/models.js");
+  const roles = siteRoles({
+    board: { contracts: [{ id: 1, siteId: 7, siteIdB: -1 }] },
+    active: [{ id: 2, siteId: 7, siteIdB: -1 }],
+  });
+  assert.equal(roles.get(7), "active", "the job you took must win");
+});
+
+test("the objective bearing points the right way and reports distance", async () => {
+  const { objectiveBearing } = await import("../client/js/models.js");
+  const view = {
+    active: [{ id: 1, kind: 1, siteId: 5, siteIdB: -1, stage: 1 }],
+    sites: [{ id: 5, cellX: 30, cellY: 10 }],
+    hq: { cellX: 2, cellY: 2 },
+  };
+  const east = objectiveBearing(view, 10, 10);
+  assert.equal(east.distance, 20);
+  assert.ok(Math.abs(east.angle) < 0.01, "due east should be angle 0");
+
+  const south = objectiveBearing({ ...view, sites: [{ id: 5, cellX: 10, cellY: 30 }] }, 10, 10);
+  assert.ok(Math.abs(south.angle - Math.PI / 2) < 0.01, "due south should be +PI/2");
+
+  assert.equal(objectiveBearing({ active: [], sites: [] }, 0, 0), null,
+    "no contract means no pointer");
+});
+
+test("the objective follows the contract stage to its destination", async () => {
+  const { objectiveCell } = await import("../client/js/models.js");
+  const base = {
+    sites: [{ id: 5, cellX: 30, cellY: 10 }, { id: 6, cellX: 40, cellY: 40 }],
+    hq: { cellX: 2, cellY: 2 },
+  };
+  // Travelling: head for the pickup.
+  assert.equal(objectiveCell({ ...base, active: [{ kind: 0, siteId: 5, siteIdB: 6, stage: 1 }] }).cellX, 30);
+  // Carrying a courier package: head for the drop.
+  assert.equal(objectiveCell({ ...base, active: [{ kind: 0, siteId: 5, siteIdB: 6, stage: 3 }] }).cellX, 40);
+  // Carrying anything else home: head for the HQ.
+  assert.equal(objectiveCell({ ...base, active: [{ kind: 2, siteId: 5, siteIdB: -1, stage: 3 }] }).cellX, 2);
+});
+
+test("the debrief prints the numbers that make an extraction feel like one", async () => {
+  const { debriefRows, reputationBar } = await import("../client/js/models.js");
+  const rows = debriefRows(
+    { banked: 480, contractsCompleted: 3, recognition: 240, emergency: 0, reputationDelta: 4 },
+    { bank: 1200, tierUnlocked: 2, reputation: 20 });
+  const keys = rows.map((r) => r[0]);
+  for (const expected of ["debrief.resources", "debrief.contracts", "debrief.recognition",
+    "debrief.hqIntact", "debrief.bank"]) {
+    assert.ok(keys.includes(expected), `debrief is missing ${expected}`);
+  }
+  assert.deepEqual(rows.find((r) => r[0] === "debrief.hqIntact")[1], "common.yes");
+
+  const emergency = debriefRows({ banked: 0, emergency: 1 }, null);
+  assert.equal(emergency.find((r) => r[0] === "debrief.hqIntact")[1], "common.no",
+    "an emergency evac must not claim the HQ survived");
+
+  assert.equal(reputationBar(0).replace(/░/g, "").length, 0);
+  assert.equal(reputationBar(40).replace(/█/g, "").length, 0);
+  assert.equal(reputationBar(20).length, 10, "the bar is always ten cells wide");
+});

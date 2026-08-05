@@ -77,3 +77,14 @@ button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal)
   padding: .4rem 0; border-bottom: 1px solid var(--line); color: var(--teal); }
 #active-list li.at-risk { color: var(--alarm); }
 .overlay h3 { margin: 0 0 .4rem; font-size: .82rem; letter-spacing: .08em; color: var(--dim); }
+
+/* Off-screen objective pointer: sits at the screen edge in the direction of
+   the job, so the player is never left hunting for where to go. */
+#objective-arrow { position: absolute; left: 50%; top: 50%; width: 0; height: 0;
+  pointer-events: none; }
+#objective-arrow span { position: absolute; display: block; width: 0; height: 0;
+  border-left: 11px solid var(--teal); border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent; transform-origin: 0 50%;
+  filter: drop-shadow(0 0 3px rgba(83,214,198,.7)); }
+#objective-distance { position: absolute; color: var(--teal); font-size: .72rem;
+  transform: translate(-50%, -50%); text-shadow: 0 0 4px #0F1114; }

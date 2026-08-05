@@ -104,5 +104,6 @@
   "stage.done": "fullført",
   "stage.failed": "mislyktes",
   "board.none": "Ingen pågående oppdrag",
-  "hud.objective": "MÅL"
+  "hud.objective": "MÅL",
+  "debrief.bank": "BANKET TOTALT"
 }

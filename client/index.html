@@ -20,6 +20,13 @@
     <p id="zone-hint" data-i18n="dropzone.auto"></p>
   </section>
 
+  <section id="debrief" class="screen" hidden>
+    <pre id="debrief-terminal"></pre>
+    <div class="row">
+      <button id="debrief-return" class="primary" data-i18n="debrief.returnToWorld"></button>
+    </div>
+  </section>
+
   <section id="world" class="screen" hidden>
     <canvas id="view"></canvas>
     <canvas id="minimap" width="180" height="180"></canvas>
@@ -35,6 +42,7 @@
         <button id="board-btn" class="primary" data-i18n="board.title"></button>
         <button id="evac-btn" data-i18n="evac.beaconActive"></button>
       </div>
+      <div id="objective-arrow" hidden><span></span></div>
       <div id="toasts"></div>
     </div>
 

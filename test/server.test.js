@@ -249,6 +249,38 @@ test("the drop-zone endpoint offers real, landable zones and an auto pick", () =
   world.stop();
 });
 
+test("extraction delivers a debrief to the extracting seat", () => {
+  // The payoff beat. It is delivered directly rather than through the normal
+  // broadcast because by the time it exists the Firm has no agent and no HQ,
+  // so nothing else would carry it.
+  const dir = mkdtempSync(join(tmpdir(), "sm-debrief-"));
+  try {
+    const { world } = hostedWorld();
+    world.ledger = new LedgerStore(join(dir, "ledger.json"));
+    const got = [];
+    world.seat(0, (m) => got.push(m));
+
+    const zone = centralDropZone(world.state, findDropZones(world.state, RULES.citygen));
+    world.submit({ type: CMD_DROP_IN, firmId: 0, cellX: zone.cellX, cellY: zone.cellY });
+    world.tick();
+    world.state.hqs[0].cacheResources = 480;
+
+    // Run the beacon out, then extract.
+    world.submit({ type: 11, firmId: 0 });
+    for (let i = 0; i <= RULES.hq.evacHoldTicks + 2; i++) world.tick();
+    world.submit({ type: 13, firmId: 0 });
+    world.tick();
+
+    const debrief = got.find((m) => m.type === "debrief");
+    assert.ok(debrief, "extraction sent no debrief — the loop has no ending");
+    assert.equal(debrief.debrief.banked, 480, "the debrief did not report the banked cache");
+    assert.equal(debrief.debrief.emergency, 0);
+    assert.ok(debrief.ledger, "the debrief carried no ledger");
+    assert.equal(debrief.ledger.bank, 480, "the ledger was not credited");
+    world.stop();
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
 test("events are routed to the Firm they concern, not broadcast to everyone", () => {
   const { world } = hostedWorld();
   const a = [], b = [];

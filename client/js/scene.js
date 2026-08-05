@@ -11,12 +11,16 @@
 
 import * as THREE from "three";
 import { buildGround, buildBlocks } from "./terrain3d.js";
+import { siteRoles, objectiveCell } from "./models.js";
 
 export const CELL = 256;   // world units per cell, matching the engine
 
 // Marker palette, shared with the minimap so the two agree.
 export const MARK = {
-  site: 0xD9A441, informant: 0x3E8E8C, market: 0x8A867E, coverShop: 0xB5613C,
+  site: 0x6B6250,            // scenery: a site with nothing on it for you
+  siteOffered: 0xD9A441,     // on your board
+  siteActive: 0x53D6C6,      // the job you actually took
+  informant: 0x3E8E8C, market: 0x8A867E, coverShop: 0xB5613C,
   holding: 0x7A4A3A, patrol: 0x8A867E, patrolAlert: 0xC2452F, rival: 0xB5613C,
   ownHq: 0x3E8E8C, rivalHq: 0xB5613C,
   agentUnseen: 0xE8E6E0, agentNoticed: 0xD9A441, agentBurned: 0xC2452F,
@@ -68,6 +72,12 @@ export function createScene(canvas) {
   const sphere = new THREE.SphereGeometry(0.34, 10, 8);
   const ring = new THREE.TorusGeometry(0.62, 0.07, 6, 18);
   const boxGeo = new THREE.BoxGeometry(1.6, 0.5, 1.6);
+  // The objective beacon: a tall thin column you can see over building mass,
+  // which is the whole point — an objective you can only see when you are
+  // already standing on it is not a marker.
+  const beamGeo = new THREE.CylinderGeometry(0.16, 0.16, 9, 8);
+  const haloGeo = new THREE.TorusGeometry(1.25, 0.1, 6, 24);
+  let beacon = null, halo = null;
 
   function takeMarker(kind, colour) {
     let m = pool.find((x) => !x.inUse && x.kind === kind);
@@ -83,6 +93,18 @@ export function createScene(canvas) {
     m.mesh.visible = true;
     m.mesh.material.color.setHex(colour);
     return m.mesh;
+  }
+
+  function ensureBeacon() {
+    if (beacon) return;
+    beacon = new THREE.Mesh(beamGeo, new THREE.MeshBasicMaterial({
+      color: MARK.siteActive, transparent: true, opacity: 0.5,
+    }));
+    halo = new THREE.Mesh(haloGeo, new THREE.MeshBasicMaterial({
+      color: MARK.siteActive, transparent: true, opacity: 0.85,
+    }));
+    halo.rotation.x = -Math.PI / 2;
+    scene.add(beacon); scene.add(halo);
   }
 
   function setTerrain(tiles, size, seed) {
@@ -141,7 +163,16 @@ export function createScene(canvas) {
 
     const at = (mesh, cx, cy, h = 0.35) => mesh.position.set(cx, h, cy);
 
-    for (const s of view.sites) at(takeMarker("dot", MARK.site), s.cellX + 0.5, s.cellY + 0.5, 0.5);
+    // Sites are colour-coded by what they mean to THIS player: the job you
+    // took, something on your board, or scenery. Undifferentiated markers made
+    // a busy map unreadable.
+    const roles = siteRoles(view);
+    for (const s of view.sites) {
+      const role = roles.get(s.id);
+      const colour = role === "active" ? MARK.siteActive
+        : role === "offered" ? MARK.siteOffered : MARK.site;
+      at(takeMarker("dot", colour), s.cellX + 0.5, s.cellY + 0.5, role ? 0.6 : 0.45);
+    }
     for (const b of view.buildings) {
       const colour = b.kind === 0 ? MARK.informant : b.kind === 1 ? MARK.market : MARK.coverShop;
       at(takeMarker("dot", colour), b.cellX + 0.5, b.cellY + 0.5, 0.5);
@@ -160,6 +191,21 @@ export function createScene(canvas) {
       // The ring is how you find your own operative in a busy street.
       at(takeMarker("ring", colour), a.x / CELL, a.y / CELL, 0.12);
     }
+    // The objective beacon, pulsing so it reads as live rather than painted on.
+    const objective = objectiveCell(view);
+    if (objective) {
+      ensureBeacon();
+      const pulse = 0.5 + 0.35 * Math.sin(view.tick / 4);
+      beacon.visible = true; halo.visible = true;
+      beacon.position.set(objective.cellX + 0.5, 4.5, objective.cellY + 0.5);
+      beacon.material.opacity = 0.25 + 0.25 * pulse;
+      halo.position.set(objective.cellX + 0.5, 0.08, objective.cellY + 0.5);
+      halo.scale.setScalar(0.85 + 0.3 * pulse);
+      halo.material.opacity = 0.5 + 0.4 * pulse;
+    } else if (beacon) {
+      beacon.visible = false; halo.visible = false;
+    }
+
     renderer.render(scene, camera);
   }
 

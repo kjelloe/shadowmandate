@@ -10,6 +10,8 @@ const TILE = {
 };
 const CELL = 256;
 
+import { siteRoles, objectiveCell } from "./models.js";
+
 export function createMinimap(canvas) {
   const ctx = canvas.getContext("2d");
   let tiles = null, baked = null, bakedSize = 0;
@@ -44,7 +46,23 @@ export function createMinimap(canvas) {
         ctx.fillStyle = colour;
         ctx.beginPath(); ctx.arc(cx * s, cy * s, r, 0, Math.PI * 2); ctx.fill();
       };
-      for (const site of view.sites) dot(site.cellX, site.cellY, "#D9A441");
+      // Same colour language as the diorama — two views that disagree about
+      // what is highlighted are worse than one view.
+      const roles = siteRoles(view);
+      for (const site of view.sites) {
+        const role = roles.get(site.id);
+        dot(site.cellX, site.cellY,
+          role === "active" ? "#53D6C6" : role === "offered" ? "#D9A441" : "#6B6250",
+          role ? 2.2 : 1.4);
+      }
+      const objective = objectiveCell(view);
+      if (objective) {
+        const pulse = 3 + 1.6 * Math.sin(view.tick / 4);
+        ctx.strokeStyle = "#53D6C6"; ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(objective.cellX * s, objective.cellY * s, pulse, 0, Math.PI * 2);
+        ctx.stroke();
+      }
       for (const p of view.patrols) dot(p.x, p.y, p.alerted ? "#C2452F" : "#8A867E");
       for (const r of view.rivals) dot(r.x / CELL, r.y / CELL, "#B5613C", 2);
       if (view.hq) dot(view.hq.cellX, view.hq.cellY, "#3E8E8C", 2.4);

@@ -73,6 +73,39 @@ export function activeRows(view) {
   }));
 }
 
+// Which sites matter to this player right now, and why. The diorama and the
+// minimap both read this so they can never disagree about what is highlighted.
+export function siteRoles(view) {
+  const roles = new Map();
+  for (const c of view?.board?.contracts ?? []) {
+    if (c.siteId >= 0) roles.set(c.siteId, "offered");
+    if (c.siteIdB >= 0 && !roles.has(c.siteIdB)) roles.set(c.siteIdB, "offered");
+  }
+  // Active beats offered: the job you took outranks the ones you were shown.
+  for (const c of view?.active ?? []) {
+    if (c.siteId >= 0) roles.set(c.siteId, "active");
+    if (c.siteIdB >= 0) roles.set(c.siteIdB, "active");
+  }
+  return roles;
+}
+
+// The single cell the player should be heading for, if any.
+export function objectiveCell(view) {
+  const first = (view?.active ?? [])[0];
+  return objectiveFor(view, first);
+}
+
+// Direction and distance to an off-screen objective, so the player is never
+// left hunting for it. Angle is screen-space radians, 0 = right.
+export function objectiveBearing(view, fromCellX, fromCellY) {
+  const target = objectiveCell(view);
+  if (!target) return null;
+  const dx = target.cellX - fromCellX;
+  const dy = target.cellY - fromCellY;
+  const distance = Math.abs(dx) + Math.abs(dy);
+  return { dx, dy, distance, angle: Math.atan2(dy, dx), cellX: target.cellX, cellY: target.cellY };
+}
+
 // The cell an active contract currently wants the operative at — so the HUD
 // can point somewhere rather than leaving them to guess.
 export function objectiveFor(view, contract) {
@@ -93,6 +126,29 @@ export function evacDisplay(view) {
     paused: !!hq.evacPaused,
     emergency: hq.evacActive === 2,
   };
+}
+
+// The debrief, as label/value rows the screen can print directly. Kept here so
+// the payoff screen is testable without a browser.
+export function debriefRows(debrief, ledger) {
+  if (!debrief) return [];
+  const rows = [
+    ["debrief.resources", String(debrief.banked ?? 0)],
+    ["debrief.contracts", String(debrief.contractsCompleted ?? 0)],
+    ["debrief.recognition", String(debrief.recognition ?? 0)],
+    ["debrief.hqIntact", debrief.emergency ? "common.no" : "common.yes"],
+  ];
+  if (ledger) {
+    rows.push(["debrief.bank", String(ledger.bank ?? 0)]);
+    rows.push(["board.tier", String(ledger.tierUnlocked ?? 1)]);
+  }
+  return rows;
+}
+
+// A reputation bar that reads at a glance: ten cells, filled proportionally.
+export function reputationBar(value, max = 40) {
+  const filled = Math.max(0, Math.min(10, Math.round((value / max) * 10)));
+  return "█".repeat(filled) + "░".repeat(10 - filled);
 }
 
 // Events worth interrupting the player for. Everything else is noise.

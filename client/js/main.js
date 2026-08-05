@@ -8,7 +8,7 @@ import { createMinimap } from "./minimap.js";
 import {
   STANCES, DETECTION_KEYS, DETECTION_CLASS, HEAT_KEYS, HEAT_CLASS,
   ownAgent, heatDisplay, districtUnder, boardRows, activeRows, objectiveFor,
-  evacDisplay, toastsFor,
+  objectiveBearing, evacDisplay, toastsFor, debriefRows, reputationBar,
 } from "./models.js";
 
 const $ = (sel) => document.querySelector(sel);
@@ -61,6 +61,7 @@ function splashText(b) {
 session.onChange((s, events) => {
   if (!s.view) return;
   if ((events ?? []).some((e) => e.type === "dropZonesReady")) showZonePicker();
+  if ((events ?? []).some((e) => e.type === "debriefReady")) { showDebrief(s); return; }
   for (const e of events ?? []) {
     if (e.type === "rejected") addToast(`${e.command}: ${e.reason}`, true);
     if (e.type === "serverError") addToast(e.reason, true);
@@ -117,6 +118,7 @@ function paint(s, events) {
   renderStances();
   renderBoard(view);
   renderActive(view);
+  renderObjectiveArrow(view);
   renderStandoff(view);
   renderEvac(view);
   for (const toast of toastsFor(events)) addToast(t(toast.key), toast.alarm);
@@ -210,6 +212,59 @@ function renderActive(view) {
   if (!first || !target) { el.hidden = true; return; }
   el.hidden = false;
   el.textContent = `${t("hud.objective")} ${target.cellX},${target.cellY}`;
+}
+
+// The edge pointer. The beacon handles "where is it" when the objective is on
+// screen; this handles the much more common case where it is not.
+// The payoff. Without this an extraction — the thing the whole deployment is
+// aimed at — looked exactly like the game freezing.
+function showDebrief(s) {
+  const d = s.debrief;
+  const ledger = s.briefing?.ledger ?? null;
+  const pad = (label, value) => `${t(label).padEnd(26, ".")} ${value}`;
+  const lines = [
+    t(d.emergency ? "evac.emergency" : "debrief.title"), "",
+    ...debriefRows(d, ledger).map(([k, v]) =>
+      pad(k, v.startsWith("common.") ? t(v) : v)),
+    "",
+    `${t("debrief.reputation")}  ${reputationBar(ledger?.reputation ?? 0)}  ` +
+      `${d.reputationDelta >= 0 ? "+" : ""}${d.reputationDelta}`,
+  ];
+  $("#debrief-terminal").textContent = lines.join("\n");
+  show("debrief");
+}
+
+$("#debrief-return").addEventListener("click", () => {
+  session.debrief = null;
+  boardSignature = ""; activeSignature = "";
+  $("#splash-terminal").textContent = splashText(session.briefing);
+  show("splash");
+});
+
+function renderObjectiveArrow(view) {
+  const el = $("#objective-arrow");
+  const agent = ownAgent(view);
+  if (!agent) { el.hidden = true; return; }
+  const here = { x: Math.floor(agent.x / 256), y: Math.floor(agent.y / 256) };
+  const bearing = objectiveBearing(view, here.x, here.y);
+  if (!bearing || bearing.distance <= 6) { el.hidden = true; return; }
+
+  el.hidden = false;
+  const w = window.innerWidth, h = window.innerHeight;
+  const radius = Math.min(w, h) * 0.34;
+  const arrow = el.querySelector("span");
+  arrow.style.transform = `translate(${Math.cos(bearing.angle) * radius}px, ` +
+    `${Math.sin(bearing.angle) * radius}px) rotate(${bearing.angle}rad)`;
+
+  let label = document.getElementById("objective-distance");
+  if (!label) {
+    label = document.createElement("div");
+    label.id = "objective-distance";
+    el.appendChild(label);
+  }
+  label.textContent = String(bearing.distance);
+  label.style.left = `${Math.cos(bearing.angle) * (radius - 26)}px`;
+  label.style.top = `${Math.sin(bearing.angle) * (radius - 26)}px`;
 }
 
 function renderStandoff(view) {
