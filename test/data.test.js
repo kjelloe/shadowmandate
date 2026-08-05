@@ -71,3 +71,35 @@ test("contract data encodes the ruled economy (D18, D29)", () => {
   assert.equal(c.maxActivePerAgent, 2, "D29");
   assert.equal(c.teaserRow, true, "D29");
 });
+
+
+// D42/D43: extraction reads over-chosen in the battery and the standing
+// temptation is to cut its payout. That is ruled out — it is under-opposed, not
+// mispriced, and the difficulty belongs in S16. These assertions exist so that
+// "fix" fails loudly instead of quietly undoing the effort-pricing pass.
+test("contract rewards stay priced by effort (D42, S06)", () => {
+  const types = read("data/contracts.json").types;
+  const work = (spec) =>
+    ((spec.holdTicks ?? 0) * (spec.passes ?? 1))
+    + ((spec.plantTicks ?? 0) * (spec.legs ?? 1))
+    + (spec.crackTicks ?? 0) + (spec.secureTicks ?? 0) + (spec.fuseTicks ?? 0);
+
+  // Extraction must never go back to being a walk-on with no work stage. That
+  // was the shape that let its score run away in the first place.
+  assert.ok((types.extraction.secureTicks ?? 0) > 0,
+    "D42: extraction needs time on site; a zero-work contract is strictly the safest way to earn");
+
+  // More time on objective must pay more. Surveillance asks for the most by far.
+  assert.ok(work(types.surveillance) > work(types.extraction),
+    "surveillance should demand more work than extraction");
+  assert.ok(types.surveillance.reward > types.extraction.reward,
+    `effort pricing inverted: surveillance asks ${work(types.surveillance)} ticks for `
+    + `${types.surveillance.reward} while extraction asks ${work(types.extraction)} for `
+    + `${types.extraction.reward}`);
+
+  // Sabotage carries two plants plus a fuse to outrun, and is tier-gated above
+  // courier, which has no work stage at all.
+  assert.ok(work(types.sabotage) > work(types.courier));
+  assert.ok(types.sabotage.reward > types.courier.reward,
+    "sabotage does strictly more work than courier and must pay more");
+});

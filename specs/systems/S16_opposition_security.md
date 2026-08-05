@@ -118,22 +118,27 @@ Non-negotiable, from the existing doctrine:
   perceive step, not as a new stage, or the pinned call sequence in
   `test/contracts_engine.test.js` changes and every fixture re-pins.
 
-## The mini-game question (Q38)
+## Challenge is diegetic — RULED (D45)
 
-The owner asked for "a mini-game with alarm bells and laser security". The word
-*mini-game* usually implies a modal panel — a lock-picking widget, a wire
-puzzle. **That conflicts directly with drop-in/drop-out multiplayer**: the world
-runs at 10Hz with other players in it, so a modal puzzle either freezes one
+**Every challenge is solved with the agent in the world. No modal panels, ever.**
+
+A mini-game that opens a separate screen fights drop-in/drop-out at the root: the
+world runs at 10Hz with other players in it, so a modal puzzle either freezes one
 player while the world moves around them, or pauses nothing and gets them
-captured while they look at a widget.
+captured while they stare at a widget.
 
-The proposal is that the "mini-game" is **diegetic** — the puzzle is spatial and
-temporal, played with the agent in the world (time the sweep, cut the power,
-route around the sealed door), never on a separate screen. It keeps one input
-model, survives another player walking in, and needs no new presentation layer.
+So the "puzzle" in every mechanism above is spatial and temporal:
 
-This is Q38 in `dev-questions.md`, with the diegetic reading implemented as the
-default so nothing blocks.
+| Instead of a modal... | ...the challenge is |
+|---|---|
+| a lock-picking widget | finding the credential, or the guard carrying it |
+| a wire-cutting puzzle | reaching the junction box unseen, and paying the heat |
+| a hacking rhythm game | holding position inside the crack timer while the alarm climbs |
+| a laser-maze overlay | timing the sweep, in the street, with the cycle you learned |
+
+This applies to all future difficulty content, not only S16. It also means a
+challenge must stay legible to a spectator and to a second player standing next
+to it — if it cannot be watched, it is the wrong design.
 
 ## Not decided
 
