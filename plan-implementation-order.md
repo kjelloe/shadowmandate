@@ -1,9 +1,13 @@
 # Shadow Mandate — Implementation Order (M0–M7)
 
-**STATUS 2026-08-04: M0–M5 complete except 5g. Suite 130/130 green, pushed to
-`dev_night` (7c6bdba). 5g (batch lane) needs the gaming PC. M6 in progress:
-6c shipped early with 5f; remaining 6b vehicles, 6d dormancy, 6e pacing
-battery. M3/M4 client slices deferred.**
+**STATUS 2026-08-05: M0–M6 complete (5g lane built and verified). Suite 201/201
+green, pushed to `dev_night`. M7 in progress and PLAYABLE in a browser: views,
+hosted worlds, identity, the 2.5D diorama, objective marking, debrief, building
+overlays, drop-zone picker and the deploy runbook have all landed. Remaining in
+M7: the browser test gates (7h, new), the art pass (7a), the mobile pass (7b),
+season rotation (7d), the VM deploy itself (7e), perf (7f) and the V1 acceptance
+sweep (7g). M8 added for S16 opposition — the difficulty layer D42 says the
+balance depends on.**
 
 *Written 2026-08-04, for the implementing agent (me). The operational plan is
 `plan-version1.md`; specs are `specs/systems/S01–S15`; this file is HOW the
@@ -177,6 +181,47 @@ census complete; battery within provisional bands.
   check (D26).
 - **7g** Full V1 acceptance sweep (the 14 checkboxes in `plan-version1.md`),
   each verified and logged.
+- **7h** **Browser test gates — DO THIS FIRST.** `tools/client_smoke.mjs` and
+  `tools/ui_acceptance.mjs`, ported from `../firepower/tools/`. S12 has claimed
+  these since M3 and `test/headless/` is an empty directory; every one of the
+  five playtest defects was invisible to a green suite and obvious within ten
+  seconds of a real page load. Playwright is the house tool in both sibling
+  projects and its browsers are already installed on this machine, so this is a
+  port, not research. **Needs the owner's yes to add the dependency.**
+
+---
+
+## M8 — Opposition & Site Security 🔵 SPECCED, NOT STARTED
+
+The difficulty layer. D42 rules that extraction and acquisition are
+under-opposed rather than mispriced, so this is what the contract balance is
+waiting on; D45 rules that every challenge here is diegetic — solved with the
+agent in the world, never in a modal panel. Contract: `S16_opposition_security.md`.
+
+Ordered so each slice is playable and measurable on its own.
+
+- **8a** **Alarm state machine** (staged: local → lockdown → district). No
+  sensors yet — trigger it from the detection events that already exist, so the
+  escalation is testable before anything can raise it. Feeds heat the way burns
+  do, from the reducer, keeping the module graph acyclic.
+- **8b** **Camera cones.** Fixed arc, fixed sweep period derived from
+  `state.tick`, feeding the EXISTING detection currency rather than a second
+  one. Four places for the positional state; MIRROR AUDIT must stay green.
+- **8c** **Sensor lines.** Beam between two emitters, integer cycle. The first
+  mechanism whose counter-play is pure timing (D45).
+- **8d** **Junction boxes.** Zone blackout for N ticks, and it raises district
+  heat — a local problem traded for a global one.
+- **8e** **Access control.** Credential tiers on doors and interior rooms;
+  sources are informant, vendor (S09) and a disabled guard.
+- **8f** **Secured facilities.** Wire 8a–8e into acquisition and extraction:
+  the crack timer elapses inside a facility with an alarm climbing, and the
+  contact sits behind access control. **This is the slice D42 is waiting for.**
+- **8g** **Contested contracts.** A contract offered to more than one Firm,
+  flagged on the board, with a telegraphed rival arrival (S05 dropship
+  choreography). Pairwise-in-pinned-order standoffs rather than N-way.
+- **8h** **Re-run the pacing battery and re-read D19** on the preference ratio.
+  Only now is a dominance number a verdict (D43). Expect extraction's ratio to
+  fall without a single reward change; if it does not, THEN the price is wrong.
 
 ---
 
