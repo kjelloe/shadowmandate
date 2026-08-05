@@ -79,8 +79,10 @@ shapes per marker type, district tinting, better building variation.
   table that had never been priced by effort. Re-pricing rescued surveillance
   from 1.8% of contracts taken to ~24%, and extraction — the only type with no
   work stage at all — gained a `secureTicks` timer. Extraction remains
-  over-chosen; that is **Q37**, and it wants a design answer rather than another
-  tuning pass from me.
+  over-chosen; that was **Q37**, now answered — the answer was that I had the
+  wrong lever entirely. Extraction and acquisition are under-opposed, not
+  mispriced (D42), and the difficulty belongs in the opposition system now
+  specced as S16.
 - **8. VM deploy runbook — DONE.** `DEPLOYING.md`, plus the `/health` endpoint
   it depends on (a sleeping world counts as healthy, per D16).
 - **Unplanned, and I judged it worth the detour:** the paired-hash test — the

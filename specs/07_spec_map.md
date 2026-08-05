@@ -11,7 +11,7 @@
 | Technical foundation | `02_technical_foundation.md` — stack, fork plan, module disposition | **Complete** |
 | Operational plans | `../plan-version1.md`, `../plan-version2.md` (+ HTML) | **Complete** |
 | Records | `design_update_2026-08-03…`, `starter_design_document.md`, `06_open_questions.md` (archive), `dev-prompts.md` | **Complete** |
-| **System specs (implementation contracts)** | `systems/S01…S15` | **This is the gap** — created now as pinned skeletons |
+| **System specs (implementation contracts)** | `systems/S01…S16` | **This is the gap** — created now as pinned skeletons |
 
 The design docs say what the game is; the plans say when features land. What
 code needs is the layer firepower called the *technical workthrough*: per-system
@@ -39,6 +39,7 @@ and end at its gate. Here that layer is split into one file per system
 | `S13_data_rulesets_i18n.md` | Ruleset JSON layout, catalogs, keys registry | M0 | — |
 | `S14_testing_validation.md` | Fixtures, sim harness, probes, batteries, metrics | M0, every gate | — |
 | `S15_art_assets.md` | Asset list, pipeline, palettes, splash | M7 | — |
+| `S16_opposition_security.md` | Contested contracts, rival teams, alarms/sensors/cameras/lockdowns | V2 (design pinned V1) | D42–D44 |
 
 ## Milestone → spec matrix
 

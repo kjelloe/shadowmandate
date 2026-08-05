@@ -130,10 +130,19 @@ residence, and a popular contract leaves the board sooner *because* it was
 taken, so the ratio overstates popular types. Direction and ordering are solid;
 the multiplier is not.
 
-Current state: extraction ~2.66x over-chosen, surveillance ~0.47x ignored,
-despite extraction being the type offered LEAST. Awaiting the Q37 ruling — no
-price tried so far makes danger appealing, so this likely needs a design answer
-rather than another tuning pass.
+Final state after the pass: extraction 1.43x over-chosen, surveillance 0.80x,
+sabotage 0.89x, courier 0.79x, acquisition 1.47x.
+
+**RULED (D42, Q37): stop here. Do not tune extraction or acquisition rewards
+further.** They are not mispriced, they are under-opposed — both are meant to
+get harder as a season progresses, and the opposition that will make them
+dangerous does not exist yet. Cutting their payout now only has to be undone
+once a contested extraction can go wrong. Effort-pricing stands; difficulty
+goes in `S16_opposition_security.md`.
+
+**D43:** D19 is judged on the preference ratio, not raw share, and its ceiling
+is deferred until opposition exists. A mix measured against absent difficulty is
+not a verdict.
 
 **The reward table and the progression curve are one system.** Every reward
 change moved "deploys to tier 3" in or out of its 3-4 band; check both whenever

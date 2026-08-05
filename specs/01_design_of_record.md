@@ -108,6 +108,14 @@ These seven rulings resolve the open forks in the starter document and in `batch
 |---:|---|
 | **D41** | **Sortie length comes from CONTENT, not from slower walking** (Q36, option c with a little of a). The M6 battery measured an AI sortie at 0.4 min against D11's 15–20; a first tuning pass reached 2.5 min and only closed a fifth of the gap by making travel slower. Slower is not the same as tenser. So: keep a modest travel slowdown, and spend the remaining minutes on **decisions** — multi-stage contracts, objectives that must be approached when a patrol is elsewhere, and legs that cannot be done in one pass. D11's targets stand; how they are reached is content. The pacing columns exist so every further pass is measured, and the owner playtests for feel. |
 
+### Seventh decision batch (2026-08-05, Q37)
+
+| # | Ruling |
+|---:|---|
+| **D42** | **Extraction and acquisition are not mispriced — they are under-opposed. Stop tuning their rewards.** The battery reported extraction 1.43x over-chosen after an effort-pricing pass, and the instinct was to keep cutting its payout. That is the wrong lever: these two types get *harder as the world progresses*, because the opposition that will make them dangerous is not built yet. Once a contested extraction can go wrong — a rival Firm arriving on the same contact, a facility that notices you — the take falls on its own, and a reward cut made now would have to be undone. **Contract attractiveness is balanced by OPPOSITION, not by price.** Prices are already priced by effort (S06) and that part stands. |
+| **D43** | **D19 "no dominant type" is judged on the preference ratio** (accepted share over offered share), not raw completion share. Raw share cannot answer the question: short contracts finish more often per unit time whatever anyone prefers, and tier gating means a tier-1 Firm sees only 3 of the 5 types, so uniform choice is already 33.3% against a 35% ceiling. The ceiling itself is deferred until opposition exists, per D42 — a mix measured against absent difficulty is not a verdict. |
+| **D44** | **Opposition is a system, not a difficulty number.** Two families, specced in S16: (a) **live opposition** — rival Firm teams that turn up and contest the same objective; (b) **site security** — alarms, sensor lines and lockdowns that make a facility a place you solve rather than a cell you stand on. Both must obey the existing engine doctrine: disable-only (D6), deterministic, and legible before they are lethal. |
+
 ---
 
 ## Terminology Contract (D8)

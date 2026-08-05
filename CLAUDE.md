@@ -139,6 +139,15 @@ is undeclared. A missed mirror field silently invalidates every future battery.
 - **Rewards and progression are one system.** Every reward change moved
   "deploys to tier 3" in or out of its 3-4 band. Check both whenever either
   moves.
+- **Balance attractiveness with OPPOSITION, not price (D42).** Extraction read
+  1.43x over-chosen and the instinct was to keep cutting its payout. Wrong
+  lever: extraction and acquisition are meant to get harder as a season
+  progresses, and the opposition that makes them dangerous is not built yet
+  (`specs/systems/S16_opposition_security.md`). A reward cut made now has to be
+  undone later. Effort-pricing is done; leave the numbers alone.
+- **Do not read a balance verdict against absent difficulty (D43).** The D19
+  ceiling is deferred until opposition exists. A contract mix measured in a
+  world with nothing pushing back is not a verdict about the finished game.
 - **A test whose subject is empty proves nothing.** The paired-hash test ran
   only against a world with no contracts, and hashing is deliberately hash-inert
   for empty collections, so the twins' contract writers were never compared.
