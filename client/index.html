@@ -31,6 +31,7 @@
       </div>
       <div id="hud-right">
         <div id="cache" class="pill"></div>
+        <div id="objective" class="pill" hidden></div>
         <button id="board-btn" class="primary" data-i18n="board.title"></button>
         <button id="evac-btn" data-i18n="evac.beaconActive"></button>
       </div>
@@ -38,6 +39,8 @@
     </div>
 
     <div id="board" class="overlay" hidden>
+      <h3 data-i18n="board.active"></h3>
+      <ul id="active-list"></ul>
       <h2 data-i18n="board.title"></h2>
       <ul id="board-list"></ul>
       <button class="close" data-i18n="board.back"></button>

@@ -103,6 +103,20 @@ export function buildView(state, firmId, detCfg) {
       heldOwn: h.heldAgentIds.filter((id) => state.agents[id]?.firmId === firmId),
     })),
 
+    // The contracts this Firm is actually RUNNING. The board only ever shows
+    // OFFERS — `rebuildOffers` drops a contract the moment it is accepted and
+    // replaces it — so without this the player accepts a job, watches it
+    // disappear, and has no way to see what they are carrying.
+    active: (() => {
+      const ids = new Set(own.flatMap((a) => a.contractIds));
+      return state.contractPool.filter((c) => ids.has(c.id)).map((c) => ({
+        id: c.id, kind: c.kind, tier: c.tier, districtId: c.districtId,
+        siteId: c.siteId, siteIdB: c.siteIdB, reward: c.reward,
+        stage: c.stage, stageTicks: c.stageTicks,
+        legsDone: c.legsDone ?? 0, graceTicks: c.graceTicks ?? 0,
+      }));
+    })(),
+
     // D18: your five offers, and nothing else about the pool.
     board: (() => {
       const offers = state.offers.find((o) => o.firmId === firmId);

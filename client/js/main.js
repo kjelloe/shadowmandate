@@ -7,7 +7,8 @@ import { createScene } from "./scene.js";
 import { createMinimap } from "./minimap.js";
 import {
   STANCES, DETECTION_KEYS, DETECTION_CLASS, HEAT_KEYS, HEAT_CLASS,
-  ownAgent, heatDisplay, districtUnder, boardRows, evacDisplay, toastsFor,
+  ownAgent, heatDisplay, districtUnder, boardRows, activeRows, objectiveFor,
+  evacDisplay, toastsFor,
 } from "./models.js";
 
 const $ = (sel) => document.querySelector(sel);
@@ -115,6 +116,7 @@ function paint(s, events) {
 
   renderStances();
   renderBoard(view);
+  renderActive(view);
   renderStandoff(view);
   renderEvac(view);
   for (const toast of toastsFor(events)) addToast(t(toast.key), toast.alarm);
@@ -136,10 +138,22 @@ function renderStances() {
   [...host.children].forEach((b, i) => b.setAttribute("aria-pressed", String(i === lastStance)));
 }
 
+// THE 10Hz REBUILD BUG (playtest 5): this used to wipe and rebuild the list on
+// every tick. A click needs mousedown AND mouseup on the SAME element, and the
+// button was being destroyed and replaced between them — so pressing "accept"
+// did nothing, forever, with no error. Anything the player clicks must survive
+// long enough to be clicked: re-render ONLY when the content actually changes.
+let boardSignature = "";
+
 function renderBoard(view) {
+  const rows = boardRows(view);
+  const signature = rows.map((r) => `${r.id}:${r.tier}:${r.reward}:${r.accepted}:${r.locked}`).join("|");
+  if (signature === boardSignature) return;
+  boardSignature = signature;
+
   const list = $("#board-list");
   list.textContent = "";
-  for (const row of boardRows(view)) {
+  for (const row of rows) {
     const li = document.createElement("li");
     if (row.locked) li.className = "locked";
     const label = document.createElement("span");
@@ -147,9 +161,13 @@ function renderBoard(view) {
     const right = document.createElement("span");
     right.textContent = `+${row.reward}`;
     li.append(label, right);
-    if (!row.locked && !row.accepted) {
+    if (row.accepted) {
+      const mark = document.createElement("span");
+      mark.textContent = t("board.accepted");
+      li.appendChild(mark);
+    } else if (!row.locked) {
       const take = document.createElement("button");
-      take.textContent = t("board.select");
+      take.textContent = t("board.accept");
       take.addEventListener("click", () => {
         const a = ownAgent(session.view);
         if (a) session.send({ type: 40, agentId: a.id, contractId: row.id });
@@ -158,6 +176,40 @@ function renderBoard(view) {
     }
     list.appendChild(li);
   }
+}
+
+let activeSignature = "";
+function renderActive(view) {
+  const rows = activeRows(view);
+  const signature = rows.map((r) => `${r.id}:${r.stageKey}:${r.atRisk}`).join("|");
+  if (signature !== activeSignature) {
+    activeSignature = signature;
+    const list = $("#active-list");
+    list.textContent = "";
+    if (!rows.length) {
+      const li = document.createElement("li");
+      li.textContent = t("board.none");
+      list.appendChild(li);
+    }
+    for (const row of rows) {
+      const li = document.createElement("li");
+      if (row.atRisk) li.className = "at-risk";
+      const label = document.createElement("span");
+      label.textContent = `${t(row.kindKey)} — ${t(row.stageKey)}`;
+      const right = document.createElement("span");
+      right.textContent = `+${row.reward}`;
+      li.append(label, right);
+      list.appendChild(li);
+    }
+  }
+
+  // Point at the current objective, so an accepted contract is not a mystery.
+  const el = $("#objective");
+  const first = (view.active ?? [])[0];
+  const target = objectiveFor(view, first);
+  if (!first || !target) { el.hidden = true; return; }
+  el.hidden = false;
+  el.textContent = `${t("hud.objective")} ${target.cellX},${target.cellY}`;
 }
 
 function renderStandoff(view) {

@@ -3,8 +3,8 @@
 Drop-in/drop-out covert-ops game. Sibling of Fireline Command
 (`~/GIT/firepower` — the fork source, never modified from here).
 
-**Status: M0–M5 complete except slice 5g, engine only. `npm test` = 130
-green.** No client exists yet. **5g (batch-lane bring-up) needs the gaming PC
+**Status: M0–M6 complete; M7 in progress and PLAYABLE in a browser.
+`npm test` = 183 green.** No client exists yet. **5g (batch-lane bring-up) needs the gaming PC
 and cannot be done solo** — runbook in `plan-implementation-order.md`. M6 done; batch lane verified (`BATCH_PC.md`). **M7 in progress**: views,
 hosted worlds and identity have landed; the ws transport, client, art and VM
 deploy remain.
@@ -96,6 +96,10 @@ is undeclared. A missed mirror field silently invalidates every future battery.
   in a test. This has now bitten twice: the dependency guard matched the phrase
   `from "this seat is lucky"` in a comment, and the CSS guard matched the rule
   written inside the comment explaining the bug it was checking for.
+- **Anything a player clicks must outlive the click.** A list rebuilt on every
+  tick destroys its own buttons between mousedown and mouseup, so clicks never
+  land and nothing errors. Re-render interactive DOM only when its content
+  changes (see `boardSignature` in main.js).
 - **A silent client is the worst client.** Failures must surface on the page
   (`fatal()` in main.js). An empty canvas looks identical whether the renderer
   threw, the data never arrived, or everything drew in the background colour —

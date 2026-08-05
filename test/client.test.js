@@ -276,3 +276,19 @@ test("PLAYTEST 3: the client reports failures on the page", () => {
   assert.ok(/unhandledrejection/.test(src), "unhandled promise rejections are swallowed");
   assert.ok(/catch \(err\)/.test(src), "the render path has no try/catch");
 });
+
+test("PLAYTEST 5: interactive lists must not rebuild every tick", () => {
+  // The board was wiped and rebuilt at 10Hz, so a button was destroyed between
+  // mousedown and mouseup and the click NEVER completed. Anything a player
+  // clicks has to outlive the click.
+  const src = readFileSync(join(JS_DIR, "main.js"), "utf8");
+  assert.ok(/boardSignature/.test(src),
+    "renderBoard has no change check — it will rebuild the list every tick");
+  const fn = src.slice(src.indexOf("function renderBoard"), src.indexOf("function renderStandoff"));
+  assert.ok(/if \(signature === boardSignature\) return;/.test(fn),
+    "renderBoard must bail out when the rows have not changed");
+  const wipeAt = fn.indexOf('list.textContent = ""');
+  const guardAt = fn.indexOf("boardSignature) return");
+  assert.ok(guardAt >= 0 && guardAt < wipeAt,
+    "the change check must come BEFORE the list is wiped");
+});

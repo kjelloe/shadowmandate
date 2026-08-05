@@ -93,5 +93,16 @@
   "shop.cost": "PRIS",
   "shop.owned": "EID",
   "recovery.title": "GJENOPPRETTINGSKODE",
-  "recovery.note": "Skriv dette ned. Det vises én gang og aldri igjen."
+  "recovery.note": "Skriv dette ned. Det vises én gang og aldri igjen.",
+  "board.accept": "TA OPPDRAG",
+  "board.accepted": "TATT",
+  "board.active": "PÅGÅENDE",
+  "stage.offered": "tilbudt",
+  "stage.travel": "reis til stedet",
+  "stage.work": "utfør på stedet",
+  "stage.return": "lever",
+  "stage.done": "fullført",
+  "stage.failed": "mislyktes",
+  "board.none": "Ingen pågående oppdrag",
+  "hud.objective": "MÅL"
 }

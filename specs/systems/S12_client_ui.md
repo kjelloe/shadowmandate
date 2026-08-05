@@ -73,9 +73,21 @@ The former full-screen 2D canvas is now the **minimap**, terrain baked once.
 Relief in the terrain mesh is decoration only — it must never imply geometry
 the simulation does not model.
 
+**Also shipped (playtest 5):** the RUNNING section — the board shows OFFERS
+only, and `rebuildOffers` removes a contract the instant it is accepted, so the
+view carries `active` separately and the HUD points at the current objective.
+Without it, accepting a contract looked like nothing happening.
+
+**Client rules earned in playtesting, all guarded by test:**
+- Interactive DOM re-renders only when its content changes. A 10Hz rebuild
+  destroys buttons between mousedown and mouseup; clicks never land.
+- Failures surface on the page (`fatal()`), never only in the console.
+- Nothing may fog or clip the scene out of existence — depth constants derive
+  from `CAMERA_DISTANCE`, not from guesses.
+
 **NOT implemented:** art assets (everything is primitives), the debrief screen,
-building/dialogue overlays in the UI, and a mobile pass beyond the 44px
-touch targets and responsive minimap.
+building/dialogue overlays in the UI, the drop-zone screen's district labels,
+and a mobile pass beyond the 44px touch targets and responsive minimap.
 
 ## To pin
 

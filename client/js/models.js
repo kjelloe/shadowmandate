@@ -58,6 +58,33 @@ export function boardRows(view) {
   return rows;
 }
 
+export const STAGE_KEYS = [
+  "stage.offered", "stage.travel", "stage.work", "stage.return", "stage.done", "stage.failed",
+];
+
+// What the player is currently carrying, and where it wants them to go.
+export function activeRows(view) {
+  return (view?.active ?? []).map((c) => ({
+    id: c.id,
+    kindKey: CONTRACT_KEYS[c.kind] ?? "contract.courier",
+    tier: c.tier, reward: c.reward,
+    stageKey: STAGE_KEYS[c.stage] ?? "stage.travel",
+    atRisk: (c.graceTicks ?? 0) > 0,
+  }));
+}
+
+// The cell an active contract currently wants the operative at — so the HUD
+// can point somewhere rather than leaving them to guess.
+export function objectiveFor(view, contract) {
+  if (!view || !contract) return null;
+  const site = (id) => view.sites?.find((s) => s.id === id) ?? null;
+  if (contract.stage === 3) {
+    if (contract.kind === 0 && contract.siteIdB >= 0) return site(contract.siteIdB);
+    return view.hq ? { cellX: view.hq.cellX, cellY: view.hq.cellY } : null;
+  }
+  return site(contract.siteId);
+}
+
 export function evacDisplay(view) {
   const hq = view?.hq;
   if (!hq || !hq.evacActive) return null;

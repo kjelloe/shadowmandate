@@ -71,3 +71,9 @@ button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal)
 #errbar { position: absolute; left: 0; right: 0; top: 0; z-index: 99;
   background: #4A1410; color: #FFD9D2; border-bottom: 2px solid var(--burn);
   font-size: .8rem; padding: .5rem .8rem; white-space: pre-wrap; }
+
+#active-list { list-style: none; margin: 0 0 .8rem; padding: 0; }
+#active-list li { display: flex; justify-content: space-between; gap: .6rem;
+  padding: .4rem 0; border-bottom: 1px solid var(--line); color: var(--teal); }
+#active-list li.at-risk { color: var(--alarm); }
+.overlay h3 { margin: 0 0 .4rem; font-size: .82rem; letter-spacing: .08em; color: var(--dim); }

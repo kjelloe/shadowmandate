@@ -93,5 +93,16 @@
   "shop.cost": "COST",
   "shop.owned": "OWNED",
   "recovery.title": "RECOVERY CODE",
-  "recovery.note": "Write this down. It is shown once and never again."
+  "recovery.note": "Write this down. It is shown once and never again.",
+  "board.accept": "ACCEPT",
+  "board.accepted": "ACCEPTED",
+  "board.active": "RUNNING",
+  "stage.offered": "offered",
+  "stage.travel": "travel to site",
+  "stage.work": "work the site",
+  "stage.return": "deliver",
+  "stage.done": "done",
+  "stage.failed": "failed",
+  "board.none": "No contracts running",
+  "hud.objective": "OBJECTIVE"
 }
