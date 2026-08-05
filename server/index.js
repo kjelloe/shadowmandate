@@ -16,6 +16,7 @@ import { validate } from "../engine/commands.js";
 
 const ROOT = new URL("..", import.meta.url).pathname;
 const CLIENT = join(ROOT, "client");
+const VENDOR = join(ROOT, "node_modules");
 const PORT = Number(process.env.PORT ?? 8080);
 const SEED = Number(process.env.SEED ?? 4711);
 const SIZE = Number(process.env.SIZE ?? 64);
@@ -49,8 +50,14 @@ const http = createServer((req, res) => {
   // Path traversal is the one static-server bug that actually matters.
   const rel = normalize(url.pathname === "/" ? "/index.html" : url.pathname)
     .replace(/^(\.\.[/\\])+/, "");
-  const file = join(CLIENT, rel);
-  if (!file.startsWith(CLIENT) || !existsSync(file) || !statSync(file).isFile()) {
+  // /vendor serves the pinned three.js out of node_modules — the sibling
+  // project's pattern. No committed vendor tree, no CDN.
+  const underVendor = rel.startsWith("/vendor/") || rel.startsWith("vendor/");
+  const base = underVendor ? VENDOR : CLIENT;
+  const file = underVendor
+    ? join(VENDOR, rel.replace(/^\/?vendor\//, ""))
+    : join(CLIENT, rel);
+  if (!file.startsWith(base) || !existsSync(file) || !statSync(file).isFile()) {
     res.writeHead(404); res.end("not found"); return;
   }
   res.writeHead(200, { "content-type": MIME[extname(file)] ?? "application/octet-stream" });

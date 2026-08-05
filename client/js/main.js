@@ -3,7 +3,8 @@
 
 import { loadLocale, t, applyStatic } from "./i18n.js";
 import { createRemoteSession } from "./session.js";
-import { createRenderer } from "./render.js";
+import { createScene } from "./scene.js";
+import { createMinimap } from "./minimap.js";
 import {
   STANCES, DETECTION_KEYS, DETECTION_CLASS, HEAT_KEYS, HEAT_CLASS,
   ownAgent, heatDisplay, districtUnder, boardRows, evacDisplay, toastsFor,
@@ -23,6 +24,7 @@ const session = createRemoteSession({
 });
 
 let renderer = null;
+let minimap = null;
 let lastStance = 1;
 
 function splashText(b) {
@@ -59,12 +61,16 @@ session.onChange((s, events) => {
 
 function paint(s, events) {
   const view = s.view;
-  if (!renderer) renderer = createRenderer($("#view"));
-  // Terrain arrives once, with the drop-zone reply. It was previously captured
-  // at renderer-construction time from a variable that was never assigned, so
-  // every tile fell through to TILE[0] and the city rendered as one flat block.
-  if (session.tiles && !renderer.hasTiles()) renderer.setTiles(session.tiles);
+  if (!renderer) renderer = createScene($("#view"));
+  if (!minimap) minimap = createMinimap($("#minimap"));
+  // Terrain arrives once, with the welcome (and again with the drop-zone
+  // reply). Build the mesh the first time it turns up.
+  if (session.tiles && !renderer.hasTerrain()) {
+    renderer.setTerrain(session.tiles, view.size, view.worldSeed ?? 1);
+    minimap.setTiles(session.tiles, view.size);
+  }
   renderer.draw(view);
+  minimap.draw(view);
 
   const agent = ownAgent(view);
   if (agent) {

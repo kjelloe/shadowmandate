@@ -219,11 +219,34 @@ test("PLAYTEST 2: project and unproject are inverses", async () => {
   }
 });
 
-test("PLAYTEST 2: the renderer receives the terrain it is given", async () => {
-  // The tiles variable was declared and never assigned, so the renderer drew
-  // the whole city in one colour. The wiring is now asserted.
+test("PLAYTEST 2: the renderer receives the terrain it is given", () => {
+  // The tiles variable was declared and never assigned, so the city rendered
+  // in one flat colour. Both the diorama and the minimap must be handed the
+  // terrain explicitly, after it arrives.
   const src = readFileSync(join(JS_DIR, "main.js"), "utf8");
-  assert.ok(/renderer\.setTiles\(/.test(src), "main.js never hands the tiles to the renderer");
-  assert.ok(!/createRenderer\([^)]*cityTiles/.test(src),
-    "the renderer should not capture tiles at construction — they arrive later");
+  assert.ok(/renderer\.setTerrain\(/.test(src), "main.js never hands terrain to the diorama");
+  assert.ok(/minimap\.setTiles\(/.test(src), "main.js never hands terrain to the minimap");
+  assert.ok(!/create(Scene|Minimap)\([^)]*tiles/i.test(src),
+    "terrain must not be captured at construction — it arrives later");
+});
+
+test("the 2.5D camera clamps to the map instead of showing the void", async () => {
+  // Playtest 2: dropping at cell (6,9) — a map corner — left 40% of the screen
+  // black. That was not an offset camera; it was the camera honestly showing
+  // the outside of the world. It now clamps.
+  const { clampCamera } = await import("../client/js/scene.js");
+  const size = 64, halfX = 17, halfY = 11;
+  const corner = clampCamera({ x: 6, y: 9 }, size, halfX, halfY);
+  assert.equal(corner.x, halfX, "the camera did not clamp on the west edge");
+  assert.equal(corner.y, halfY, "the camera did not clamp on the north edge");
+
+  const middle = clampCamera({ x: 32, y: 32 }, size, halfX, halfY);
+  assert.deepEqual(middle, { x: 32, y: 32 }, "the camera should follow freely inland");
+
+  const far = clampCamera({ x: 63, y: 63 }, size, halfX, halfY);
+  assert.equal(far.x, size - halfX, "the camera did not clamp on the east edge");
+
+  // A map smaller than the view is centred, not clamped to a corner.
+  const tiny = clampCamera({ x: 2, y: 2 }, 10, halfX, halfY);
+  assert.deepEqual(tiny, { x: 5, y: 5 }, "a small map should centre");
 });

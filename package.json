@@ -5,9 +5,9 @@
   "description": "Shadow Mandate — drop into a living city, run covert contracts for your Firm, and extract before you're burned.",
   "license": "MIT",
   "dependencies": {
+    "three": "^0.165.0",
     "ws": "^8.18.0"
   },
-  "devDependencies": {},
   "scripts": {
     "start": "node server/index.js",
     "test": "node --test --test-concurrency=4 test/*.test.js",

@@ -60,3 +60,10 @@ button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal)
 .toast { background: rgba(29,32,38,.95); border: 1px solid var(--line);
   border-left: 3px solid var(--amber); padding: .45rem .8rem; border-radius: 4px; font-size: .82rem; }
 .toast.alarm { border-left-color: var(--alarm); }
+
+/* The minimap: the old full-screen 2D view, doing the job it was always
+   better at. Bottom-left so it never fights the HUD's right column. */
+#minimap { position: absolute; left: .6rem; bottom: .6rem; width: 180px; height: 180px;
+  border: 1px solid var(--line); border-radius: 4px; background: #0F1114;
+  opacity: .9; pointer-events: none; }
+@media (max-width: 600px) { #minimap { width: 116px; height: 116px; } }

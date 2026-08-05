@@ -60,6 +60,23 @@ zero literal "Syndicate" (D8) — suite greps the client tree.
 DO things — elementFromPoint hit-testing, manual event dispatch under
 SwiftShader) per milestone; parse/import check on every client file.
 
+## AS BUILT (M7, 2026-08-05)
+
+Session seam, i18n, HUD, mission board, standoff panel, evac overlay,
+tap-to-move, drop-zone picker — and, from playtest 3, the **2.5D diorama**:
+three.js from `node_modules` via `/vendor` + importmap (the Fireline pattern),
+one vertex-coloured ground mesh, instanced building mass, a 52° orthographic
+camera with **no rotation** and clamping to the map.
+
+The former full-screen 2D canvas is now the **minimap**, terrain baked once.
+
+Relief in the terrain mesh is decoration only — it must never imply geometry
+the simulation does not model.
+
+**NOT implemented:** art assets (everything is primitives), the debrief screen,
+building/dialogue overlays in the UI, and a mobile pass beyond the 44px
+touch targets and responsive minimap.
+
 ## To pin
 
 `❑` HUD layout wireframe (M3 slice, with screenshot gallery) · `⚙` zoom
