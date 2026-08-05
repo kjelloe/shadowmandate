@@ -47,6 +47,29 @@ const http = createServer((req, res) => {
     res.end(JSON.stringify({ ruleset: rules.version, worlds: [...worlds.keys()] }));
     return;
   }
+  // The deploy guard's probe. It reports the TICK rather than a bare "ok",
+  // because a wedged pump still answers HTTP and a liveness-only check would
+  // call that a successful deploy. The guard curls twice and requires the tick
+  // to move — see DEPLOYING.md.
+  //
+  // A SLEEPING world is healthy, not broken: D16 parks an empty world so it
+  // costs nothing, and the sample host is empty most of the time. Reporting
+  // dormancy as unhealthy would make the runbook cry wolf every quiet night.
+  if (url.pathname === "/health") {
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({
+      ok: true,
+      uptimeSec: Math.trunc(process.uptime()),
+      ruleset: rules.version,
+      worlds: [...worlds.values()].map((w) => ({
+        id: w.id,
+        tick: w.state?.tick ?? 0,
+        seats: w.seats?.size ?? 0,
+        sleeping: w.sleepingSince !== null,
+      })),
+    }));
+    return;
+  }
   // Path traversal is the one static-server bug that actually matters.
   const rel = normalize(url.pathname === "/" ? "/index.html" : url.pathname)
     .replace(/^(\.\.[/\\])+/, "");
