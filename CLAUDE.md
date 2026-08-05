@@ -119,6 +119,31 @@ is undeclared. A missed mirror field silently invalidates every future battery.
   `activateEvac:not_at_hq` counts in a world-day found three AI defects and one
   serious player-facing bug that no test caught. A well-behaved AI issues zero
   rejections; anything else is a bug report.
+- **A 0% in the battery is a bug report, not a balance reading.** Acquisition
+  completed 0.0% across 24 world-days because D41 moved its delivery to a
+  drop-off site and `ai_firms.targetCellFor` was never told, so the AI walked
+  home and waited forever. Change what a contract requires, and change the AI's
+  decision path in the same edit — a rule the actor does not know is a rule
+  nobody follows.
+- **The AI scorer is a measuring instrument.** D11 and D19 are verdicted from AI
+  runs, so anything the scorer cannot perceive does not exist in the numbers. It
+  priced `reward / (distance + heat)` with no term for time-on-objective, which
+  made surveillance's 3600 stationary ticks free. Fixing it made the reported
+  mix look *worse*, because it had started telling the truth.
+- **Raw share cannot answer "is any type dominant."** Short contracts finish
+  more often per unit time whatever anyone prefers, and tier gating means a
+  tier-1 Firm sees only 3 of 5 types (uniform choice = 33.3%, already at D19's
+  35% ceiling). Read the preference ratio in `debugging/analyze_pacing.py`, and
+  mind its own caveat: "offered" samples board residence, which is depressed for
+  popular types.
+- **Rewards and progression are one system.** Every reward change moved
+  "deploys to tier 3" in or out of its 3-4 band. Check both whenever either
+  moves.
+- **A test whose subject is empty proves nothing.** The paired-hash test ran
+  only against a world with no contracts, and hashing is deliberately hash-inert
+  for empty collections, so the twins' contract writers were never compared.
+  `test/fixture_populated.test.js` asserts the world is populated BEFORE
+  comparing. Prove a new guard can fail by breaking what it watches.
 
 ## Workflow
 

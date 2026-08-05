@@ -70,4 +70,46 @@ shapes per marker type, district tinting, better building variation.
   gained `atDoor`/`inside`; GO INSIDE button, portrait, options and catalogue;
   informant visibly quiet at lockdown; disguise portrait changes. 4 new tests,
   plus six untranslated disguise names found and fixed.
-- **4–8** — in progress; see dev-log.
+- **4. Drop-zone and evac polish — DONE.** The picker names each district with
+  its trait and how many of your offers sit inside it; evac has its countdown.
+- **6. Pacing battery — DONE, and it changed the session.** It found two bugs
+  (acquisition completing 0.0% of the time; sabotage planting both charges in
+  the same square), a lying instrument (the AI scorer could not perceive
+  time-on-objective, and we verdict YOUR pacing from AI runs), and a reward
+  table that had never been priced by effort. Re-pricing rescued surveillance
+  from 1.8% of contracts taken to ~24%, and extraction — the only type with no
+  work stage at all — gained a `secureTicks` timer. Extraction remains
+  over-chosen; that is **Q37**, and it wants a design answer rather than another
+  tuning pass from me.
+- **8. VM deploy runbook — DONE.** `DEPLOYING.md`, plus the `/health` endpoint
+  it depends on (a sleeping world counts as healthy, per D16).
+- **Unplanned, and I judged it worth the detour:** the paired-hash test — the
+  project's strongest guarantee — ran only against a world with an empty
+  contract pool, so the contract writers in the two twin hash functions were
+  never compared. `test/fixture_populated.test.js` closes it.
+- **5. Mobile pass and 7. Art pass — NOT DONE.** I stopped short of these
+  deliberately. While looking at the mobile question I found that
+  `test/headless/` is empty: the `client_smoke.mjs` and `ui_acceptance.mjs`
+  browser gates S12 has claimed since M3 do not exist. That is the plainest
+  explanation for why five playtests each found a defect a green suite could not
+  see, and I think it outranks both remaining items. Playwright is already the
+  house tool in both sibling projects and its browsers are installed on this
+  machine, so it is a port rather than a research task. Flagged rather than
+  started, because adding a dependency is your call.
+
+## Where this leaves the balance numbers
+
+Tier-3 unlock pace is the one verdict that moved OUT of band: it read 4.0
+(in band) before the session and reads 5.0 now.
+
+I first assumed I had inflated it by raising rewards, so I scaled the whole
+table back to its original mean income. **It did not help**, which is the useful
+part: the cause is not price, it is THROUGHPUT. Completed contracts per
+world-day went from ~11 to ~15 because acquisition works now, sabotage plants
+its second charge somewhere new, and surveillance is finally worth taking. Firms
+earn faster because the game does more.
+
+That means the tier-unlock thresholds were tuned against a partly broken
+economy, and re-tuning them is a balance decision rather than a bug fix — so it
+is yours, not mine. Everything needed to judge it is in
+`reports/sweeps/pacing_final.csv`.
