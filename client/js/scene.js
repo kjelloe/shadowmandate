@@ -11,20 +11,17 @@
 
 import * as THREE from "three";
 import { buildGround, buildBlocks } from "./terrain3d.js";
-import { siteRoles, objectiveCell, markerShape, buildingRole, siteRole } from "./models.js";
+import { siteRoles, objectiveCell, buildingRole, siteRole } from "./models.js";
+import { buildProcedural, applyTint } from "./asset_factory.js";
+import { resolveVisual, tintFor, detectionMark } from "./asset_resolver.js";
+import { art } from "./assets.js";
 
 export const CELL = 256;   // world units per cell, matching the engine
 
-// Marker palette, shared with the minimap so the two agree.
-export const MARK = {
-  site: 0x6B6250,            // scenery: a site with nothing on it for you
-  siteOffered: 0xD9A441,     // on your board
-  siteActive: 0x53D6C6,      // the job you actually took
-  informant: 0x3E8E8C, market: 0x8A867E, coverShop: 0xB5613C,
-  holding: 0x7A4A3A, patrol: 0x8A867E, patrolAlert: 0xC2452F, rival: 0xB5613C,
-  ownHq: 0x3E8E8C, rivalHq: 0xB5613C,
-  agentUnseen: 0xE8E6E0, agentNoticed: 0xD9A441, agentBurned: 0xC2452F,
-};
+// The palette used to live here as literal hex, duplicated into the minimap.
+// It now lives in client/assets/metadata/style_tokens.json, which is the single
+// source of truth for both surfaces (D46) — test/art_pipeline.test.js fails if
+// a colour creeps back into this file.
 
 // Clamp so the visible frustum stays inside the map when the map is larger
 // than the view, and centre it when it is smaller.
@@ -38,7 +35,8 @@ export function clampCamera(target, size, halfSpanX, halfSpanY) {
 
 export function createScene(canvas) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setClearColor(0x0F1114);
+  const { tokens, manifest } = art();
+  renderer.setClearColor(new THREE.Color(tokens.lighting.clear));
 
   const scene = new THREE.Scene();
   // NO FOG. The first version set Fog(colour, 40, 110) — but an orthographic
@@ -51,12 +49,13 @@ export function createScene(canvas) {
 
   // Light from the north-west, low: long shadows read as evening, and the
   // painted low-poly look wants shape more than brightness.
-  const key = new THREE.DirectionalLight(0xFFF2DC, 1.15);
-  key.position.set(-40, 60, -30);
+  const L = tokens.lighting;
+  const key = new THREE.DirectionalLight(new THREE.Color(L.key.color), L.key.intensity);
+  key.position.set(...L.key.position);
   scene.add(key);
-  scene.add(new THREE.AmbientLight(0x4A5566, 0.75));
-  const bounce = new THREE.DirectionalLight(0x3E8E8C, 0.28);
-  bounce.position.set(30, 20, 40);
+  scene.add(new THREE.AmbientLight(new THREE.Color(L.ambient.color), L.ambient.intensity));
+  const bounce = new THREE.DirectionalLight(new THREE.Color(L.bounce.color), L.bounce.intensity);
+  bounce.position.set(...L.bounce.position);
   scene.add(bounce);
 
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 500);
@@ -66,20 +65,17 @@ export function createScene(canvas) {
   const markers = new THREE.Group();
   scene.add(markers);
 
-  // A small pool of reusable meshes: markers change every tick and allocating
-  // per frame would make the GC the bottleneck.
+  // A pool of reusable procedural groups, keyed by visual role: markers change
+  // every tick and allocating per frame would make the GC the bottleneck.
   const pool = [];
   // One geometry per silhouette, shared by every marker of that shape. Kept
   // low-poly on purpose: these are read at a glance from a tilted camera, and
   // the client must stay cheap enough for a phone.
-  const GEO = {
-    sphere: new THREE.SphereGeometry(0.34, 10, 8),
-    ring: new THREE.TorusGeometry(0.62, 0.07, 6, 18),
-    box: new THREE.BoxGeometry(1.6, 0.5, 1.6),
-    oct: new THREE.OctahedronGeometry(0.42),
-    cone: new THREE.ConeGeometry(0.36, 0.9, 7),
-    cyl: new THREE.CylinderGeometry(0.26, 0.26, 0.8, 8),
-  };
+  // The one piece of geometry that is not a manifest visual: the ring under
+  // your own operative, which is a HUD affordance rather than a thing in the
+  // world — it is how you find yourself in a busy street.
+  const ringGeo = new THREE.TorusGeometry(0.62, 0.07, 6, 18);
+  const warned = new Set();
   // The objective beacon: a tall thin column you can see over building mass,
   // which is the whole point — an objective you can only see when you are
   // already standing on it is not a marker.
@@ -87,29 +83,52 @@ export function createScene(canvas) {
   const haloGeo = new THREE.TorusGeometry(1.25, 0.1, 6, 24);
   let beacon = null, halo = null;
 
-  function takeMarker(kind, colour) {
-    let m = pool.find((x) => !x.inUse && x.kind === kind);
+  // Ask the resolver WHAT to show; the manifest and factory decide HOW. A role
+  // the manifest does not know draws nothing and says so, rather than quietly
+  // rendering as something else.
+  function takeVisual(role, stateMark = null) {
+    const resolved = resolveVisual(manifest, role);
+    if (resolved.kind !== "procedural") {
+      if (!warned.has(role)) { warned.add(role); console.warn(`no visual for role "${role}"`); }
+      return null;
+    }
+    let m = pool.find((x) => !x.inUse && x.role === role);
     if (!m) {
-      const geo = GEO[kind] ?? GEO.sphere;
-      const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: colour }));
-      if (kind === "ring") mesh.rotation.x = -Math.PI / 2;
-      m = { kind, mesh, inUse: false };
+      const group = buildProcedural(resolved.key);
+      if (!group) return null;
+      m = { role, group, inUse: false };
+      pool.push(m);
+      markers.add(group);
+    }
+    m.inUse = true;
+    m.group.visible = true;
+    const tint = tintFor(tokens, resolved.entry, stateMark);
+    if (tint) applyTint(m.group, tint);
+    return m.group;
+  }
+
+  function takeRing(colour) {
+    let m = pool.find((x) => !x.inUse && x.role === "__ring");
+    if (!m) {
+      const mesh = new THREE.Mesh(ringGeo, new THREE.MeshLambertMaterial({ color: colour }));
+      mesh.rotation.x = -Math.PI / 2;
+      m = { role: "__ring", group: mesh, inUse: false };
       pool.push(m);
       markers.add(mesh);
     }
     m.inUse = true;
-    m.mesh.visible = true;
-    m.mesh.material.color.setHex(colour);
-    return m.mesh;
+    m.group.visible = true;
+    m.group.material.color.set(colour);
+    return m.group;
   }
 
   function ensureBeacon() {
     if (beacon) return;
     beacon = new THREE.Mesh(beamGeo, new THREE.MeshBasicMaterial({
-      color: MARK.siteActive, transparent: true, opacity: 0.5,
+      color: new THREE.Color(tokens.marks.siteActive), transparent: true, opacity: 0.5,
     }));
     halo = new THREE.Mesh(haloGeo, new THREE.MeshBasicMaterial({
-      color: MARK.siteActive, transparent: true, opacity: 0.85,
+      color: new THREE.Color(tokens.marks.siteActive), transparent: true, opacity: 0.85,
     }));
     halo.rotation.x = -Math.PI / 2;
     scene.add(beacon); scene.add(halo);
@@ -160,7 +179,7 @@ export function createScene(canvas) {
 
   function draw(view) {
     if (!view || !resize()) return;
-    for (const m of pool) { m.inUse = false; m.mesh.visible = false; }
+      for (const m of pool) { m.inUse = false; m.group.visible = false; }
 
     const own = view.agents?.find((a) => a.state === 1) ?? view.agents?.[0];
     const target = own
@@ -169,47 +188,35 @@ export function createScene(canvas) {
         : { x: view.size / 2, y: view.size / 2 };
     place(target);
 
-    const at = (mesh, cx, cy, h = 0.35) => mesh.position.set(cx, h, cy);
+    // Procedural visuals stand ON the ground; their own geometry carries the
+    // height, so the renderer no longer guesses a lift per marker type.
+    const at = (obj, cx, cy, h = 0) => { if (obj) obj.position.set(cx, h, cy); return obj; };
 
-    // Sites are colour-coded by what they mean to THIS player: the job you
-    // took, something on your board, or scenery. Undifferentiated markers made
-    // a busy map unreadable.
+    // What a site MEANS to this player — the job you took, something on your
+    // board, or scenery — is carried by shape and tint together (7a).
     const roles = siteRoles(view);
     for (const s of view.sites) {
-      const role = siteRole(roles.get(s.id));
-      const colour = role === "siteActive" ? MARK.siteActive
-        : role === "siteOffered" ? MARK.siteOffered : MARK.site;
-      // A site that means something to you stands taller as well as brighter.
-      at(takeMarker(markerShape(role), colour), s.cellX + 0.5, s.cellY + 0.5,
-        role === "siteScenery" ? 0.45 : 0.7);
+      at(takeVisual(siteRole(roles.get(s.id))), s.cellX + 0.5, s.cellY + 0.5);
     }
     for (const b of view.buildings) {
-      const role = buildingRole(b.kind);
-      const colour = role === "informant" ? MARK.informant
-        : role === "market" ? MARK.market : MARK.coverShop;
-      at(takeMarker(markerShape(role), colour), b.cellX + 0.5, b.cellY + 0.5, 0.5);
+      at(takeVisual(buildingRole(b.kind)), b.cellX + 0.5, b.cellY + 0.5);
     }
-    for (const h of view.holdingSites) {
-      at(takeMarker(markerShape("holding"), MARK.holding), h.cellX + 0.5, h.cellY + 0.5, 0.3);
-    }
-    if (view.hq) at(takeMarker(markerShape("ownHq"), MARK.ownHq), view.hq.cellX + 0.5, view.hq.cellY + 0.5, 0.25);
-    for (const h of view.rivalHqs) {
-      at(takeMarker(markerShape("rivalHq"), MARK.rivalHq), h.cellX + 0.5, h.cellY + 0.5, 0.25);
-    }
+    for (const h of view.holdingSites) at(takeVisual("holding"), h.cellX + 0.5, h.cellY + 0.5);
+    if (view.hq) at(takeVisual("ownHq"), view.hq.cellX + 0.5, view.hq.cellY + 0.5);
+    for (const h of view.rivalHqs) at(takeVisual("rivalHq"), h.cellX + 0.5, h.cellY + 0.5);
     for (const p of view.patrols) {
-      const role = p.alerted ? "patrolAlert" : "patrol";
-      at(takeMarker(markerShape(role), p.alerted ? MARK.patrolAlert : MARK.patrol),
-        p.x + 0.5, p.y + 0.5, p.alerted ? 0.75 : 0.6);
+      at(takeVisual(p.alerted ? "patrolAlert" : "patrol"), p.x + 0.5, p.y + 0.5);
     }
-    for (const r of view.rivals) {
-      at(takeMarker(markerShape("rival"), MARK.rival), r.x / CELL, r.y / CELL, 0.5);
-    }
+    for (const r of view.rivals) at(takeVisual("rival"), r.x / CELL, r.y / CELL);
     for (const a of view.agents) {
-      const colour = a.detection === 2 ? MARK.agentBurned
-        : a.detection === 1 ? MARK.agentNoticed : MARK.agentUnseen;
-      at(takeMarker(markerShape("agent"), colour), a.x / CELL, a.y / CELL, 0.55);
-      // The ring is how you find your own operative in a busy street.
-      at(takeMarker("ring", colour), a.x / CELL, a.y / CELL, 0.12);
+      // The agent's tint is its DETECTION state — gameplay information, so it
+      // comes from the resolver rather than being decided here.
+      const stateMark = detectionMark(a.detection);
+      at(takeVisual("agent", stateMark), a.x / CELL, a.y / CELL);
+      // The ring is how you find your own operative in a busy street. It is a
+      // HUD affordance rather than a thing in the world, so it is not a
+      // manifest visual.
+      at(takeRing(tokens.marks[stateMark]), a.x / CELL, a.y / CELL, 0.12);
     }
     // The objective beacon, pulsing so it reads as live rather than painted on.
     const objective = objectiveCell(view);

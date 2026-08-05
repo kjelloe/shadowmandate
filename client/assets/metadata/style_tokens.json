@@ -1,0 +1,116 @@
+{
+  "note": "Painted Low-Poly Hybrid style tokens (S15). SINGLE SOURCE OF TRUTH for materials, palette and Firm identity \u2014 every procedural model is generated from this file, and the renderer must not carry colours of its own. Forked from the sibling project's pattern (Q41a/D46).",
+  "materials": {
+    "paintedMatte": {
+      "roughness": 0.85,
+      "metalness": 0.0
+    },
+    "firmPanel": {
+      "roughness": 0.75,
+      "metalness": 0.0
+    },
+    "wornMetal": {
+      "roughness": 0.9,
+      "metalness": 0.15
+    },
+    "glass": {
+      "roughness": 0.35,
+      "metalness": 0.1
+    },
+    "signal": {
+      "roughness": 0.5,
+      "metalness": 0.0
+    }
+  },
+  "note_marks": "Carried verbatim from the pre-pipeline MARK table in scene.js so the 7a pipeline changes HOW things are built without changing what anything means. The minimap reads the same values, so the two can never disagree.",
+  "marks": {
+    "site": "#6B6250",
+    "siteOffered": "#D9A441",
+    "siteActive": "#53D6C6",
+    "informant": "#3E8E8C",
+    "market": "#8A867E",
+    "coverShop": "#B5613C",
+    "holding": "#7A4A3A",
+    "patrol": "#8A867E",
+    "patrolAlert": "#C2452F",
+    "rival": "#B5613C",
+    "ownHq": "#3E8E8C",
+    "rivalHq": "#B5613C",
+    "agentUnseen": "#E8E6E0",
+    "agentNoticed": "#D9A441",
+    "agentBurned": "#C2452F"
+  },
+  "note_body": "Body colours are the PAINTED part \u2014 the part a tint never touches. Keeping them separate from marks is what lets detection state stay readable: the coat stays the coat while the state band changes colour.",
+  "body": {
+    "coat": "#2E3238",
+    "coatDark": "#22262B",
+    "trouser": "#1C1F24",
+    "skin": "#C9A98B",
+    "visor": "#141619",
+    "kiosk": "#3A3F47",
+    "kioskRoof": "#4A5058",
+    "canvas": "#3E4650",
+    "post": "#5A6068",
+    "bars": "#6E747C",
+    "plinth": "#2A2E36"
+  },
+  "note_firms": "S15 palettes. Firm identity is carried by COLOUR AND SYMBOL together \u2014 colour alone fails for a colourblind player, which is the same reason the 7a silhouette pass exists.",
+  "firms": [
+    {
+      "id": 0,
+      "name": "corporate",
+      "primary": "#5B6B7F",
+      "accent": "#8FA7C4",
+      "trim": "#E8E6E0",
+      "symbol": "bar"
+    },
+    {
+      "id": 1,
+      "name": "insurgent",
+      "primary": "#B5613C",
+      "accent": "#C9A06B",
+      "trim": "#53D6C6",
+      "symbol": "chevron"
+    },
+    {
+      "id": 2,
+      "name": "mercenary",
+      "primary": "#3A3D42",
+      "accent": "#8A867E",
+      "trim": "#D9A441",
+      "symbol": "dot"
+    }
+  ],
+  "note_budget": "Triangle budgets are a MOBILE constraint, not an aesthetic one. The client already runs on a phone (7b) and a busy street draws dozens of these.",
+  "triBudget": {
+    "figure": 420,
+    "marker": 260,
+    "structure": 700
+  },
+  "note_light": "Lighting IS art direction, not renderer plumbing: the low, warm key from the north-west is what makes the painted low-poly look read as evening. Keeping it in tokens means a look candidate (Q41c) can change the mood without touching scene.js.",
+  "lighting": {
+    "clear": "#0F1114",
+    "key": {
+      "color": "#FFF2DC",
+      "intensity": 1.15,
+      "position": [
+        -40,
+        60,
+        -30
+      ]
+    },
+    "ambient": {
+      "color": "#4A5566",
+      "intensity": 0.75
+    },
+    "bounce": {
+      "color": "#3E8E8C",
+      "intensity": 0.28,
+      "position": [
+        30,
+        20,
+        40
+      ]
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "note": "Manifest-driven visuals (S15, D46). The renderer asks the resolver WHAT to show; this file and the factory decide HOW. No geometry decision lives in scene.js, so swapping a procedural stand-in for a painted model later is a manifest edit rather than a renderer edit.",
+
+  "note_tint": "`tint` names the mark token a visual takes at runtime. A visual with tint:null is fully painted and never recoloured. Meshes named \"tint\" inside a group are the only ones a tint touches — that is what keeps detection state readable without repainting the coat.",
+
+  "figures": {
+    "agent": {
+      "procedural": "agent",
+      "class": "figure",
+      "tint": "state",
+      "note": "tint is the DETECTION state (unseen/noticed/burned), which is gameplay information, not decoration."
+    },
+    "rival": {
+      "procedural": "rival",
+      "class": "figure",
+      "tint": "rival"
+    },
+    "patrol": {
+      "procedural": "patrol",
+      "class": "figure",
+      "tint": "patrol"
+    },
+    "patrolAlert": {
+      "procedural": "patrol",
+      "class": "figure",
+      "tint": "patrolAlert"
+    }
+  },
+
+  "markers": {
+    "siteScenery": { "procedural": "siteMarker", "class": "marker", "tint": "site" },
+    "siteOffered": { "procedural": "siteMarker", "class": "marker", "tint": "siteOffered" },
+    "siteActive":  { "procedural": "siteMarker", "class": "marker", "tint": "siteActive" }
+  },
+
+  "structures": {
+    "informant":  { "procedural": "kioskTall",  "class": "structure", "tint": "informant" },
+    "market":     { "procedural": "kioskWide",  "class": "structure", "tint": "market" },
+    "coverShop":  { "procedural": "kioskPeak",  "class": "structure", "tint": "coverShop" },
+    "holding":    { "procedural": "holdingPen", "class": "structure", "tint": "holding" },
+    "ownHq":      { "procedural": "fieldHq",    "class": "structure", "tint": "ownHq" },
+    "rivalHq":    { "procedural": "fieldHq",    "class": "structure", "tint": "rivalHq" }
+  }
+}

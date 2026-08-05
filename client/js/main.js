@@ -2,6 +2,7 @@
 // engine; this file only wires elements to a session (S12).
 
 import { loadLocale, t, applyStatic } from "./i18n.js";
+import { loadArt } from "./assets.js";
 import { createRemoteSession } from "./session.js";
 import { createScene } from "./scene.js";
 import { createMinimap } from "./minimap.js";
@@ -37,6 +38,10 @@ const show = (id) => {
 };
 
 await loadLocale();
+// Art metadata before any renderer exists: createScene() reads style tokens,
+// and a scene built without them would fall back to grey and look "fine",
+// which is the kind of silent wrongness this project has paid for before.
+await loadArt();
 applyStatic();
 $("#drop-in").textContent = t("splash.dropIn");
 

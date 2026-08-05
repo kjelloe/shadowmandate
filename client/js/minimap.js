@@ -10,7 +10,9 @@ const TILE = {
 };
 const CELL = 256;
 
-import { siteRoles, objectiveCell } from "./models.js";
+import { siteRoles, objectiveCell, siteRole } from "./models.js";
+import { mark } from "./assets.js";
+import { detectionMark } from "./asset_resolver.js";
 
 export function createMinimap(canvas) {
   const ctx = canvas.getContext("2d");
@@ -52,22 +54,22 @@ export function createMinimap(canvas) {
       for (const site of view.sites) {
         const role = roles.get(site.id);
         dot(site.cellX, site.cellY,
-          role === "active" ? "#53D6C6" : role === "offered" ? "#D9A441" : "#6B6250",
+          mark(siteRole(role)),
           role ? 2.2 : 1.4);
       }
       const objective = objectiveCell(view);
       if (objective) {
         const pulse = 3 + 1.6 * Math.sin(view.tick / 4);
-        ctx.strokeStyle = "#53D6C6"; ctx.lineWidth = 1.5;
+        ctx.strokeStyle = mark("siteActive"); ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.arc(objective.cellX * s, objective.cellY * s, pulse, 0, Math.PI * 2);
         ctx.stroke();
       }
-      for (const p of view.patrols) dot(p.x, p.y, p.alerted ? "#C2452F" : "#8A867E");
-      for (const r of view.rivals) dot(r.x / CELL, r.y / CELL, "#B5613C", 2);
-      if (view.hq) dot(view.hq.cellX, view.hq.cellY, "#3E8E8C", 2.4);
+      for (const p of view.patrols) dot(p.x, p.y, mark(p.alerted ? "patrolAlert" : "patrol"));
+      for (const r of view.rivals) dot(r.x / CELL, r.y / CELL, mark("rival"), 2);
+      if (view.hq) dot(view.hq.cellX, view.hq.cellY, mark("ownHq"), 2.4);
       for (const a of view.agents) {
-        const colour = a.detection === 2 ? "#C2452F" : a.detection === 1 ? "#D9A441" : "#E8E6E0";
+        const colour = mark(detectionMark(a.detection));
         dot(a.x / CELL, a.y / CELL, colour, 2.6);
       }
     },
