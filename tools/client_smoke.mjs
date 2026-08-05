@@ -29,7 +29,10 @@ function startServer() {
     // simulation outcome (the reducer counts ticks, it never reads a clock) and
     // still reproduces the defects this gate exists for — a list that rebuilds
     // per view update rebuilds at any rate.
-    env: { ...process.env, PORT: String(PORT), SEED: "4711", SIZE: "64",
+    env: { ...process.env, PORT: String(PORT), SEED: "4711",
+      // D26: the render path must handle 128 as well as the 64 default.
+      //   SIZE=128 node tools/client_smoke.mjs
+      SIZE: process.env.SIZE ?? "64",
       TICK_MS: process.env.TICK_MS ?? "250" },
     stdio: ["ignore", "pipe", "pipe"],
   });

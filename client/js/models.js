@@ -232,3 +232,42 @@ export function toastsFor(events) {
   return events.map((e) => TOASTS[e.type] && { ...TOASTS[e.type], event: e })
     .filter(Boolean);
 }
+
+
+// Marker silhouettes. S15 asks for silhouette readability, and until now every
+// marker except the Field HQ was the same sphere, separated only by colour —
+// which fails at a glance, fails in a busy street, and fails entirely for a
+// colourblind player. Shape carries the meaning; colour reinforces it.
+//
+// Pure and exported so it can be tested without a WebGL context: the renderer
+// is untestable headlessly, but the DECISION about what shape a thing gets is
+// not, and that is where the mistakes live.
+export const MARKER_SHAPES = {
+  siteScenery: "oct",       // a place something could happen
+  siteOffered: "oct",
+  siteActive: "oct",
+  informant: "cyl",         // people you talk to stand upright
+  market: "box",            // premises
+  coverShop: "cone",
+  holding: "box",
+  patrol: "cone",           // pointed: something that is looking
+  patrolAlert: "cone",
+  rival: "sphere",
+  ownHq: "box",
+  rivalHq: "box",
+  agent: "sphere",
+};
+
+// Every marker role must resolve to a shape. A missing role silently falling
+// back to a sphere is exactly the bug this table exists to prevent.
+export function markerShape(role) {
+  return MARKER_SHAPES[role] ?? null;
+}
+
+export function buildingRole(kind) {
+  return kind === 0 ? "informant" : kind === 1 ? "market" : "coverShop";
+}
+
+export function siteRole(role) {
+  return role === "active" ? "siteActive" : role === "offered" ? "siteOffered" : "siteScenery";
+}

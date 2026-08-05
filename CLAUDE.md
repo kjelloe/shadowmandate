@@ -25,6 +25,8 @@ deploy remain.
 npm test                                    # the whole suite (node --test)
 npm run smoke                               # real browser: loads, drops in, ticks
 npm run ui                                  # real browser: the controls DO things
+npm run mobile                              # real browser: two phone viewports
+SIZE=128 npm run smoke                      # D26: render path at 128
 node --test test/citygen.test.js            # one file
 node tools/render_city.mjs 4711 64          # eyeball a generated city
 node tools/render_city.mjs 4711 16 5        # the microscope config

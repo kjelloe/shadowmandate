@@ -14,6 +14,7 @@ import { join } from "node:path";
 import {
   ownAgent, heatDisplay, districtUnder, boardRows, evacDisplay, toastsFor,
   STANCES, DETECTION_KEYS, HEAT_KEYS, CONTRACT_KEYS,
+  MARKER_SHAPES, markerShape, buildingRole, siteRole,
 } from "../client/js/models.js";
 
 const ROOT = new URL("..", import.meta.url).pathname;
@@ -445,4 +446,32 @@ test("the drop-zone screen ranks districts by work, then by how hot they are", a
     assert.ok(d.traitKey in EN, `trait key ${d.traitKey} is not translated`);
     assert.ok(d.heatKey in EN, `heat key ${d.heatKey} is not translated`);
   }
+});
+
+// S15 asks for silhouette readability. Until the 7a art pass every marker
+// except the Field HQ was the same sphere, separated only by colour — which
+// fails at a glance and fails completely for a colourblind player. The shape
+// DECISION is pure, so it is testable even though the renderer is not.
+test("every marker role has a silhouette, and they are not all the same", () => {
+  const roles = Object.keys(MARKER_SHAPES);
+  for (const role of roles) {
+    assert.ok(markerShape(role), `role ${role} has no shape`);
+  }
+  assert.equal(markerShape("no-such-role"), null,
+    "an unknown role must return null, not silently fall back to a sphere");
+
+  // The point of the pass: the things a player must tell apart in a busy
+  // street must not share a silhouette.
+  const distinct = new Set([
+    markerShape("agent"), markerShape("patrol"),
+    markerShape("siteActive"), markerShape("ownHq"), markerShape("informant"),
+  ]);
+  assert.ok(distinct.size >= 4,
+    `own agent, patrol, objective, HQ and informant should be distinguishable by shape alone, got ${[...distinct].join("/")}`);
+
+  // A patrol is a thing that is LOOKING; it should not look like a person.
+  assert.notEqual(markerShape("patrol"), markerShape("agent"));
+  assert.equal(buildingRole(0), "informant");
+  assert.equal(siteRole("active"), "siteActive");
+  assert.equal(siteRole(undefined), "siteScenery");
 });

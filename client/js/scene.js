@@ -11,7 +11,7 @@
 
 import * as THREE from "three";
 import { buildGround, buildBlocks } from "./terrain3d.js";
-import { siteRoles, objectiveCell } from "./models.js";
+import { siteRoles, objectiveCell, markerShape, buildingRole, siteRole } from "./models.js";
 
 export const CELL = 256;   // world units per cell, matching the engine
 
@@ -69,9 +69,17 @@ export function createScene(canvas) {
   // A small pool of reusable meshes: markers change every tick and allocating
   // per frame would make the GC the bottleneck.
   const pool = [];
-  const sphere = new THREE.SphereGeometry(0.34, 10, 8);
-  const ring = new THREE.TorusGeometry(0.62, 0.07, 6, 18);
-  const boxGeo = new THREE.BoxGeometry(1.6, 0.5, 1.6);
+  // One geometry per silhouette, shared by every marker of that shape. Kept
+  // low-poly on purpose: these are read at a glance from a tilted camera, and
+  // the client must stay cheap enough for a phone.
+  const GEO = {
+    sphere: new THREE.SphereGeometry(0.34, 10, 8),
+    ring: new THREE.TorusGeometry(0.62, 0.07, 6, 18),
+    box: new THREE.BoxGeometry(1.6, 0.5, 1.6),
+    oct: new THREE.OctahedronGeometry(0.42),
+    cone: new THREE.ConeGeometry(0.36, 0.9, 7),
+    cyl: new THREE.CylinderGeometry(0.26, 0.26, 0.8, 8),
+  };
   // The objective beacon: a tall thin column you can see over building mass,
   // which is the whole point — an objective you can only see when you are
   // already standing on it is not a marker.
@@ -82,7 +90,7 @@ export function createScene(canvas) {
   function takeMarker(kind, colour) {
     let m = pool.find((x) => !x.inUse && x.kind === kind);
     if (!m) {
-      const geo = kind === "ring" ? ring : kind === "box" ? boxGeo : sphere;
+      const geo = GEO[kind] ?? GEO.sphere;
       const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: colour }));
       if (kind === "ring") mesh.rotation.x = -Math.PI / 2;
       m = { kind, mesh, inUse: false };
@@ -168,26 +176,38 @@ export function createScene(canvas) {
     // a busy map unreadable.
     const roles = siteRoles(view);
     for (const s of view.sites) {
-      const role = roles.get(s.id);
-      const colour = role === "active" ? MARK.siteActive
-        : role === "offered" ? MARK.siteOffered : MARK.site;
-      at(takeMarker("dot", colour), s.cellX + 0.5, s.cellY + 0.5, role ? 0.6 : 0.45);
+      const role = siteRole(roles.get(s.id));
+      const colour = role === "siteActive" ? MARK.siteActive
+        : role === "siteOffered" ? MARK.siteOffered : MARK.site;
+      // A site that means something to you stands taller as well as brighter.
+      at(takeMarker(markerShape(role), colour), s.cellX + 0.5, s.cellY + 0.5,
+        role === "siteScenery" ? 0.45 : 0.7);
     }
     for (const b of view.buildings) {
-      const colour = b.kind === 0 ? MARK.informant : b.kind === 1 ? MARK.market : MARK.coverShop;
-      at(takeMarker("dot", colour), b.cellX + 0.5, b.cellY + 0.5, 0.5);
+      const role = buildingRole(b.kind);
+      const colour = role === "informant" ? MARK.informant
+        : role === "market" ? MARK.market : MARK.coverShop;
+      at(takeMarker(markerShape(role), colour), b.cellX + 0.5, b.cellY + 0.5, 0.5);
     }
-    for (const h of view.holdingSites) at(takeMarker("dot", MARK.holding), h.cellX + 0.5, h.cellY + 0.5, 0.5);
-    if (view.hq) at(takeMarker("box", MARK.ownHq), view.hq.cellX + 0.5, view.hq.cellY + 0.5, 0.25);
-    for (const h of view.rivalHqs) at(takeMarker("box", MARK.rivalHq), h.cellX + 0.5, h.cellY + 0.5, 0.25);
+    for (const h of view.holdingSites) {
+      at(takeMarker(markerShape("holding"), MARK.holding), h.cellX + 0.5, h.cellY + 0.5, 0.3);
+    }
+    if (view.hq) at(takeMarker(markerShape("ownHq"), MARK.ownHq), view.hq.cellX + 0.5, view.hq.cellY + 0.5, 0.25);
+    for (const h of view.rivalHqs) {
+      at(takeMarker(markerShape("rivalHq"), MARK.rivalHq), h.cellX + 0.5, h.cellY + 0.5, 0.25);
+    }
     for (const p of view.patrols) {
-      at(takeMarker("dot", p.alerted ? MARK.patrolAlert : MARK.patrol), p.x + 0.5, p.y + 0.5, 0.5);
+      const role = p.alerted ? "patrolAlert" : "patrol";
+      at(takeMarker(markerShape(role), p.alerted ? MARK.patrolAlert : MARK.patrol),
+        p.x + 0.5, p.y + 0.5, p.alerted ? 0.75 : 0.6);
     }
-    for (const r of view.rivals) at(takeMarker("dot", MARK.rival), r.x / CELL, r.y / CELL, 0.5);
+    for (const r of view.rivals) {
+      at(takeMarker(markerShape("rival"), MARK.rival), r.x / CELL, r.y / CELL, 0.5);
+    }
     for (const a of view.agents) {
       const colour = a.detection === 2 ? MARK.agentBurned
         : a.detection === 1 ? MARK.agentNoticed : MARK.agentUnseen;
-      at(takeMarker("dot", colour), a.x / CELL, a.y / CELL, 0.55);
+      at(takeMarker(markerShape("agent"), colour), a.x / CELL, a.y / CELL, 0.55);
       // The ring is how you find your own operative in a busy street.
       at(takeMarker("ring", colour), a.x / CELL, a.y / CELL, 0.12);
     }

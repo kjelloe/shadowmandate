@@ -14,7 +14,8 @@
     "gate": "bash debugging/sim_campaign.sh",
     "sweep": "node tools/sm_worldday.mjs",
     "smoke": "node tools/client_smoke.mjs",
-    "ui": "node tools/ui_acceptance.mjs"
+    "ui": "node tools/ui_acceptance.mjs",
+    "mobile": "node tools/mobile_check.mjs"
   },
   "devDependencies": {
     "playwright": "^1.62.1"

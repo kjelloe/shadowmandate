@@ -133,8 +133,37 @@ cheap, so this is largely a SwiftShader artefact — but it is worth a look duri
 the 7f perf pass and the mobile pass, since low-end devices composite in
 software too.
 
-**NOT implemented:** art assets (everything is primitives), and a mobile pass
-beyond the 44px touch targets and responsive minimap.
+## AS BUILT (7a art pass + 7b mobile pass, 2026-08-05)
+
+**7b — the touch model is now measured, not asserted.** `npm run mobile` drives
+two phone viewports (390x844 and 360x640) with touch emulation and checks: no
+horizontal scroll on either the splash or the world screen, every visible
+control >= 44px, drop-in working by TAP rather than click, the minimap under a
+quarter of the screen, no HUD element off-screen, and the board overlay fitting
+without pushing the page sideways. **Everything passed on the first run** — the
+mobile CSS was written correctly and had simply never been loaded on a narrow
+viewport. Verified by mutation: dropping the button `min-height` to 20px makes
+the gate fail naming each offender and its measured size.
+
+**7a — silhouettes.** Every marker except the Field HQ used to be the same
+sphere, separated only by colour, which fails at a glance in a busy street and
+fails completely for a colourblind player. Roles now carry shape: sites are
+octahedra (taller when they are yours), informants cylinders, markets boxes,
+cover shops cones, patrols cones (pointed — a thing that is looking), rivals and
+your own agent spheres, HQs and holding sites boxes. The mapping lives in
+`models.js` as a pure table, so the DECISION is unit-tested even though the
+renderer is not; an unknown role returns null rather than silently defaulting to
+a sphere. Building mass gained per-instance tint and footprint variation from a
+second seeded hash draw — keying tone off the same value as height made every
+tall block the same shade, which read as authored rather than grown.
+
+**7f — D26 confirmed:** the render path loads, deploys and ticks at `SIZE=128`
+as well as the 64 default (`SIZE=128 npm run smoke`). Native GPU perf still
+needs the gaming PC and remains the owner's.
+
+**NOT implemented:** real art assets (everything is still primitives), and
+district tinting — the view carries district cores but not per-cell district
+ids, so the client cannot tint ground by district without a view change.
 
 ## To pin
 

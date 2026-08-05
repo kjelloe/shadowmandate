@@ -102,17 +102,28 @@ export function buildBlocks(tiles, size, seed) {
   }
   if (!cells.length) return null;
   const geo = new THREE.BoxGeometry(1, 1, 1);
-  const mat = new THREE.MeshLambertMaterial({ color: 0x2A2E36 });
+  // Per-instance colour: one flat grey made the whole city read as a single
+  // mass, which defeats the point of varying the heights at all. The tint uses
+  // a SECOND hash draw so tone and height vary independently — keying both off
+  // one value makes every tall block the same shade, which looks authored.
+  const mat = new THREE.MeshLambertMaterial({ color: 0xFFFFFF, vertexColors: true });
   const mesh = new THREE.InstancedMesh(geo, mat, cells.length);
   const m = new THREE.Matrix4();
+  const colour = new THREE.Color();
   for (let i = 0; i < cells.length; i++) {
     const [x, y] = cells[i];
     const h = 0.6 + hash2(seed, x, y) * 2.4;
-    m.makeScale(0.94, h, 0.94);
+    // Footprint varies slightly too: a uniform 0.94 grid reads as tiling.
+    const w = 0.88 + hash2(seed ^ 0x51ed, x, y) * 0.10;
+    m.makeScale(w, h, w);
     m.setPosition(x + 0.5, h / 2, y + 0.5);
     mesh.setMatrixAt(i, m);
+    const t = hash2(seed ^ 0x9e37, x, y);
+    colour.setRGB(0.145 + t * 0.075, 0.165 + t * 0.075, 0.20 + t * 0.085);
+    mesh.setColorAt(i, colour);
   }
   mesh.instanceMatrix.needsUpdate = true;
+  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   mesh.castShadow = false;
   return mesh;
 }
