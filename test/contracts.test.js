@@ -240,3 +240,50 @@ test("the contract economy stays deterministic under replay", () => {
   };
   assert.deepEqual(run(), run());
 });
+
+// V1 acceptance criterion 8, which asks for this explicitly as a HEADLESS
+// MULTI-SEAT test: "every present player's board shows 5 offers, disjoint from
+// other players' boards". The engine reserves each contract to one Firm
+// (`reservedBy`), but nothing tested that two seats could never be shown the
+// same job — and D18's whole promise is that your board is YOURS.
+test("D18: every deployed Firm gets five offers, disjoint across seats", () => {
+  let s = seededWorld(31337, 4);
+
+  const deployed = s.firms.filter((f) => f.state !== 0);
+  assert.ok(deployed.length >= 2,
+    `need at least two seats for this to prove anything, got ${deployed.length}`);
+
+  const seen = new Map();          // contractId -> firmId that was offered it
+  for (const firm of deployed) {
+    const board = s.offers.find((o) => o.firmId === firm.id);
+    assert.ok(board, `firm ${firm.id} has no board at all`);
+    assert.equal(board.contractIds.length, 5,
+      `D18 promises five offers; firm ${firm.id} has ${board.contractIds.length}`);
+    for (const id of board.contractIds) {
+      // Two distinct failures share this check, and they mean different things:
+      // the same job on two seats' boards breaks D18's promise, while the same
+      // job twice on ONE board is a reservation bug. Say which.
+      assert.ok(!seen.has(id), seen.get(id) === firm.id
+        ? `contract ${id} appears TWICE on firm ${firm.id}'s own board`
+        : `contract ${id} is on BOTH firm ${seen.get(id)}'s and firm ${firm.id}'s board`);
+      seen.set(id, firm.id);
+    }
+  }
+
+  // Disjointness must SURVIVE the world running — a rebuild that re-reserves
+  // is where this would actually break, not the first build.
+  for (let i = 0; i < 30; i++) {
+    s = apply(s, { type: CMD_ADVANCE_TICK });
+    rebuildOffers(s, RULES.contracts, RULES.detection);
+  }
+  const seenAgain = new Map();
+  for (const firm of deployed) {
+    const board = s.offers.find((o) => o.firmId === firm.id);
+    for (const id of board.contractIds) {
+      assert.ok(!seenAgain.has(id), seenAgain.get(id) === firm.id
+        ? `after 30 ticks, contract ${id} appears twice on firm ${firm.id}'s own board`
+        : `after 30 ticks, contract ${id} is on two boards (${seenAgain.get(id)} and ${firm.id})`);
+      seenAgain.set(id, firm.id);
+    }
+  }
+});

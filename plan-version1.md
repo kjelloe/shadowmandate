@@ -69,20 +69,23 @@ human multiplayer is an unlock, not a rewrite.
 
 ## Acceptance criteria
 
-- [ ] Join without lobby; dropship plays; HQ at chosen zone.
-- [ ] Tier 1 contracts complete; tier 2 unlocks and persists in the ledger.
-- [ ] Detection states and heat observably change how a sortie plays; heat shows fuzzy, informant sells exact.
-- [ ] Downed leads to capture; bail and re-drop both work; an Extraction contract recovers a captured agent.
-- [ ] Evac: 30s hold, interruption rules, cache banks only on clean extraction.
-- [ ] AI rivals visibly operate; an HQ raid triggers the alarm with a winnable race home.
-- [ ] A standoff with an AI rival presents Engage/Withdraw/Negotiate and honours the outcome.
-- [ ] Every present player's board shows 5 offers, disjoint from other players' boards (headless multi-seat test).
-- [ ] Returning after a day: changed world, intact ledger, fog reset, persistent building changes.
-- [ ] A sortie fits 15–20 min; a 2–3 contract deployment fits 40–60 (battery-verified).
-- [ ] Vendor sells ≥3 meaningful upgrades; bank has a purpose.
-- [ ] Cleared browser + recovery code restores the Firm ledger.
-- [ ] Replays exact; pinned fixture stable; sim gate + battery pass on shipping ruleset.
-- [ ] Desktop + mobile browser; en/no; painted low-poly consistent with Fireline; zero "Syndicate" strings.
+*Swept 2026-08-05 (slice 7g). Full evidence and the reasoning behind every
+partial in `V1_ACCEPTANCE.md`. **10 pass, 3 partial, 1 fail.***
+
+- [~] Join without lobby; dropship plays; HQ at chosen zone. — join and HQ pass; **dropship choreography not built in the client**.
+- [x] Tier 1 contracts complete; tier 2 unlocks and persists in the ledger.
+- [x] Detection states and heat observably change how a sortie plays; heat shows fuzzy, informant sells exact.
+- [~] Downed leads to capture; bail and re-drop both work; an Extraction contract recovers a captured agent. — bail and re-drop pass; **the auto-generated rescue contract (other half of D17) is not implemented**.
+- [x] Evac: 30s hold, interruption rules, cache banks only on clean extraction.
+- [x] AI rivals visibly operate; an HQ raid triggers the alarm with a winnable race home.
+- [x] A standoff with an AI rival presents Engage/Withdraw/Negotiate and honours the outcome.
+- [x] Every present player's board shows 5 offers, disjoint from other players' boards (headless multi-seat test). — **test written in 7g**; four seats, disjoint, and still disjoint after 30 ticks.
+- [x] Returning after a day: changed world, intact ledger, fog reset, persistent building changes.
+- [ ] A sortie fits 15–20 min; a 2–3 contract deployment fits 40–60 (battery-verified). — **FAIL**: 8.7–17.4 and 27.7–55.4 human-adjusted; both overlap their target, neither sits inside it, and tier-3 pace is 5.0 against 3–4. Per D41/D42 the remedy is the M8 opposition content, not more reward tuning. **Re-measure after M8.**
+- [x] Vendor sells ≥3 meaningful upgrades; bank has a purpose.
+- [x] Cleared browser + recovery code restores the Firm ledger.
+- [x] Replays exact; pinned fixture stable; sim gate + battery pass on shipping ruleset.
+- [~] Desktop + mobile browser; en/no; painted low-poly consistent with Fireline; zero "Syndicate" strings. — desktop, mobile, i18n parity and the terminology guard all pass; **there is no painted art, only primitives**.
 
 ## Working practices (inherited from firepower)
 

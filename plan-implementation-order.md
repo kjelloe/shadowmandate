@@ -167,20 +167,29 @@ census complete; battery within provisional bands.
 
 ## M7 — Presentation & Ship 🟡 IN PROGRESS (views + world host + identity done; transport, client, art, deploy remain)
 
-- **7a** Asset pipeline fork + placeholder-to-painted pass (S15 inventory);
-  gallery page screenshot-diff green.
-- **7b** Splash/debrief final strings (D8), i18n complete pass, mobile touch
-  pass (44px targets, pinch zoom).
+- **7a** 🟡 **PARTIAL (2026-08-05)** — silhouette pass done within primitives:
+  distinct shapes per marker role (pure, unit-tested mapping in `models.js`),
+  per-instance building tint and footprint variation. **The asset pipeline and
+  painted art are NOT done** and remain the largest V1 gap.
+- **7b** ✅ **DONE (2026-08-05)** — mobile pass MEASURED, not asserted:
+  `npm run mobile` drives two phone viewports with touch emulation. All checks
+  passed first time; mutation-verified by shrinking `min-height`.
 - **7c** Identity: firmToken + recovery code + `claimFirm`, per-server
   scope (D32).
 - **7d** Season config + rotation + archive (D33: bank/tier reset,
   recognition carries as lifetime honor).
 - **7e** VM deploy: systemd unit, caddy, rsync allowlist, `/version`,
   official public sample world; deploy runbook written as `RUNNING.md`.
-- **7f** Perf: native GPU run on the PC (runbook below) + 128×128 render
-  check (D26).
-- **7g** Full V1 acceptance sweep (the 14 checkboxes in `plan-version1.md`),
-  each verified and logged.
+- **7f** 🟡 **PARTIAL (2026-08-05)** — D26 128×128 render check PASSES
+  (`SIZE=128 npm run smoke`). Native GPU perf still needs the gaming PC and
+  remains the owner's.
+- **7g** ✅ **DONE (2026-08-05)** — V1 acceptance sweep: **10 pass, 3 partial,
+  1 fail**, written up with evidence in `V1_ACCEPTANCE.md`. The fail is pacing
+  (criterion 10) and per D41/D42 its remedy is M8 opposition content rather
+  than reward tuning, so it should be re-measured after M8. The partials are
+  the dropship choreography (presentation, never built), the D17 rescue
+  contract, and painted art. The sweep also wrote the multi-seat board
+  disjointness test the criterion had asked for and which did not exist.
 - **7h** ✅ **DONE (2026-08-05) — Browser test gates.** `tools/client_smoke.mjs` and
   `tools/ui_acceptance.mjs`, ported from `../firepower/tools/`. S12 has claimed
   these since M3 and `test/headless/` is an empty directory; every one of the
