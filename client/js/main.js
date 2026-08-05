@@ -11,6 +11,24 @@ import {
 } from "./models.js";
 
 const $ = (sel) => document.querySelector(sel);
+
+// Surface failures ON THE PAGE. A silent client cost three playtest rounds of
+// guesswork — an empty canvas looks identical whether the renderer crashed,
+// the data never arrived, or everything drew in the fog colour.
+function fatal(where, err) {
+  const msg = `${where}: ${err?.message ?? err}`;
+  console.error(msg, err);
+  let bar = document.getElementById("errbar");
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.id = "errbar";
+    document.body.appendChild(bar);
+  }
+  bar.textContent = msg;
+  bar.hidden = false;
+}
+window.addEventListener("error", (e) => fatal("uncaught", e.error ?? e.message));
+window.addEventListener("unhandledrejection", (e) => fatal("promise", e.reason));
 const show = (id) => {
   for (const s of document.querySelectorAll(".screen")) s.hidden = s.id !== id;
 };
@@ -65,12 +83,16 @@ function paint(s, events) {
   if (!minimap) minimap = createMinimap($("#minimap"));
   // Terrain arrives once, with the welcome (and again with the drop-zone
   // reply). Build the mesh the first time it turns up.
-  if (session.tiles && !renderer.hasTerrain()) {
-    renderer.setTerrain(session.tiles, view.size, view.worldSeed ?? 1);
-    minimap.setTiles(session.tiles, view.size);
+  try {
+    if (session.tiles && !renderer.hasTerrain()) {
+      renderer.setTerrain(session.tiles, view.size, view.worldSeed ?? 1);
+      minimap.setTiles(session.tiles, view.size);
+    }
+    renderer.draw(view);
+    minimap.draw(view);
+  } catch (err) {
+    fatal("render", err);
   }
-  renderer.draw(view);
-  minimap.draw(view);
 
   const agent = ownAgent(view);
   if (agent) {

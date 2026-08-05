@@ -37,7 +37,13 @@ export function createScene(canvas) {
   renderer.setClearColor(0x0F1114);
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0x0F1114, 40, 110);
+  // NO FOG. The first version set Fog(colour, 40, 110) — but an orthographic
+  // camera pitched at 52 degrees from 90 units up sits ~114 units from the
+  // ground, so EVERY fragment fell beyond fog.far and rendered as 100% fog
+  // colour. Fog colour equalled clear colour, so the scene drew perfectly and
+  // was completely invisible: an empty-looking canvas with no error anywhere.
+  // If depth cueing is wanted later, derive the range from CAMERA_DISTANCE
+  // below rather than guessing constants.
 
   // Light from the north-west, low: long shadows read as evening, and the
   // painted low-poly look wants shape more than brightness.
@@ -108,6 +114,9 @@ export function createScene(canvas) {
   // tabletop feel without the parallax that makes a top-down map hard to read.
   const PITCH = 52 * (Math.PI / 180);
   const HEIGHT = 90;
+  // Exported so anything depth-related (fog, near/far) is derived from the
+  // real distance instead of a constant somebody guessed.
+  const CAMERA_DISTANCE = Math.sqrt(HEIGHT ** 2 + (HEIGHT / Math.tan(PITCH)) ** 2);
 
   function place(target) {
     const aspect = (canvas.clientWidth || 1) / (canvas.clientHeight || 1);
@@ -169,6 +178,7 @@ export function createScene(canvas) {
 
   return {
     draw, resize, setTerrain, screenToCell,
+    cameraDistance: () => CAMERA_DISTANCE,
     hasTerrain: () => terrain !== null,
     zoomBy(f) { zoomCells = Math.max(14, Math.min(70, zoomCells * f)); resize(); },
   };

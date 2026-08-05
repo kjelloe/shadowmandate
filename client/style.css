@@ -67,3 +67,7 @@ button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal)
   border: 1px solid var(--line); border-radius: 4px; background: #0F1114;
   opacity: .9; pointer-events: none; }
 @media (max-width: 600px) { #minimap { width: 116px; height: 116px; } }
+
+#errbar { position: absolute; left: 0; right: 0; top: 0; z-index: 99;
+  background: #4A1410; color: #FFD9D2; border-bottom: 2px solid var(--burn);
+  font-size: .8rem; padding: .5rem .8rem; white-space: pre-wrap; }

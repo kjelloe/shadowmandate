@@ -96,6 +96,13 @@ is undeclared. A missed mirror field silently invalidates every future battery.
   in a test. This has now bitten twice: the dependency guard matched the phrase
   `from "this seat is lucky"` in a comment, and the CSS guard matched the rule
   written inside the comment explaining the bug it was checking for.
+- **A silent client is the worst client.** Failures must surface on the page
+  (`fatal()` in main.js). An empty canvas looks identical whether the renderer
+  threw, the data never arrived, or everything drew in the background colour —
+  that ambiguity cost three playtest rounds.
+- **Isolate rendering faults in order: geometry → camera → wiring → shading.**
+  Each is testable headlessly. The fog bug was found only after the first three
+  were eliminated with numbers.
 - **A UI claim is not verified until the flow runs against a live server.**
   Playtest 1 was unplayable — stacked screens, a dead button, invisible
   rejections — while the suite was green, because nothing exercised the client

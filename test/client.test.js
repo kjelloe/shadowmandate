@@ -250,3 +250,29 @@ test("the 2.5D camera clamps to the map instead of showing the void", async () =
   const tiny = clampCamera({ x: 2, y: 2 }, 10, halfX, halfY);
   assert.deepEqual(tiny, { x: 5, y: 5 }, "a small map should centre");
 });
+
+test("PLAYTEST 3: nothing may fog the diorama out of existence", async () => {
+  // The bug that made the canvas look empty with no error at all: fog.far was
+  // 110 while the orthographic camera sits ~114 units from the ground, so every
+  // fragment rendered as 100% fog colour — which was also the clear colour.
+  const src = readFileSync(join(JS_DIR, "scene.js"), "utf8");
+  const code = src.split("\n").filter((l) => !l.trim().startsWith("//")).join("\n");
+  const fog = code.match(/new THREE\.Fog\w*\(([^)]*)\)/);
+  if (fog) {
+    const nums = fog[1].split(",").slice(1).map((n) => Number(n.trim()));
+    const far = Math.max(...nums.filter(Number.isFinite));
+    const PITCH = 52 * (Math.PI / 180), HEIGHT = 90;
+    const distance = Math.sqrt(HEIGHT ** 2 + (HEIGHT / Math.tan(PITCH)) ** 2);
+    assert.ok(far > distance * 1.25,
+      `fog.far (${far}) is inside the camera distance (${distance.toFixed(1)}) — ` +
+      "the whole scene will render as fog colour and look like an empty canvas");
+  }
+});
+
+test("PLAYTEST 3: the client reports failures on the page", () => {
+  // Three rounds were lost to a client that failed silently.
+  const src = readFileSync(join(JS_DIR, "main.js"), "utf8");
+  assert.ok(/addEventListener\("error"/.test(src), "no window error handler");
+  assert.ok(/unhandledrejection/.test(src), "unhandled promise rejections are swallowed");
+  assert.ok(/catch \(err\)/.test(src), "the render path has no try/catch");
+});
