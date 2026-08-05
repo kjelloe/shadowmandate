@@ -45,6 +45,9 @@ export function createRenderer(canvas, cityTiles) {
     const own = view.agents.find((a) => a.state === 1) ?? view.agents[0];
     if (own) { camera.x = own.x; camera.y = own.y; }
     else if (view.hq) { camera.x = view.hq.cellX * CELL; camera.y = view.hq.cellY * CELL; }
+    // Nothing to follow yet: centre the map rather than leaving the camera at
+    // 0,0, which drew the whole city into one corner of the screen.
+    else { camera.x = (view.size * CELL) / 2; camera.y = (view.size * CELL) / 2; }
 
     // Terrain. Only what fits on screen — a 128-world is 16k cells.
     const z = camera.zoom;

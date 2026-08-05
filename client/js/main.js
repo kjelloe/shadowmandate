@@ -40,6 +40,11 @@ function splashText(b) {
 
 session.onChange((s, events) => {
   if (!s.view) return;
+  if ((events ?? []).some((e) => e.type === "dropZonesReady")) showZonePicker();
+  for (const e of events ?? []) {
+    if (e.type === "rejected") addToast(`${e.command}: ${e.reason}`, true);
+    if (e.type === "serverError") addToast(e.reason, true);
+  }
   if ($("#splash").hidden === false) {
     $("#splash-terminal").textContent = splashText(s.briefing);
     if (s.recoveryCode) {
@@ -166,9 +171,73 @@ $("#view").addEventListener("pointerdown", (ev) => {
   session.send({ type: 20, agentId: agent.id, cellX: cell.x, cellY: cell.y });
 });
 
+// The drop-in flow. The first build sent cellX:-1 straight to the engine,
+// which is always "unlandable" — the button did nothing and said nothing
+// (playtest 1). Now: ask for zones, let the player choose, auto-pick on the
+// 15-second timeout exactly as the design describes.
+let zoneTimer = null;
 $("#drop-in").addEventListener("click", () => {
-  fetch("/dropzones").catch(() => {});
-  session.send({ type: 10, firmId: session.firmId, cellX: -1, cellY: -1 });
+  session.requestDropZones();
+  show("dropzone");
+});
+
+function deployAt(zone) {
+  if (!zone) return;
+  clearInterval(zoneTimer);
+  session.send({ type: 10, firmId: session.firmId, cellX: zone.cellX, cellY: zone.cellY });
+}
+
+function showZonePicker() {
+  const canvas = $("#zone-map");
+  const ctx = canvas.getContext("2d");
+  const size = session.view?.size ?? 64;
+  const px = canvas.width / size;
+  ctx.fillStyle = "#0F1114";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  if (session.tiles) {
+    const TILE = { 0:"#2A2E26",1:"#3B3F46",2:"#24272C",3:"#454B54",4:"#171A1F",
+      5:"#6A5B3E",6:"#4A5566",7:"#7A4A3A",8:"#33352C",9:"#2E2A24",10:"#1B2A33" };
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        ctx.fillStyle = TILE[session.tiles[y * size + x]] ?? "#222";
+        ctx.fillRect(x * px, y * px, px + 0.5, px + 0.5);
+      }
+    }
+  }
+  for (const z of session.dropZones ?? []) {
+    ctx.fillStyle = "rgba(62,142,140,.75)";
+    ctx.fillRect(z.cellX * px - 1, z.cellY * px - 1, px + 2, px + 2);
+  }
+  if (session.autoZone) {
+    ctx.strokeStyle = "#D9A441"; ctx.lineWidth = 2;
+    ctx.strokeRect(session.autoZone.cellX * px - 3, session.autoZone.cellY * px - 3, px + 6, px + 6);
+  }
+
+  let left = 15;
+  const hint = $("#zone-hint");
+  hint.textContent = `${t("dropzone.auto")} (${left})`;
+  clearInterval(zoneTimer);
+  zoneTimer = setInterval(() => {
+    left -= 1;
+    hint.textContent = `${t("dropzone.auto")} (${left})`;
+    if (left <= 0) deployAt(session.autoZone ?? (session.dropZones ?? [])[0]);
+  }, 1000);
+}
+
+$("#zone-map").addEventListener("pointerdown", (ev) => {
+  const canvas = $("#zone-map");
+  const rect = canvas.getBoundingClientRect();
+  const size = session.view?.size ?? 64;
+  const cx = Math.floor((ev.clientX - rect.left) / rect.width * size);
+  const cy = Math.floor((ev.clientY - rect.top) / rect.height * size);
+  // Snap to the nearest offered zone: a pixel-perfect tap on a 64-grid scaled
+  // into a phone screen is not a reasonable thing to ask of anyone.
+  let best = null, bestD = Infinity;
+  for (const z of session.dropZones ?? []) {
+    const d = Math.abs(z.cellX - cx) + Math.abs(z.cellY - cy);
+    if (d < bestD) { bestD = d; best = z; }
+  }
+  if (best && bestD <= 6) deployAt(best);
 });
 $("#board-btn").addEventListener("click", () => { $("#board").hidden = !$("#board").hidden; });
 $("#evac-btn").addEventListener("click", () => session.send({ type: 11, firmId: session.firmId }));

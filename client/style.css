@@ -8,6 +8,10 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; overflow: hidden; }
+/* MUST come before .screen/.overlay: a class rule with `display` beats the
+   user-agent's [hidden] { display: none }, which silently disabled every
+   screen transition in the first playtest. */
+[hidden] { display: none !important; }
 .screen { position: absolute; inset: 0; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 1rem; padding: 1rem; }
 #splash-terminal { font-size: clamp(11px, 2.6vw, 15px); line-height: 1.6;

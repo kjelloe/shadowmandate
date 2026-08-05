@@ -19,12 +19,21 @@ export function createRemoteSession({ url, token }) {
     briefing: null,
     connected: false,
     recoveryCode: null,
+    dropZones: null,
+    autoZone: null,
+    tiles: null,
 
     onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); },
 
     send(command) {
       if (socket?.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({ type: "command", command }));
+      }
+    },
+
+    requestDropZones() {
+      if (socket?.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type: "dropZones" }));
       }
     },
 
@@ -60,6 +69,12 @@ export function createRemoteSession({ url, token }) {
         case "view":
           session.view = msg.view;
           emit(msg.events ?? []);
+          break;
+        case "dropZones":
+          session.dropZones = msg.zones;
+          session.autoZone = msg.auto;
+          session.tiles = msg.tiles;
+          emit([{ type: "dropZonesReady" }]);
           break;
         case "claimed":
           localStorage.setItem("sm.token", msg.token);

@@ -136,6 +136,12 @@ export class World {
       firm?.tierUnlocked ?? 1);
   }
 
+  // The terrain, sent once at drop-in time. It is static world data — the
+  // client cannot derive it and re-sending it every tick would be absurd.
+  clientTiles() {
+    return Array.from(this.state.map.cells);
+  }
+
   viewFor(firmId) {
     return buildView(this.state, firmId, this.rules.detection);
   }
@@ -169,6 +175,9 @@ export class World {
 // An event reaches a seat only if it concerns them. A rival's burn is their
 // business; your own perimeter alarm is very much yours.
 function relevantTo(event, firmId) {
+  // A rejection belongs to whoever caused it. Without this the player pressed
+  // a button, nothing happened, and nothing said why (playtest 1).
+  if (event.type === "rejected") return true;
   if (event.firmId !== undefined) return event.firmId === firmId;
   if (event.byFirmId !== undefined) return event.byFirmId === firmId;
   // World-scale events everyone may see.

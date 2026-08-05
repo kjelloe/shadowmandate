@@ -220,6 +220,35 @@ test("the briefing carries the ledger and the world's news", () => {
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
+test("PLAYTEST 1: a rejected command reaches the player who caused it", () => {
+  // Rejections carry no firmId, so the router dropped them: the player pressed
+  // a button, nothing happened, and nothing said why. Silence is the worst
+  // possible feedback because it is indistinguishable from a frozen game.
+  const { world } = hostedWorld();
+  const seen = [];
+  world.seat(0, (m) => seen.push(...(m.events ?? [])));
+  world.submit({ type: 10, firmId: 0, cellX: -1, cellY: -1 });   // unlandable
+  world.tick();
+  const rejected = seen.find((e) => e.type === "rejected");
+  assert.ok(rejected, "the player was never told their command failed");
+  assert.equal(rejected.reason, "unlandable");
+  world.stop();
+});
+
+test("the drop-zone endpoint offers real, landable zones and an auto pick", () => {
+  const { world } = hostedWorld();
+  const zones = world.dropZones();
+  assert.ok(zones.length > 20, `only ${zones.length} drop zones offered`);
+  const auto = world.autoDropZone(0);
+  assert.ok(auto, "no auto-selected zone");
+  // D37: the auto pick must clear the map edge — a corner is safe and awful.
+  const margin = RULES.hq.dropZoneEdgeMargin;
+  const edge = Math.min(auto.cellX, auto.cellY,
+    world.state.size - 1 - auto.cellX, world.state.size - 1 - auto.cellY);
+  assert.ok(edge >= margin, `auto zone sits ${edge} from the edge, want >= ${margin}`);
+  world.stop();
+});
+
 test("events are routed to the Firm they concern, not broadcast to everyone", () => {
   const { world } = hostedWorld();
   const a = [], b = [];

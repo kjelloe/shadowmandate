@@ -92,6 +92,14 @@ is undeclared. A missed mirror field silently invalidates every future battery.
 - **Use `reachableDestination` / `centralDropZone` / `quietCell`** rather than
   hand-picked coordinates. `x + 3` lands in building mass; the first drop zone
   is always a map corner. Those failures are the test's fault, not the engine's.
+- **Guards must read code, not prose.** Strip comments before scanning source
+  in a test. This has now bitten twice: the dependency guard matched the phrase
+  `from "this seat is lucky"` in a comment, and the CSS guard matched the rule
+  written inside the comment explaining the bug it was checking for.
+- **A UI claim is not verified until the flow runs against a live server.**
+  Playtest 1 was unplayable — stacked screens, a dead button, invisible
+  rejections — while the suite was green, because nothing exercised the client
+  end to end.
 - Test bugs and engine bugs look identical from the outside. When a probe and
   the game disagree, **check the instrument first** — two of M1's three "bugs"
   were in my own probes, and M5's AI telemetry was itself silently dropping

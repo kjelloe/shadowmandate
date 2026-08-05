@@ -143,3 +143,36 @@ test("the client never hard-codes a visible string", () => {
   }
   assert.deepEqual(offenders, [], `hard-coded UI text:\n${offenders.join("\n")}`);
 });
+
+// ── Playtest-1 regressions ────────────────────────────────────────────────
+
+test("PLAYTEST 1: [hidden] must beat the .screen display rule", () => {
+  // The bug that made the first playtest unplayable. `.screen { display: flex }`
+  // is a class rule and outranks the user-agent's `[hidden] { display: none }`,
+  // so nothing ever hid: every screen stacked and the world painted over the
+  // splash the player had just clicked. Cheap to reintroduce, so: guarded.
+  // Strip comments first. The first version of this test matched the
+  // `[hidden] { display: none }` written inside the comment that EXPLAINS the
+  // bug, and reported the real rule as missing — the same comment-matching
+  // mistake the dependency guard made in M5. Guards must read code, not prose.
+  const css = readFileSync(join(ROOT, "client/style.css"), "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "");
+  const hiddenRule = css.match(/\[hidden\]\s*\{[^}]*\}/);
+  assert.ok(hiddenRule, "no [hidden] rule at all — screens will not hide");
+  assert.ok(/display:\s*none\s*!important/.test(hiddenRule[0]),
+    "the [hidden] rule must be !important to beat .screen/.overlay display rules");
+  const hiddenAt = css.indexOf("[hidden]");
+  const screenAt = css.indexOf(".screen {");
+  assert.ok(hiddenAt < screenAt || /!important/.test(hiddenRule[0]),
+    "[hidden] must win against .screen");
+});
+
+test("PLAYTEST 1: the drop-in button never sends an impossible cell", () => {
+  // The first build sent cellX:-1, which the engine always rejects as
+  // "unlandable" — so the only button on the splash screen did nothing at all.
+  const src = readFileSync(join(JS_DIR, "main.js"), "utf8");
+  assert.ok(!/type:\s*10[^}]*cellX:\s*-1/.test(src),
+    "drop-in still sends cellX:-1, which is always unlandable");
+  assert.ok(/requestDropZones\(\)/.test(src),
+    "drop-in should ask the server for real zones");
+});

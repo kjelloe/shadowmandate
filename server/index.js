@@ -127,8 +127,12 @@ wss.on("connection", (socket) => {
         return;
       }
       case "dropZones": {
-        if (!world) return send({ type: "error", reason: "not_seated" });
-        return send({ type: "dropZones", zones: world.dropZones?.() ?? [] });
+        if (!world || firmId === null) return send({ type: "error", reason: "not_seated" });
+        // Cap what crosses the wire: a 64-world has hundreds of valid zones and
+        // the client only needs enough to choose between.
+        const zones = world.dropZones().slice(0, 400);
+        const auto = world.autoDropZone(firmId);
+        return send({ type: "dropZones", zones, auto, tiles: world.clientTiles() });
       }
       default:
         return send({ type: "error", reason: "unknown_frame" });
