@@ -176,3 +176,54 @@ test("PLAYTEST 1: the drop-in button never sends an impossible cell", () => {
   assert.ok(/requestDropZones\(\)/.test(src),
     "drop-in should ask the server for real zones");
 });
+
+// ── Playtest 2: the camera ────────────────────────────────────────────────
+
+test("PLAYTEST 2: the camera centres on the operative, never on 0,0", async () => {
+  // "Content starts at the middle of the screen and runs off the edge" is what
+  // a camera at 0,0 looks like. Asserted rather than eyeballed from here on.
+  const { project, cameraTarget, CELL } = await import("../client/js/render.js");
+  const viewport = { width: 1000, height: 600 };
+  const camera = { x: 0, y: 0, zoom: 12 };
+
+  const deployed = {
+    size: 64, hq: { cellX: 6, cellY: 9 },
+    agents: [{ id: 0, state: 1, x: 30 * CELL + 128, y: 20 * CELL + 128 }],
+  };
+  const target = cameraTarget(deployed);
+  assert.equal(target.x, 30 * CELL + 128, "the camera did not follow the agent");
+  Object.assign(camera, target);
+  const onScreen = project(target.x, target.y, camera, viewport);
+  assert.equal(onScreen.x, viewport.width / 2, "the operative is not horizontally centred");
+  assert.equal(onScreen.y, viewport.height / 2, "the operative is not vertically centred");
+});
+
+test("PLAYTEST 2: with no agent the camera falls back to the HQ, then the map", async () => {
+  const { cameraTarget, CELL } = await import("../client/js/render.js");
+  const atHq = cameraTarget({ size: 64, agents: [], hq: { cellX: 10, cellY: 10 } });
+  assert.equal(atHq.x, 10 * CELL + CELL / 2, "should centre on the HQ");
+
+  const empty = cameraTarget({ size: 64, agents: [], hq: null });
+  assert.equal(empty.x, (64 * CELL) / 2, "an undeployed world should centre the map");
+  assert.notEqual(empty.x, 0, "0,0 draws the city into a corner — the playtest-1 symptom");
+});
+
+test("PLAYTEST 2: project and unproject are inverses", async () => {
+  const { project, unproject, CELL } = await import("../client/js/render.js");
+  const camera = { x: 20 * CELL, y: 14 * CELL, zoom: 12 };
+  const viewport = { width: 800, height: 500 };
+  for (const [cx, cy] of [[20, 14], [25, 9], [3, 40]]) {
+    const p = project(cx * CELL + 128, cy * CELL + 128, camera, viewport);
+    const back = unproject(p.x, p.y, camera, viewport);
+    assert.deepEqual(back, { x: cx, y: cy }, `round trip failed for ${cx},${cy}`);
+  }
+});
+
+test("PLAYTEST 2: the renderer receives the terrain it is given", async () => {
+  // The tiles variable was declared and never assigned, so the renderer drew
+  // the whole city in one colour. The wiring is now asserted.
+  const src = readFileSync(join(JS_DIR, "main.js"), "utf8");
+  assert.ok(/renderer\.setTiles\(/.test(src), "main.js never hands the tiles to the renderer");
+  assert.ok(!/createRenderer\([^)]*cityTiles/.test(src),
+    "the renderer should not capture tiles at construction — they arrive later");
+});

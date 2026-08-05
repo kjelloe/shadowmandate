@@ -95,6 +95,10 @@ wss.on("connection", (socket) => {
           recoveryCode: issued?.recoveryCode ?? null,
           briefing: world.briefingFor(firmId),
           view: world.viewFor(firmId),
+          // Terrain rides along with the welcome as well as the drop-zone
+          // reply: a RECONNECTING player never asks for drop zones, so without
+          // this their map would render blank forever.
+          tiles: world.clientTiles(),
           ruleset: rules.version,
         });
         return;

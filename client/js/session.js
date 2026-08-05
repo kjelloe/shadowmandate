@@ -61,6 +61,7 @@ export function createRemoteSession({ url, token }) {
           session.firmId = msg.firmId;
           session.briefing = msg.briefing;
           session.view = msg.view;
+          if (msg.tiles) session.tiles = msg.tiles;
           if (msg.token) localStorage.setItem("sm.token", msg.token);
           // Shown once, and only once — after this the server only has a hash.
           if (msg.recoveryCode) session.recoveryCode = msg.recoveryCode;

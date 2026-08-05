@@ -23,7 +23,6 @@ const session = createRemoteSession({
 });
 
 let renderer = null;
-let cityTiles = null;
 let lastStance = 1;
 
 function splashText(b) {
@@ -60,7 +59,11 @@ session.onChange((s, events) => {
 
 function paint(s, events) {
   const view = s.view;
-  if (!renderer) renderer = createRenderer($("#view"), cityTiles);
+  if (!renderer) renderer = createRenderer($("#view"));
+  // Terrain arrives once, with the drop-zone reply. It was previously captured
+  // at renderer-construction time from a variable that was never assigned, so
+  // every tile fell through to TILE[0] and the city rendered as one flat block.
+  if (session.tiles && !renderer.hasTiles()) renderer.setTiles(session.tiles);
   renderer.draw(view);
 
   const agent = ownAgent(view);
