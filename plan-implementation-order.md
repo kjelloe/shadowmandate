@@ -1,13 +1,15 @@
 # Shadow Mandate — Implementation Order (M0–M7)
 
-**STATUS 2026-08-05: M0–M6 complete (5g lane built and verified). Suite 201/201
-green, pushed to `dev_night`. M7 in progress and PLAYABLE in a browser: views,
-hosted worlds, identity, the 2.5D diorama, objective marking, debrief, building
-overlays, drop-zone picker and the deploy runbook have all landed. Remaining in
-M7: the art pass (7a), the mobile pass (7b),
-season rotation (7d), the VM deploy itself (7e), perf (7f) and the V1 acceptance
-sweep (7g). M8 added for S16 opposition — the difficulty layer D42 says the
-balance depends on.**
+**STATUS 2026-08-06: M0–M6 complete (5g lane built and verified). Suite 220/220
+green double-run, plus four browser gates (`smoke`, `ui`, `mobile`, `gallery`),
+pushed to `dev_night`. M7 in progress and PLAYABLE in a browser: views, hosted
+worlds, identity, the 2.5D diorama, objective marking, debrief, building
+overlays, the drop-zone picker, the mobile pass (7b), the browser gates (7h),
+the acceptance sweep (7g) and the procedural art pipeline (7a) have all landed.
+Remaining in M7: season rotation (7d) — the only one that can be done solo — the
+VM deploy itself (7e, needs the box) and native GPU perf (7f, needs the gaming
+PC). M8 added for S16 opposition: the difficulty layer D42/D43 say the contract
+balance is waiting on.**
 
 *Written 2026-08-04, for the implementing agent (me). The operational plan is
 `plan-version1.md`; specs are `specs/systems/S01–S15`; this file is HOW the
@@ -170,9 +172,11 @@ census complete; battery within provisional bands.
 - **7a** 🟢 **DONE (2026-08-05)** — the procedural pipeline is forked and live
   (D46), portraits are feature-layer stacks so a disguise is a diff (D47), and
   `npm run gallery` renders the review surface. Art ships as CODE: no binary
-  blobs, no artist in the loop, unit-tested. **Only Q41c remains — the final
-  look, which is the owner's judgement and is now a token file rather than a
-  rewrite.**
+  blobs, no artist in the loop, unit-tested. **7a-4 (2026-08-06)** finished the
+  job the docs claimed was already done: the TILE palette had never left the
+  renderer, existing in three copies across two colour spaces, so half of Q41c
+  was not a token edit at all. It is now. **Only Q41c remains — the final look,
+  which is the owner's judgement.**
 - **7b** ✅ **DONE (2026-08-05)** — mobile pass MEASURED, not asserted:
   `npm run mobile` drives two phone viewports with touch emulation. All checks
   passed first time; mutation-verified by shrinking `min-height`.

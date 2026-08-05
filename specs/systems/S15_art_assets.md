@@ -1,12 +1,18 @@
 # S15 — Art & Assets
 
-*Feeds: M7 (full set), earlier milestones use placeholders · Depends on: — · Status: skeleton*
+*Feeds: M7 (full set), earlier milestones use placeholders · Depends on: — ·
+Status: **AS BUILT** (7a-1…7a-4). Only Q41c, the look itself, is unpinned.*
 
 ## Purpose
 
-Painted Low-Poly Hybrid, shared pipeline with Fireline Command: procedural
-sprites baked to a strip PNG (`tools/build_assets.mjs`), width pinned by test;
-gallery page rendered through the real renderer for screenshot-diff review.
+Painted Low-Poly Hybrid, pipeline forked from Fireline Command: **art ships as
+code** (D46) — style tokens and a manifest, models built at runtime, nothing
+loaded from a binary. A gallery page renders every visual and portrait through
+the real renderer for headless review.
+
+*(The sibling additionally bakes sprites to a strip PNG. We took the tokens,
+manifest, factory and resolver but not the bake: this project draws 3D
+primitives in a diorama, so there is nothing to bake to a sprite sheet.)*
 
 ## Asset inventory (V1)
 
@@ -36,22 +42,19 @@ terminal transaction. Portraits and icons reviewed against this at M7.
 
 ## Pipeline & gates
 
-`tools/build_assets.mjs` + `render_asset_strip.mjs` forked from firepower;
-strip width pinned by test; gallery page at rest pose screenshot-diffed
-(SwiftShader) — visual work reviewable headlessly. Placeholder policy:
-flat-color stand-ins with correct footprints from each system's first slice,
-so silhouette readability is tested before painting.
+`npm run gallery` renders every visual and portrait through the real renderer
+and the real lighting (SwiftShader), so visual work is reviewable headlessly and
+screenshot-diffable. `test/art_pipeline.test.js` is the unit gate. Placeholder
+policy: flat-colour stand-ins with correct footprints from each system's first
+slice, so silhouette readability is settled before painting.
 
-## AS BUILT (7a, 2026-08-05) — silhouettes only
+## AS BUILT, step 1 (7a silhouettes, 2026-08-05) — superseded below
 
-**The pipeline in the Purpose section above does not exist yet.** Nothing has
-been forked from the sibling; there is no `tools/build_assets.mjs`, no asset
-manifest, no strip PNG, no gallery page. Everything in the diorama is an
-untextured three.js primitive, and every "portrait" is a text glyph
-(`PORTRAIT_GLYPH` in `main.js`), not an image. `find client -name "*.png"`
-returns nothing.
+*Kept for the reasoning, not the status: at this point nothing had been forked
+from the sibling and the pipeline described in Purpose did not exist. The next
+two sections are what is true now.*
 
-What 7a DID do, which is the part that does not need an artist:
+What the silhouette pass did, which is the part that needs no artist:
 
 - **Silhouettes.** Every marker except the Field HQ was the same sphere,
   separated only by colour — which fails at a glance in a busy street and fails
@@ -136,8 +139,46 @@ BURNED are not tellable apart at a glance the figure has failed at its only job.
 Figures now carry a full shoulder yoke, an alerted patrol tints torso and cap,
 and the coats were lifted off the night background.
 
+## AS BUILT (7a-4, 2026-08-06) — the tile palette, and a guard that was green for the wrong reason
+
+Writing the docs above turned up that they were **half untrue**. "Colours left
+the renderer" held for the marks; it did not hold for the tiles. The tile look —
+which is the greater part of Q41c — existed in **three copies across two colour
+spaces**: float triples in `terrain3d.js` for the diorama ground, a hand-synced
+hex table in `minimap.js` for the radar, and a third inline ramp for building
+mass. Nothing kept them equal, and "a candidate look is a token file" was
+therefore only true of the figures.
+
+The tile palette, the block tone ramp and the radar backdrop are now
+`terrain` in the style tokens, read by both surfaces. Two things worth keeping:
+
+- **The colour-space trap.** These floats are written straight into a
+  vertex-colour buffer, so they convert with a plain `/255` and deliberately
+  **not** through `THREE.Color`, whose colour management would sRGB-decode them
+  and darken the whole ground about fivefold. Recorded because the failure
+  renders *successfully*, just wrong — the hardest kind to spot.
+- **The guard was green for the wrong reason.** It scanned for `0x......` only,
+  while the historical defect — the palette duplicated into `minimap.js` — was
+  written as `"#RRGGBB"` strings and would have walked straight past it. It now
+  matches both forms across all three world renderers, and is mutation-verified
+  with the real defect rather than a convenient one.
+
+Measured drift from the retired float table: worst 3/255 (alley), block ramp
+exact — the authored hex winning over a hand-typed approximation.
+
+Also closed in the same pass: the test's role list is **derived from the
+manifest** rather than restated (one more copy that could drift), the gallery is
+checked to show every visual the game can draw, and `models.js`'s role tables
+are checked against the manifest — so a role the renderer can ask for cannot be
+missing from either.
+
 ## To pin — **Q41c, the owner's call**
 
-`❑` **final tile/figure look.** The pipeline makes this cheap to answer: a
+`❑` **final tile/figure look.** Now genuinely cheap to answer for both halves: a
 candidate look is a token file, not a rewrite. Run `npm run gallery` and look at
 `reports/gallery.png`. · `❑` splash styling.
+
+**One honest exception:** portrait colours (skin, hair, frames, hi-vis) still
+live in `portraits.js` rather than the tokens, because they read as part of the
+layer definitions rather than the world's look. If a look candidate should reach
+the faces too, that is a small follow-up and the guard's scope comment says so.

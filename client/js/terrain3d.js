@@ -14,12 +14,33 @@ import * as THREE from "three";
 
 // Tile ids: 0 open, 1 street, 2 alley, 3 plaza, 4 block, 5 entrance,
 // 6 transit, 7 checkpoint, 8 yard, 9 rough, 10 water.
-const COLOUR = {
-  0: [0.16, 0.18, 0.14], 1: [0.23, 0.25, 0.28], 2: [0.13, 0.14, 0.16],
-  3: [0.27, 0.29, 0.33], 4: [0.09, 0.10, 0.12], 5: [0.42, 0.36, 0.24],
-  6: [0.29, 0.33, 0.40], 7: [0.48, 0.29, 0.23], 8: [0.20, 0.21, 0.17],
-  9: [0.18, 0.16, 0.14], 10: [0.10, 0.16, 0.20],
-};
+//
+// The tile COLOURS used to live here as float triples, hand-synced against a
+// hex copy in minimap.js. They are style tokens now (D46) — Q41c is a judgement
+// about the tile look, and it cannot be a token edit while the tiles are hard
+// wired into two renderers that can drift apart.
+let COLOUR = null, BLOCK_LO = null, BLOCK_SPAN = null;
+
+// Raw /255, deliberately NOT THREE.Color: these floats are written straight
+// into a vertex-colour buffer, and three's colour management would sRGB-decode
+// a Color and hand back linear values, darkening the whole ground about
+// fivefold. A ground that renders "wrong but plausibly" is the hardest kind of
+// render fault to spot, so the conversion stays explicit.
+export function hexRgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+}
+
+export function setTerrainTokens(terrain) {
+  if (!terrain) { COLOUR = null; BLOCK_LO = null; BLOCK_SPAN = null; return; }
+  COLOUR = {};
+  for (const [id, hex] of Object.entries(terrain.tiles)) COLOUR[Number(id)] = hexRgb(hex);
+  COLOUR.unknown = hexRgb(terrain.unknown);
+  BLOCK_LO = hexRgb(terrain.blockLo);
+  const hi = hexRgb(terrain.blockHi);
+  BLOCK_SPAN = hi.map((c, i) => c - BLOCK_LO[i]);
+}
+
 // Purely cosmetic relief. Water sinks, yards and rough sit slightly proud.
 const RELIEF = { 0: 0, 1: 0.02, 2: 0, 3: 0.03, 4: 0, 5: 0.02, 6: 0.04, 7: 0.03, 8: 0.05, 9: 0.06, 10: -0.18 };
 const NOISE = { 0: 0.05, 1: 0, 2: 0.01, 3: 0, 5: 0, 6: 0, 7: 0, 8: 0.07, 9: 0.09, 10: 0.01, 4: 0 };
@@ -51,9 +72,12 @@ export function heightAt(tiles, size, seed, x, y) {
 }
 
 function blendedColour(tiles, size, x, y) {
+  // Loud, not grey. A terrain built before the tokens loaded would render as a
+  // uniform slab and look exactly like a citygen bug.
+  if (!COLOUR) throw new Error("terrain3d: setTerrainTokens() was never called");
   let r = 0, g = 0, b = 0;
   for (const [dx, dy] of [[-1, -1], [0, -1], [-1, 0], [0, 0]]) {
-    const c = COLOUR[tileAt(tiles, size, x + dx, y + dy)] ?? COLOUR[0];
+    const c = COLOUR[tileAt(tiles, size, x + dx, y + dy)] ?? COLOUR.unknown;
     r += c[0]; g += c[1]; b += c[2];
   }
   return [r / 4, g / 4, b / 4];
@@ -106,7 +130,8 @@ export function buildBlocks(tiles, size, seed) {
   // mass, which defeats the point of varying the heights at all. The tint uses
   // a SECOND hash draw so tone and height vary independently — keying both off
   // one value makes every tall block the same shade, which looks authored.
-  const mat = new THREE.MeshLambertMaterial({ color: 0xFFFFFF, vertexColors: true });
+  if (!BLOCK_LO) throw new Error("terrain3d: setTerrainTokens() was never called");
+  const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
   const mesh = new THREE.InstancedMesh(geo, mat, cells.length);
   const m = new THREE.Matrix4();
   const colour = new THREE.Color();
@@ -119,7 +144,9 @@ export function buildBlocks(tiles, size, seed) {
     m.setPosition(x + 0.5, h / 2, y + 0.5);
     mesh.setMatrixAt(i, m);
     const t = hash2(seed ^ 0x9e37, x, y);
-    colour.setRGB(0.145 + t * 0.075, 0.165 + t * 0.075, 0.20 + t * 0.085);
+    colour.setRGB(BLOCK_LO[0] + t * BLOCK_SPAN[0],
+      BLOCK_LO[1] + t * BLOCK_SPAN[1],
+      BLOCK_LO[2] + t * BLOCK_SPAN[2]);
     mesh.setColorAt(i, colour);
   }
   mesh.instanceMatrix.needsUpdate = true;

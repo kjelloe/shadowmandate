@@ -10,7 +10,7 @@
 // reasonably read as "off centre".
 
 import * as THREE from "three";
-import { buildGround, buildBlocks } from "./terrain3d.js";
+import { buildGround, buildBlocks, setTerrainTokens } from "./terrain3d.js";
 import { siteRoles, objectiveCell, buildingRole, siteRole } from "./models.js";
 import { buildProcedural, applyTint } from "./asset_factory.js";
 import { resolveVisual, tintFor, detectionMark } from "./asset_resolver.js";
@@ -37,6 +37,7 @@ export function createScene(canvas) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   const { tokens, manifest } = art();
   renderer.setClearColor(new THREE.Color(tokens.lighting.clear));
+  setTerrainTokens(tokens.terrain);
 
   const scene = new THREE.Scene();
   // NO FOG. The first version set Fog(colour, 40, 110) — but an orthographic

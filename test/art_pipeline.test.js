@@ -23,19 +23,22 @@ import {
 import {
   portraitLayers, layerDiff, disguiseCount, drawableLayers,
 } from "../client/js/portraits.js";
+import { setTerrainTokens, hexRgb, buildGround } from "../client/js/terrain3d.js";
+import { buildingRole, siteRole } from "../client/js/models.js";
+import { TILE_COUNT } from "../engine/terrain.js";
 
 const root = new URL("../", import.meta.url);
 const tokens = JSON.parse(readFileSync(new URL("client/assets/metadata/style_tokens.json", root)));
 const manifest = JSON.parse(readFileSync(new URL("client/assets/metadata/asset_manifest.json", root)));
 setStyleTokens(tokens);
 
-// Every visual key the renderer can ask for. If scene.js gains a role, it goes
-// here — and the test below proves the manifest and factory both know it.
-const ROLES = [
-  "agent", "rival", "patrol", "patrolAlert",
-  "siteScenery", "siteOffered", "siteActive",
-  "informant", "market", "coverShop", "holding", "ownHq", "rivalHq",
-];
+// DERIVED from the manifest, not restated. A hand-maintained list here would be
+// one more copy that can drift out of step — the exact failure the palette had,
+// and the reason the gallery test below checks coverage rather than trusting a
+// second literal list.
+const ROLES = Object.values(manifest)
+  .filter((section) => section && typeof section === "object")
+  .flatMap((section) => Object.keys(section));
 
 test("every role resolves through the manifest to a real builder", () => {
   for (const role of ROLES) {
@@ -109,15 +112,98 @@ test("Firm identity carries colour AND a symbol", () => {
   assert.ok(firmToken(tokens, 999), "an unknown firm id must still resolve to something drawable");
 });
 
-test("the renderer carries no colours of its own — tokens are the source of truth", () => {
-  // Guards must read CODE, not prose: strip comments first. This project has
-  // been bitten twice by a guard matching the comment that explained it.
-  const scene = readFileSync(new URL("client/js/scene.js", root), "utf8")
+// Guards must read CODE, not prose: strip comments first. This project has been
+// bitten twice by a guard that matched the comment explaining it.
+function code(file) {
+  return readFileSync(new URL(`client/js/${file}`, root), "utf8")
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .split("\n").filter((l) => !l.trim().startsWith("//")).join("\n");
-  const hexes = scene.match(/0x[0-9A-Fa-f]{6}/g) ?? [];
-  assert.deepEqual(hexes, [],
-    `scene.js still hardcodes colours (${hexes.join(", ")}) — they belong in style_tokens.json`);
+}
+
+test("no world renderer carries colours of its own — tokens are the source of truth", () => {
+  // Scope: the three surfaces that draw the WORLD. portraits.js is deliberately
+  // out of scope — its palette is part of the layer definitions rather than the
+  // world's look, and is noted in S15 as a follow-up if a look candidate should
+  // reach the faces too.
+  //
+  // BOTH literal forms, and this matters: the first version of this guard
+  // matched only `0x......`, while the historical bug — the palette duplicated
+  // into minimap.js — was written as "#RRGGBB" strings and would have walked
+  // straight past it. \b keeps the seeded-hash constants in terrain3d.js
+  // (0x9e3779b1) from reading as a six-digit colour.
+  for (const file of ["scene.js", "minimap.js", "terrain3d.js"]) {
+    const hexes = code(file).match(/\b0x[0-9A-Fa-f]{6}\b|#[0-9A-Fa-f]{6}\b/g) ?? [];
+    assert.deepEqual(hexes, [],
+      `${file} still hardcodes colours (${hexes.join(", ")}) — they belong in style_tokens.json`);
+  }
+});
+
+test("the gallery shows every visual the game can draw", () => {
+  // A review surface that silently shows fewer things than the renderer draws
+  // is worse than no review surface: it makes an unreviewed asset look reviewed.
+  const gallery = readFileSync(new URL("client/js/gallery.js", root), "utf8");
+  for (const role of ROLES) {
+    assert.ok(gallery.includes(`"${role}"`),
+      `the manifest defines "${role}" but the gallery never renders it — it would ship unlooked-at`);
+  }
+});
+
+test("every role the renderer's decision tables can produce is in the manifest", () => {
+  // scene.js does not name most roles literally; it asks models.js. So the
+  // guard has to walk the same tables rather than a list somebody kept by hand.
+  const produced = [
+    buildingRole(0), buildingRole(1), buildingRole(2), buildingRole(99),
+    siteRole("active"), siteRole("offered"), siteRole(undefined),
+  ];
+  for (const role of produced) {
+    assert.ok(manifestEntry(manifest, role),
+      `models.js can return role "${role}", which the manifest does not define`);
+  }
+});
+
+// ── The tile look (Q41c's other half) ──────────────────────────────────────
+// Tiles were the last colours living in the renderer, in three copies and two
+// colour spaces: float triples in terrain3d.js, a hand-synced hex table in
+// minimap.js, and a third inline ramp for building mass. Nothing kept them
+// equal, so "a candidate look is a token file" was only true of the figures.
+
+test("every tile the engine can emit has a colour token", () => {
+  // Fires the day citygen gains a tile id: without this, a new surface renders
+  // as fallback grey in BOTH views and looks like a citygen bug.
+  for (let id = 0; id < TILE_COUNT; id++) {
+    assert.ok(tokens.terrain.tiles[id], `tile id ${id} has no colour in style_tokens.json`);
+  }
+  assert.ok(tokens.terrain.unknown, "no fallback colour for a tile id the tokens do not know");
+  assert.ok(tokens.terrain.blockLo && tokens.terrain.blockHi, "building mass has no tone ramp");
+});
+
+test("the diorama and the radar read the SAME tile table", () => {
+  // The minimap's own comment — "two views that disagree about what a thing
+  // looks like are worse than one view" — is right, and duplicated constants
+  // cannot deliver it. This is now checkable: the ground converts the very hex
+  // string the radar fills with.
+  setTerrainTokens(tokens.terrain);
+  for (let id = 0; id < TILE_COUNT; id++) {
+    const hex = tokens.terrain.tiles[id];
+    const rgb = hexRgb(hex);
+    assert.equal(rgb.length, 3);
+    for (const c of rgb) assert.ok(c >= 0 && c <= 1, `${hex} converted out of range`);
+  }
+  // Raw /255, NOT a THREE.Color: colour management would sRGB-decode the value
+  // and darken the ground about fivefold — a fault that renders "successfully".
+  assert.deepEqual(hexRgb("#000000"), [0, 0, 0]);
+  assert.deepEqual(hexRgb("#ffffff"), [1, 1, 1]);
+  assert.deepEqual(hexRgb("#3B3F46").map((c) => Math.round(c * 255)), [59, 63, 70]);
+});
+
+test("terrain built before its tokens fails loudly, never as a grey slab", () => {
+  // A ground that draws in one flat colour looks exactly like a citygen bug,
+  // and the fog defect cost this project three playtests precisely because a
+  // broken render still rendered.
+  setTerrainTokens(null);
+  const tiles = new Uint8Array(16 * 16);
+  assert.throws(() => buildGround(tiles, 16, 1), /setTerrainTokens/);
+  setTerrainTokens(tokens.terrain);   // leave the module usable for other tests
 });
 
 // ── Portraits (D47) ────────────────────────────────────────────────────────

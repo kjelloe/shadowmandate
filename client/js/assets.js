@@ -33,3 +33,13 @@ export function art() {
 export function mark(name) {
   return tokens?.marks?.[name] ?? "#888888";
 }
+
+// The tile palette, shared by the diorama ground and the radar. Throws rather
+// than substituting a default: a radar baked from a fallback palette is a
+// uniform slab that looks exactly like a citygen bug, and this project has
+// already paid once for a render fault that drew "successfully" in the wrong
+// colour (the fog bug, S12).
+export function terrain() {
+  if (!tokens?.terrain) throw new Error("assets: loadArt() must run before terrain is drawn");
+  return tokens.terrain;
+}

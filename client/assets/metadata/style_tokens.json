@@ -81,6 +81,27 @@
       "symbol": "dot"
     }
   ],
+  "note_terrain": "The TILE look — the other half of Q41c. These were the last colours still living in the renderer: the diorama ground held them as float RGB triples in terrain3d.js, the radar held a hand-synced hex copy in minimap.js, and the building mass had a third ramp inline. Three copies of one colour language, in two colour spaces, with nothing keeping them equal. Now both surfaces read this table, and 'a candidate look is a token file' is true for tiles as well as figures. Values are the authored hex; consumers convert with a plain /255, NOT through THREE.Color — colour management would sRGB-decode them and darken the ground by a factor of five.",
+  "terrain": {
+    "tiles": {
+      "0": "#2A2E26",
+      "1": "#3B3F46",
+      "2": "#24272C",
+      "3": "#454B54",
+      "4": "#171A1F",
+      "5": "#6A5B3E",
+      "6": "#4A5566",
+      "7": "#7A4A3A",
+      "8": "#33352C",
+      "9": "#2E2A24",
+      "10": "#1B2A33"
+    },
+    "note_block": "Building mass tone ramp. A second seeded hash draw picks a point on it, so tone and height vary independently — keying both off one value makes every tall block the same shade, which reads as authored rather than grown.",
+    "blockLo": "#252A33",
+    "blockHi": "#383D49",
+    "unknown": "#222222",
+    "backdrop": "#0F1114"
+  },
   "note_budget": "Triangle budgets are a MOBILE constraint, not an aesthetic one. The client already runs on a phone (7b) and a busy street draws dozens of these.",
   "triBudget": {
     "figure": 420,

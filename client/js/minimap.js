@@ -4,14 +4,14 @@
 // radar rather than a low-resolution world, which is what it was always better
 // suited to being.
 
-const TILE = {
-  0: "#2A2E26", 1: "#3B3F46", 2: "#24272C", 3: "#454B54", 4: "#171A1F",
-  5: "#6A5B3E", 6: "#4A5566", 7: "#7A4A3A", 8: "#33352C", 9: "#2E2A24", 10: "#1B2A33",
-};
+// The tile palette used to be a literal table here, hand-synced against a
+// second copy in terrain3d.js. It is a style token now (D46): the radar and the
+// diorama read the SAME table, so they cannot drift apart, and a Q41c look
+// candidate changes both at once.
 const CELL = 256;
 
 import { siteRoles, objectiveCell, siteRole } from "./models.js";
-import { mark } from "./assets.js";
+import { mark, terrain } from "./assets.js";
 import { detectionMark } from "./asset_resolver.js";
 
 export function createMinimap(canvas) {
@@ -25,9 +25,10 @@ export function createMinimap(canvas) {
     baked = document.createElement("canvas");
     baked.width = size; baked.height = size;
     const b = baked.getContext("2d");
+    const T = terrain();
     for (let y = 0; y < size; y++) {
       for (let x = 0; x < size; x++) {
-        b.fillStyle = TILE[tiles[y * size + x]] ?? "#222";
+        b.fillStyle = T.tiles[tiles[y * size + x]] ?? T.unknown;
         b.fillRect(x, y, 1, 1);
       }
     }
@@ -40,7 +41,7 @@ export function createMinimap(canvas) {
     draw(view) {
       if (!view) return;
       const w = canvas.width, h = canvas.height;
-      ctx.fillStyle = "#0F1114";
+      ctx.fillStyle = terrain().backdrop;
       ctx.fillRect(0, 0, w, h);
       if (baked) ctx.drawImage(baked, 0, 0, bakedSize, bakedSize, 0, 0, w, h);
       const s = w / view.size;

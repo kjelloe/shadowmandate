@@ -2,7 +2,8 @@
 
 **Project codename:** multisyndicate
 **Game title:** Shadow Mandate
-**Status:** Pre-production, design of record established 2026-07-31
+**Status:** In production — design of record established 2026-07-31; M0–M6 built,
+M7 in progress and playable in a browser (updated 2026-08-06)
 
 ## Reading order
 
@@ -13,10 +14,10 @@
 | 3 | `03_roadmap_v1.md` | V1 "The Operative" — solo vs AI rival firms |
 | 4 | `04_roadmap_v2.md` | V2 "The Squad" — human multiplayer, squads, standoffs, support agents |
 | 5 | `05_roadmap_v3.md` | V3 "The World" — doctrines, living world, seasons, Roblox gate |
-| 6 | `06_open_questions.md` | Numbered design questions queue (Q1…), answered in batches — currently empty (all 21 answered) |
+| 6 | `06_open_questions.md` | Archive of answered design questions (Q1–Q21); the live queue is `../dev-questions.md` |
 | 7 | `07_spec_map.md` | The spec structure: how design docs, plans, and system specs relate; milestone → spec matrix |
 | `08_reference_mission_taxonomy.md` | Bullfrog mission corpus mapped to our contract types; the Eliminate-family collision with D6; funding/research/upgrade meta-layer | research note |
-| 8 | `systems/S01…S15` | **System specs (implementation contracts)** — state shapes, commands, ruleset keys, behaviour tables per system |
+| 8 | `systems/S01…S16` | **System specs (implementation contracts)** — state shapes, commands, ruleset keys, behaviour tables per system. S16 (opposition & site security) is specced, not built — it is what M8 implements |
 | — | `../dev-questions.md` | **Live question queue (Q22+)** — pending decisions with proposals; answers become rulings and move to `06` |
 | — | `../plan-version1.md` (+ `.html`) | **The operational V1 plan** — features in/out, milestones M0–M7, gates, acceptance (supersedes `03` for day-to-day work) |
 | — | `../plan-version2.md` (+ `.html`) | The operational V2 plan — M8–M13 |
@@ -94,6 +95,25 @@
 | # | Decision | Ruling |
 |---:|---|---|
 | D41 | Sortie pacing | Length comes from **content** (multi-stage work, patrol timing windows), not from slower walking; modest travel slowdown retained. D11 targets stand |
+
+## Seventh decision batch (2026-08-05, Q37–Q38)
+
+| # | Decision | Ruling |
+|---:|---|---|
+| D42 | Contract attractiveness | Balance extraction and acquisition with **opposition, not price**. They are under-opposed, not mispriced; a reward cut made now has to be undone when S16 lands |
+| D43 | The D19 ceiling | **Deferred until opposition exists.** A contract mix measured in a world with nothing pushing back is not a verdict about the finished game |
+| D44 | Opposition | A **system, not a difficulty number**: live rival teams contesting the objective, plus site security (alarms, sensor lines, lockdowns). Disable-only (D6), deterministic, legible before lethal. Spec: `systems/S16` |
+| D45 | Challenge presentation | **Always diegetic, never a modal panel.** A mini-game on its own screen fights drop-in/drop-out at the root — the world runs at 10Hz with other players in it. Applies to all future difficulty content |
+
+## Eighth decision batch (2026-08-05, Q41a/Q41b)
+
+| # | Decision | Ruling |
+|---:|---|---|
+| D46 | Art pipeline | **Art ships as CODE** — fork the sibling's procedural pipeline. Style tokens are the single source of truth, the manifest is the seam, and art is unit-testable because three.js builds geometry in node with no DOM |
+| D47 | Portraits | **Procedural feature-layer stacks**, so a D38 disguise is a *diff on the layers*. The comic requirement is combinatorial, not illustrative: a fixed image set can only produce unrelated pictures, never "the same person, different glasses" |
+
+**Still open: Q41c — the final tile and figure look.** The owner's judgement,
+and now a token-file edit rather than a rewrite (`npm run gallery`).
 
 ## Sibling project references
 

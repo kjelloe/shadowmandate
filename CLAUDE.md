@@ -4,14 +4,15 @@ Drop-in/drop-out covert-ops game. Sibling of Fireline Command
 (`~/GIT/firepower` — the fork source, never modified from here).
 
 **Status: M0–M6 complete; M7 in progress and PLAYABLE in a browser.
-`npm test` = 183 green.** No client exists yet. **5g (batch-lane bring-up) needs the gaming PC
-and cannot be done solo** — runbook in `plan-implementation-order.md`. M6 done; batch lane verified (`BATCH_PC.md`). **M7 in progress**: views,
-hosted worlds and identity have landed; the ws transport, client, art and VM
-deploy remain.
+`npm test` = 220 green**, plus four browser gates (`smoke`, `ui`, `mobile`,
+`gallery`). Batch lane verified (`BATCH_PC.md`). **Remaining in M7**: season
+rotation (7d), the VM deploy itself (7e, needs the box) and native GPU perf
+(7f, needs the gaming PC). **M8 — opposition and site security — is specced and
+is what the contract balance is waiting on** (D42/D43).
 
 ## Read first
 
-1. `specs/00_document_index.md` — document map, rulings D1–D34
+1. `specs/00_document_index.md` — document map, rulings D1–D47
 2. `plan-version1.md` — the operational plan (milestones M0–M7, gates)
 3. `plan-implementation-order.md` — slice-by-slice execution order, per-milestone
    STATUS markers, and the gaming-PC battery runbook (hub port 8972)
@@ -26,6 +27,7 @@ npm test                                    # the whole suite (node --test)
 npm run smoke                               # real browser: loads, drops in, ticks
 npm run ui                                  # real browser: the controls DO things
 npm run mobile                              # real browser: two phone viewports
+npm run gallery                             # every visual + portrait -> reports/gallery.png
 SIZE=128 npm run smoke                      # D26: render path at 128
 node --test test/citygen.test.js            # one file
 node tools/render_city.mjs 4711 64          # eyeball a generated city
@@ -46,6 +48,8 @@ node tools/repin_fixture.mjs "<reason>"     # deliberate fixture re-pin
 | `engine/` | pure reducer and subsystems: state, commands, reducer, snapshot, terrain, citygen, worldprobes, pathfind, agents, detection, combat, hq, contracts, buildings, standoff, ai_firms, mirror |
 | `server/` | all I/O: `ruleset.js` (loads `data/`), `ledger.js` (world ledger, identity) |
 | `data/` | every tuned number, 12 files + `ruleset.json` manifest with an era version |
+| `client/js/` | the browser client: `main.js`, `scene.js` (diorama), `minimap.js`, `terrain3d.js`, `models.js` (view-model decisions, unit-tested) |
+| `client/assets/metadata/` | **all art direction**: `style_tokens.json` (materials, marks, body, Firm identity, tile palette, triangle budgets, lighting) + `asset_manifest.json` (role → builder) |
 | `client/i18n/` | `en.json` / `no.json`, key-parity enforced |
 | `test/` | suite + `helpers.js` + `fixture_hash.js` (the paired hash) + `fixtures/` |
 | `tools/`, `debugging/` | re-pin tool, city renderer, agent-mail; probes kept forever |
@@ -84,6 +88,30 @@ only sanctioned occurrence. `test/guards.test.js` fails the suite on a violation
 `test/mirror.test.js` has a MIRROR AUDIT that fails when a new `x`/`*X` field
 is undeclared. A missed mirror field silently invalidates every future battery.
 
+## Art doctrine (D46/D47 — art ships as CODE)
+
+- **No colour lives in a renderer.** `client/assets/metadata/style_tokens.json`
+  is the single source of truth for marks, body, Firm identity, the tile palette
+  and lighting; `scene.js`, `minimap.js` and `terrain3d.js` carry none of their
+  own, guard-enforced in `test/art_pipeline.test.js`. This is not tidiness: two
+  surfaces draw the same world, and **duplicated constants cannot guarantee they
+  agree** — which is exactly how the tile palette ended up in three copies and
+  two colour spaces until 7a-4.
+- **The manifest is the seam.** `asset_manifest.json` maps role → builder, so
+  swapping a procedural stand-in for a painted model is a manifest edit, never a
+  renderer edit. Roles in the tests are DERIVED from the manifest — never
+  restated as a second list.
+- **The tint rule.** Only meshes named `tint` are recoloured at runtime. A
+  visual that accepts a tint and shows nothing looks like a design decision, so
+  the test fails when the manifest claims a tint the model has no slot for.
+- **Tile colours convert with a plain `/255`, never `THREE.Color`** — colour
+  management would sRGB-decode them and darken the ground about fivefold, and a
+  ground that renders "wrong but plausibly" is the hardest render fault to spot.
+- **Look at `npm run gallery`.** Every visual, every portrait, real renderer,
+  real lighting. The first render found figures reading as dark blobs with a
+  detection band too thin to see — invisible to the code, the tests and a green
+  suite. **A green suite cannot tell you the game looks wrong.**
+
 ## Test conventions (earned, not stylistic)
 
 - **`tickCollecting(state, apply, n)`** from `test/helpers.js` whenever you
@@ -100,6 +128,11 @@ is undeclared. A missed mirror field silently invalidates every future battery.
   in a test. This has now bitten twice: the dependency guard matched the phrase
   `from "this seat is lucky"` in a comment, and the CSS guard matched the rule
   written inside the comment explaining the bug it was checking for.
+- **A guard must match the form the bug actually took.** The colour guard
+  scanned for `0x......` only — while the historical defect, the palette
+  duplicated into `minimap.js`, was written as `"#RRGGBB"` strings and would
+  have walked straight past it. It was green, and green for the wrong reason.
+  Mutate with the *real* defect, not a convenient one.
 - **Anything a player clicks must outlive the click.** A list rebuilt on every
   tick destroys its own buttons between mousedown and mouseup, so clicks never
   land and nothing errors. Re-render interactive DOM only when its content
