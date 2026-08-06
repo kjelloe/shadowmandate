@@ -1,7 +1,7 @@
 # S16 — Opposition & Site Security
 
-*Feeds: V2 (design pinned in V1) · Depends on: S03, S04, S07, S08, S09 ·
-Status: design note, nothing implemented*
+*Feeds: M8 · Depends on: S03, S04, S07, S08, S09 ·
+Status: **8a AS BUILT** (staged alarms); 8b–8j specced, not started*
 
 ## Purpose
 
@@ -182,3 +182,59 @@ would mean an HQ is attacked strictly by appointment. Both, in that order:
 - Whether site security is per-site static or generated per contract.
 - Whether a blackout should be usable offensively against a rival Firm's
   in-progress contract.
+
+---
+
+## AS BUILT — 8a, staged alarms (2026-08-06)
+
+`engine/security.js` + `data/security.json`. The escalation machine, shipped
+**with no new way to trigger it**: alarms are raised from the burn events
+detection already emits. That was deliberate — it makes the state machine
+testable before anything can raise it, so 8b/8c add a trigger to a machine that
+is already proven rather than debugging both at once.
+
+Stages 0 clear → 1 local → 2 lockdown → 3 district. Escalates while a burned
+agent stays within `radius` of the site; eases **one stage at a time** after
+`calmTicks` of quiet; leaves the collection entirely at clear. Reaching stage 3
+spikes district heat exactly once.
+
+**Hash-inert by construction.** Alarms are their own collection rather than
+fields on every site, so a world with nothing wrong writes no alarm bytes and
+hashes exactly as it did before this file existed — no fixture re-pin, no era
+bump. The counterpart obligation: `test/fixture_populated.test.js` now raises an
+alarm, because a hash-inert collection is only compared between the twin hashers
+while it is non-empty. **That hole had already reappeared once** — the twins'
+alarm writers were completely uncovered by the whole suite until the fixture was
+populated, which is the same defect that file was originally written to close.
+
+**Tick placement**: between `stepDetection` and `stepHeat`. Alarms are a
+consequence of being seen and a source of heat, so they sit between the two;
+running them after `stepHeat` would delay every district spike by a tick and let
+the same tick's decay cancel a spike that had just been earned. The seven
+functions the tick-order contract pins are untouched and still in order.
+
+**The view is fogged.** A site's alarm stage is reported only when the Firm can
+currently see the site. Knowing every alarm in the world would hand the player a
+free map of where every rival Firm is working — the stealth layer is a fog
+problem before it is a data problem. Out of sight reports stage 0, identical to
+clear: the view deliberately cannot distinguish "clear" from "I cannot tell".
+The internal escalation clock never crosses the wire, or a tense situation
+becomes a countdown widget and a scripted client plays perfectly.
+
+### Two findings
+
+**The alarm radius must stay below citygen's site `minSpacing`.** At radius 6
+against a spacing of 5, one burn woke every neighbouring facility at once, so
+the player could not tell which building had reacted to them and the alarm read
+as weather rather than as consequence. Radius is 4 and a test asserts the
+relationship, so a future citygen spacing change cannot silently undo it.
+
+**Stage 3 is currently unreachable in play, and that is correct.** A 6-seed
+world-day probe (`debugging/dbg_alarms.mjs`) shows the machine working — 12
+burns produced 10 raises, 4 escalations to lockdown, all eventually cleared —
+but never stage 3, which needs 900 ticks of *continuously* being burned beside a
+facility. A burned AI agent evacuates or is arrested long before that. **Do not
+tune the numbers to force it.** Stage 3 is designed for the scenario 8f builds:
+an acquisition `crackTicks` timer elapsing INSIDE a secured facility while the
+alarm climbs. Tuning it reachable now, against absent content, is the same
+error D42/D43 rule against for contract rewards.

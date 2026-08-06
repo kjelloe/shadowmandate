@@ -14,6 +14,7 @@ import { AGENT_ACTIVE, AGENT_DOWNED, AGENT_INSIDE, AGENT_HELD } from "./state.js
 import { heatBandFor, agentCell } from "./detection.js";
 import { hasHeatIntel } from "./buildings.js";
 import { stageTargetTicks } from "./contracts.js";
+import { alarmStageOf } from "./security.js";
 import { worldToCellFloor } from "../shared/fixedmath.js";
 
 const SIGHT = 10;          // what your own agent can make out, in cells
@@ -91,9 +92,17 @@ export function buildView(state, firmId, detCfg) {
       };
     }),
 
+    // S16: an alarm is only reported for a site the Firm can currently SEE.
+    // A siren is a local fact — knowing that a facility three districts away
+    // just went into lockdown would hand the player a free map of where every
+    // rival is working, and the stealth layer is a fog problem before it is a
+    // data problem. Out of sight reports stage 0, which is also what an
+    // un-alarmed site reports: the view deliberately cannot distinguish
+    // "clear" from "I cannot tell".
     sites: state.sites.map((s) => ({
       id: s.id, type: s.type, districtId: s.districtId,
       cellX: s.cellX, cellY: s.cellY, status: s.status,
+      alarmStage: visible(s.cellX, s.cellY) ? alarmStageOf(state, s.id) : 0,
     })),
     buildings: state.buildings.map((b) => ({
       id: b.id, kind: b.kind, cellX: b.entranceX, cellY: b.entranceY,

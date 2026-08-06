@@ -216,7 +216,7 @@ census complete; battery within provisional bands.
 
 ---
 
-## M8 — Opposition & Site Security 🔵 SPECCED, NOT STARTED
+## M8 — Opposition & Site Security 🟡 IN PROGRESS (8a done)
 
 The difficulty layer. D42 rules that extraction and acquisition are
 under-opposed rather than mispriced, so this is what the contract balance is
@@ -225,10 +225,13 @@ agent in the world, never in a modal panel. Contract: `S16_opposition_security.m
 
 Ordered so each slice is playable and measurable on its own.
 
-- **8a** **Alarm state machine** (staged: local → lockdown → district). No
-  sensors yet — trigger it from the detection events that already exist, so the
-  escalation is testable before anything can raise it. Feeds heat the way burns
-  do, from the reducer, keeping the module graph acyclic.
+- **8a** ✅ **DONE (2026-08-06)** — staged alarm machine (local → lockdown →
+  district) in `engine/security.js`, triggered from existing burn events so the
+  escalation was testable before anything could raise it. **Hash-inert**: alarms
+  are their own collection, so no fixture re-pin and no era bump. Fogged in the
+  view. Two findings: the alarm radius must stay under citygen's site spacing
+  (at 6 vs 5 one burn woke every neighbour), and **stage 3 is unreachable until
+  8f** — by design, so the numbers must NOT be tuned to force it.
 - **8b** **Camera cones.** Fixed arc, fixed sweep period derived from
   `state.tick`, feeding the EXISTING detection currency rather than a second
   one. Four places for the positional state; MIRROR AUDIT must stay green.

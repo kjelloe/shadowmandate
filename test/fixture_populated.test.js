@@ -29,6 +29,7 @@ import { hashStateLocal } from "./fixture_hash.js";
 import { generateCity } from "../engine/citygen.js";
 import { refillPool, rebuildOffers } from "../engine/contracts.js";
 import { spawnAiFirms, stepAiFirms } from "../engine/ai_firms.js";
+import { raiseAlarm, ALARM_LOCKDOWN } from "../engine/security.js";
 import { RULES } from "./helpers.js";
 
 const SEED = 20260805;
@@ -40,6 +41,13 @@ function populatedWorld() {
   spawnAiFirms(s, RULES, 3, { swap: false });
   refillPool(s, RULES.contracts, RULES.detection);
   rebuildOffers(s, RULES.contracts, RULES.detection);
+  // A live alarm (M8/S16). Alarms are hash-inert while empty by design, which
+  // means the twins' alarm writers are only ever compared on a world that has
+  // one — the same hole this file was written to close for contracts, which
+  // reappeared the moment a new collection was added. Populate every
+  // hash-inert collection here, or the guarantee quietly rots again.
+  raiseAlarm(s, s.sites[0], RULES.security.alarm, ALARM_LOCKDOWN, "fixture");
+  
   return s;
 }
 
@@ -52,6 +60,9 @@ test("the populated world actually populates — otherwise this file proves noth
   assert.ok(s.buildings.length > 0, "no buildings");
   assert.ok(s.districts.length > 0, "no districts");
   assert.ok(s.agents.length > 0, "no agents");
+  assert.ok(s.alarms.length > 0,
+    "no alarms — the twins' alarm writers would never be compared, which is "
+    + "exactly the hole this file exists to close");
 });
 
 test("the paired hash functions agree on a world containing contracts and city", () => {

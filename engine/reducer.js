@@ -33,6 +33,7 @@ import {
   enterBuilding, exitBuilding, buyCover, payloadFor, applyEffect,
 } from "./buildings.js";
 import { stepStandoffs, submitChoice } from "./standoff.js";
+import { stepAlarms } from "./security.js";
 import { applyDormancy } from "./dormancy.js";
 
 export function copyState(state) {
@@ -71,6 +72,7 @@ export function copyState(state) {
     contractPool: state.contractPool.map((c) => ({ ...c })),
     offers: state.offers.map((o) => ({ ...o, contractIds: o.contractIds.slice() })),
     standoffs: state.standoffs.map((s) => ({ ...s })),
+    alarms: (state.alarms ?? []).map((a) => ({ ...a })),
     pacts: state.pacts.map((p) => ({ ...p })),
     vehicles: state.vehicles.map((v) => ({ ...v })),
 
@@ -351,6 +353,11 @@ function applyAdvanceTick(next) {
   // from the events detection just emitted, rather than by having detection
   // import contracts — the module graph stays acyclic (specs/02).
   for (const e of next.events) if (e.type === "agentBurned") noteBurn(next, e.agentId);
+  // Site alarms sit between perceive and heat because that is exactly what they
+  // are: a consequence of being seen, and a source of heat. Running them after
+  // stepHeat would delay a district spike by a full tick and — worse — let the
+  // same tick's decay cancel a spike that had just been earned.
+  stepAlarms(next, r.security?.alarm);
   stepHeat(next, r.detection);
   stepArrests(next, r.detection, r.combat, r.agents);
   stepHqs(next, r.hq);

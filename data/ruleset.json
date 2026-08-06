@@ -13,6 +13,7 @@
     "standoff.json",
     "vehicles.json",
     "firms.json",
-    "season.json"
+    "season.json",
+    "security.json"
   ]
 }

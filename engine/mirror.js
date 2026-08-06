@@ -101,6 +101,12 @@ export function mirrorState(state) {
     contractPool: state.contractPool.map((c) => ({ ...c })),
     offers: state.offers.map((o) => ({ ...o, contractIds: o.contractIds.slice() })),
     standoffs: state.standoffs.map((s) => ({ ...s })),
+    // Alarms key off siteId and carry no coordinate, so there is nothing to
+    // reflect — but they must still be COPIED. The `...state` spread above
+    // would otherwise share the array by reference and let a mirrored world
+    // mutate its twin, which is the silent kind of battery corruption the
+    // MIRROR AUDIT exists to prevent.
+    alarms: (state.alarms ?? []).map((a) => ({ ...a })),
     pacts: state.pacts.map((p) => ({ ...p })),
     firms: state.firms.map((f) => ({
       ...f,

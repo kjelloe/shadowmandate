@@ -36,6 +36,7 @@ SEED=4711 node debugging/sm_systems.mjs     # event census: what actually FIRED
 node tools/sm_worldday.mjs 12               # AI world-day sweep, CSV metrics
 MIRROR=1 node tools/sm_worldday.mjs 300     # fairness instrument
 FIRMSWAP=1 node tools/sm_worldday.mjs 300   # personality vs seat
+node debugging/dbg_alarms.mjs 6 12000       # do S16 alarms actually FIRE?
 node debugging/dbg_choke.mjs 1548 64        # example one-off probe (kept)
 node tools/repin_fixture.mjs "<reason>"     # deliberate fixture re-pin
 ```
@@ -45,9 +46,9 @@ node tools/repin_fixture.mjs "<reason>"     # deliberate fixture re-pin
 | Path | Contents |
 |---|---|
 | `shared/` | prng, canonical byte writer + FNV-1a 64, fixedmath — **verbatim from firepower**, do not edit |
-| `engine/` | pure reducer and subsystems: state, commands, reducer, snapshot, terrain, citygen, worldprobes, pathfind, agents, detection, combat, hq, contracts, buildings, standoff, ai_firms, mirror |
+| `engine/` | pure reducer and subsystems: state, commands, reducer, snapshot, terrain, citygen, worldprobes, pathfind, agents, detection, combat, hq, contracts, buildings, standoff, ai_firms, security, season, mirror |
 | `server/` | all I/O: `ruleset.js` (loads `data/`), `ledger.js` (world ledger, identity) |
-| `data/` | every tuned number, 12 files + `ruleset.json` manifest with an era version |
+| `data/` | every tuned number, 13 files + `ruleset.json` manifest with an era version |
 | `client/js/` | the browser client: `main.js`, `scene.js` (diorama), `minimap.js`, `terrain3d.js`, `models.js` (view-model decisions, unit-tested) |
 | `client/assets/metadata/` | **all art direction**: `style_tokens.json` (materials, marks, body, Firm identity, tile palette, triangle budgets, lighting) + `asset_manifest.json` (role → builder) |
 | `client/i18n/` | `en.json` / `no.json`, key-parity enforced |
@@ -199,6 +200,18 @@ is undeclared. A missed mirror field silently invalidates every future battery.
 - **Do not read a balance verdict against absent difficulty (D43).** The D19
   ceiling is deferred until opposition exists. A contract mix measured in a
   world with nothing pushing back is not a verdict about the finished game.
+- **Every hash-inert collection must be POPULATED in
+  `test/fixture_populated.test.js`.** Hash-inert growth is deliberate (an empty
+  collection writes no bytes, so fixtures do not churn), but it means the twin
+  hashers are only compared where a collection is non-empty. Adding `alarms` in
+  8a re-opened the exact hole that file was written to close: deleting a field
+  from one twin left the ENTIRE suite green. Populate it, and prove both
+  directions — drift the twin, and un-populate the subject.
+- **A mutation can apply to the FILE and not to the executed path.** Mutating a
+  default parameter proved nothing because every caller passes the argument
+  explicitly. "The mutation applied" now means the *behaviour* changed, not the
+  bytes: if the suite stays green, check reachability before concluding the
+  guard is toothless.
 - **A test whose subject is empty proves nothing.** The paired-hash test ran
   only against a world with no contracts, and hashing is deliberately hash-inert
   for empty collections, so the twins' contract writers were never compared.

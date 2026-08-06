@@ -97,6 +97,13 @@ export function hashStateLocal(state) {
   for (const p of state.pacts) {
     w.writeI32LE(p.firmA); w.writeI32LE(p.firmB); w.writeI32LE(p.expiresTick);
   }
+  // S16 alarms. Hash-INERT while empty, which is the whole reason they live in
+  // their own collection: a world with nothing wrong hashes exactly as it did
+  // before site security existed, so no fixture re-pin and no era bump.
+  for (const a of (state.alarms ?? [])) {
+    w.writeI32LE(a.siteId); w.writeI32LE(a.stage);
+    w.writeI32LE(a.ticks); w.writeI32LE(a.calm);
+  }
   for (const v of state.vehicles) {
     w.writeI32LE(v.id); w.writeI32LE(v.kind); w.writeI32LE(v.firmId);
     w.writeI32LE(v.x); w.writeI32LE(v.y); w.writeI32LE(v.riderAgentId);

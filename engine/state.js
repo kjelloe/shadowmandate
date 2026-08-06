@@ -145,6 +145,10 @@ export function createInitialState(options = {}) {
     offers: [],         // M4 — S06 (per-firm disjoint boards)
     standoffs: [],      // M5 — S08
     pacts: [],          // M5 — S08
+    // M8 — S16. Kept as its own collection rather than as fields on every site
+    // so a world with nothing wrong writes no alarm bytes and hashes exactly as
+    // it did before site security existed.
+    alarms: [],
     vehicles: [],       // M6 — S02
 
     nextContractId: 0,
