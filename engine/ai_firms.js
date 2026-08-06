@@ -20,9 +20,10 @@ import {
 import { agentCell, districtAt } from "./detection.js";
 import { orderMove } from "./agents.js";
 import { hqOf, dropIn, activateEvac, extract } from "./hq.js";
-import { acceptContract, KIND_NAMES, requiresCredential } from "./contracts.js";
+import { acceptContract, KIND_NAMES, requiresCredential, objectiveCellOf } from "./contracts.js";
 import { hasCredential, isDisrupted } from "./access.js";
 import { raidBy, RAID_INBOUND } from "./raids.js";
+import { abandonedAgents } from "./hq.js";
 import { findDropZones, autoSelectDropZone } from "./citygen.js";
 import { findPath } from "./pathfind.js";
 import { inStandoff, aiStandoffChoice, CHOICE_NONE } from "./standoff.js";
@@ -50,7 +51,14 @@ function roll(state, lo, hi) {
 export function aiLawfulView(state, firmId) {
   const firm = state.firms[firmId];
   const hq = hqOf(state, firmId);
-  const agent = state.agents.find((a) => a.firmId === firmId && a.state !== 0) ?? null;
+  // The operative IN THE FIELD, matching `leadAgent` (D51). Picking any
+  // non-absent agent meant a Firm that had redeployed after leaving somebody in
+  // custody still saw its PRISONER as its agent — so it folded again on the
+  // spot, over and over: 20-32 deployments in a world-day, each one ending the
+  // moment it began. A prisoner is addressed by id, through bail or the
+  // recovery contract, never as the Firm's current operative.
+  const agent = state.agents.find((a) =>
+    a.firmId === firmId && a.state !== 0 && a.state !== AGENT_HELD) ?? null;
   const board = state.offers.find((o) => o.firmId === firmId);
   const myContracts = agent
     ? state.contractPool.filter((c) => agent.contractIds.includes(c.id)) : [];
@@ -123,8 +131,15 @@ export function workTicksFor(spec) {
 // ticks are converted to cell-equivalents at the Move rate so the two costs are
 // in the same currency.
 export function scoreContract(state, view, contract, personality, rules, agent = null) {
-  const site = state.sites.find((s) => s.id === contract.siteId);
-  if (!site || !view.hq) return -1;
+  // D51 recovery: the objective is a Holding Site, so there is no contract
+  // site to look up and the old lookup returned -1 — the AI was offered 13
+  // recoveries across eight world-days and completed none of them, because it
+  // scored every one as unscorable. Third time this session that a rule the
+  // actor did not know made a feature silently never fire; `objectiveCellOf`
+  // is the single definition and everything reads it.
+  const objective = objectiveCellOf(state, contract);
+  if (!objective || !view.hq) return -1;
+  const site = { cellX: objective.x, cellY: objective.y, districtId: contract.districtId };
   // S16 8f — A RULE THE ACTOR MUST KNOW. Secured facilities need a credential,
   // and an AI that cannot get one must not take the job: it would walk there,
   // stand at a door that never opens, and the contract would sit at 0% forever.
@@ -153,7 +168,18 @@ export function scoreContract(state, view, contract, personality, rules, agent =
   const workCells = Math.trunc(workTicksFor(spec) / ticksPerCell);
   const heat = state.districts[contract.districtId]?.heat ?? 0;
   const risk = 1 + distance + workCells + (heat * personality.riskWeight) / 32;
-  return Math.trunc((contract.reward * 256) / Math.max(1, risk));
+  const score = Math.trunc((contract.reward * 256) / Math.max(1, risk));
+  // D51: GOING BACK FOR YOUR OWN OPERATIVE OUTRANKS ORDINARY WORK. Priced on
+  // extraction's reward, a recovery scored below a courier run and the AI never
+  // took one — 13 debts raised across eight world-days, none collected. That is
+  // a value judgement the scorer cannot derive from a payout, because the
+  // payout is not why you go: the reward for a recovery is getting your person
+  // back. The multiplier says so explicitly rather than by inflating the money,
+  // which would distort the economy to express a preference.
+  if ((contract.recoverAgentId ?? -1) >= 0) {
+    return score * (rules?.ai_firms?.recoveryPriority ?? 4);
+  }
+  return score;
 }
 
 // One decision pass for one AI Firm. Returns a command to enqueue, or null.
@@ -184,7 +210,28 @@ export function aiDecide(state, firmId, rules) {
   }
 
   const agent = view.agent;
-  if (!agent) { debug("no_agent"); return { command: null, telemetry }; }
+  if (!agent) {
+    // D51: NO OPERATIVE IN THE FIELD. If the Firm has somebody in custody, that
+    // is why — and it must fold rather than sit there. Left alone this was a
+    // SILENT dead loop: 977 ticks of `no_agent` on one seed with the Firm still
+    // marked deployed, which is worse than the loud version it replaced,
+    // because nothing in the telemetry looked wrong.
+    //
+    // Folding sends the HQ home, the prisoner stays in the Holding Site, and
+    // the next drop-in offers the recovery contract that gets them back.
+    if (abandonedAgents(state, firmId).length > 0 && view.hq) {
+      if (view.hq.evacActive === 0) {
+        debug("folding_agent_lost");
+        return { command: { type: 11, firmId }, telemetry };      // ACTIVATE_EVAC
+      }
+      if ((view.hq.evacTicks | 0) <= 0) {
+        return { command: { type: 13, firmId }, telemetry };      // EXTRACT
+      }
+      return { command: null, telemetry };                        // beacon running
+    }
+    debug("no_agent");
+    return { command: null, telemetry };
+  }
 
   // ── Out of action ──
   if (agent.state === AGENT_HELD) {
@@ -200,11 +247,19 @@ export function aiDecide(state, firmId, rules) {
       debug("paying_bail", { agentId: agent.id, cache: view.hq.cacheResources });
       return { command: { type: 33, firmId, agentId: agent.id }, telemetry };
     }
-    // Cannot afford bail. The Firm is stuck until someone rescues the agent —
-    // see Q42: folding up and writing the operative off SHOULD be allowed, but
-    // doing it naively made the Firm redeploy onto its own held agent
-    // (`leadAgent` matches any state except absent) and churn 100-275 times a
-    // world-day. The right fix needs D17's custody/ownership half designed.
+    // Cannot afford bail: FOLD UP (D51). The operative stays in custody and
+    // becomes a recovery contract on the next deployment. This churned badly
+    // when first attempted — the Firm redeployed onto its own prisoner, 18
+    // extractions in a world-day — because `leadAgent` then matched any state
+    // except absent. It excludes held agents now, so the redeploy lands a fresh
+    // operative and the fold is safe.
+    if (view.hq && view.hq.evacActive === 0) {
+      debug("folding_agent_lost");
+      return { command: { type: 11, firmId }, telemetry };        // ACTIVATE_EVAC
+    }
+    if (view.hq && (view.hq.evacTicks | 0) <= 0) {
+      return { command: { type: 13, firmId }, telemetry };        // EXTRACT
+    }
     debug("agent_held_broke");
     return { command: null, telemetry };
   }
@@ -592,6 +647,13 @@ function reachable(state, here, target) {
 // drop, and acquisition completed 0% of the time across 24 world-days. A rule
 // the actor does not know is a rule nobody follows.
 function targetCellFor(state, contract, view, rules) {
+  // D51 recovery: the objective is a Holding Site, not a contract site. Told
+  // here because `objectiveCellOf` is the single definition and the AI must
+  // read the SAME one — when D41 moved acquisition's delivery and this function
+  // was not updated, acquisition completed 0% for 24 world-days.
+  if ((contract.recoverAgentId ?? -1) >= 0 && contract.stage !== 3) {
+    return objectiveCellOf(state, contract);
+  }
   const site = state.sites.find((s) => s.id === contract.siteId);
   const siteB = state.sites.find((s) => s.id === contract.siteIdB);
   const spec = rules?.contracts?.types?.[KIND_NAMES[contract.kind]] ?? null;

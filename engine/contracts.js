@@ -9,6 +9,7 @@
 import { AGENT_ACTIVE, AGENT_HELD } from "./state.js";
 import { agentCell, convergePatrols } from "./detection.js";
 import { hasCredential } from "./access.js";
+import { releaseAgent } from "./combat.js";
 import { hqOf } from "./hq.js";
 import { sfc32Next } from "../shared/prng.js";
 import { worldToCellFloor } from "../shared/fixedmath.js";
@@ -67,6 +68,70 @@ export function poolTarget(state, cfg) {
 
 // Top the pool back up to target. Called on world creation, on completion or
 // expiry, and by the dormancy transition (D16).
+// D51 / D17's other half. A RECOVERY contract: go to the Holding Site where you
+// left somebody, get them out, bring them home.
+//
+// Generated on demand rather than rolled, and reserved to the Firm that owes
+// the debt — this is not work anyone else can take. It reuses the EXTRACTION
+// machine wholesale (travel, a secure timer on the objective, carry home)
+// because that is exactly the shape of the job, and inventing a seventh kind
+// for it would double the contract vocabulary to say the same thing.
+export function recoveryContractFor(state, firmId, cfg, agent) {
+  const existing = state.contractPool.find((c) =>
+    c.recoverAgentId === agent.id && c.stage !== STAGE_DONE && c.stage !== STAGE_FAILED);
+  if (existing) {
+    // Already owed — but the board was rebuilt while the Firm was away, so put
+    // it back in front of them. Returning early without this meant the debt
+    // existed in the pool and appeared on nobody's board ever again.
+    let b = state.offers.find((o) => o.firmId === firmId);
+    if (!b) { b = { firmId, contractIds: [], teaserId: -1 }; state.offers.push(b); }
+    if (!b.contractIds.includes(existing.id)) b.contractIds.unshift(existing.id);
+    return existing;
+  }
+  const site = state.holdingSites.find((h) => h.id === agent.holdingSiteId);
+  if (!site) return null;
+  const spec = cfg.types.extraction ?? {};
+  const contract = {
+    id: state.nextContractId++,
+    kind: KIND_EXTRACTION,
+    tier: 1,                       // never gated: you can always go back for them
+    districtId: site.districtId,
+    siteId: -1,                    // the objective is a Holding Site, not a contract site
+    siteIdB: -1,
+    // Priced off extraction, because it IS one. No premium: recovering your own
+    // operative is its own reward, and paying a bonus for losing them would be
+    // a strange incentive to build into the economy.
+    reward: spec.reward ?? 69,
+    expiresTick: 0,                // a debt does not expire
+    reservedBy: firmId,
+    contested: 0, contenders: [], contestedBy: [],
+    acceptedBy: -1,
+    stage: STAGE_OFFERED,
+    stageTicks: 0,
+    graceTicks: 0,
+    burnsTaken: 0,
+    legsDone: 0,
+    // What makes it a recovery rather than an extraction.
+    recoverAgentId: agent.id,
+    holdingSiteId: site.id,
+  };
+  state.contractPool.push(contract);
+  // ONTO THE BOARD DIRECTLY. `rebuildOffers` only ever considers contracts with
+  // `reservedBy < 0`, so a job pre-reserved to one Firm is invisible to it —
+  // the recovery was created, reserved, and then never offered to anybody: 12
+  // debts raised across eight world-days and not one of them collectable.
+  // Placed FIRST, because the operative you left behind should be the first
+  // thing you see when you land.
+  let board = state.offers.find((o) => o.firmId === firmId);
+  if (!board) { board = { firmId, contractIds: [], teaserId: -1 }; state.offers.push(board); }
+  if (!board.contractIds.includes(contract.id)) board.contractIds.unshift(contract.id);
+  state.events.push({
+    type: "recoveryOffered", contractId: contract.id, firmId,
+    agentId: agent.id, holdingSiteId: site.id,
+  });
+  return contract;
+}
+
 export function refillPool(state, cfg, detCfg) {
   const target = poolTarget(state, cfg);
   let guard = 0;
@@ -158,6 +223,13 @@ export function rebuildOffers(state, cfg, detCfg) {
   // Release reservations held by Firms that are no longer deployed.
   const liveIds = new Set(deployed.map((f) => f.id));
   for (const c of state.contractPool) {
+    // A RECOVERY IS A DEBT, NOT AN OFFER (D51). Releasing it when the Firm goes
+    // home is what this loop does for ordinary work — correctly, so a departed
+    // Firm does not hoard the board — but applied to a recovery it stripped the
+    // owner the moment they extracted, and the operative they left behind
+    // became an anonymous contract nobody was on the hook for. The debt follows
+    // the Firm across deployments; that is the entire point of it.
+    if ((c.recoverAgentId ?? -1) >= 0) continue;
     if (c.reservedBy >= 0 && !liveIds.has(c.reservedBy) && c.acceptedBy < 0) {
       c.reservedBy = -1;
     }
@@ -349,6 +421,25 @@ export function accessBlocked(state, agent, contract, siteId) {
     });
   }
   return true;
+}
+
+// Where a contract wants the operative standing. A RECOVERY (D51) points at a
+// Holding Site rather than a contract site, and this is the ONE place that
+// difference lives — every stage check goes through here, so the extraction
+// machine needs no branches of its own.
+export function objectiveCellOf(state, contract) {
+  if ((contract.recoverAgentId ?? -1) >= 0) {
+    const pen = state.holdingSites.find((h) => h.id === contract.holdingSiteId);
+    return pen ? { x: pen.cellX, y: pen.cellY } : null;
+  }
+  return siteCell(state, contract.siteId);
+}
+
+function atObjective(state, agent, contract, radius = 1) {
+  const cell = objectiveCellOf(state, contract);
+  if (!cell) return false;
+  const here = agentCell(agent);
+  return Math.abs(here.x - cell.x) + Math.abs(here.y - cell.y) <= radius;
 }
 
 function atSite(state, agent, siteId, radius = 1) {
@@ -574,13 +665,13 @@ export function stepContracts(state, cfg, detCfg) {
         // equalising averages cannot fix an argmax. The contact now has to be
         // talked out of the building, which costs time on site with the meter
         // running.
-        if (contract.stage === STAGE_TRAVEL && atSite(state, agent, contract.siteId)) {
+        if (contract.stage === STAGE_TRAVEL && atObjective(state, agent, contract)) {
           contract.stage = STAGE_WORK; contract.stageTicks = 0;
           state.events.push({ type: "siteWorkStarted", contractId: contract.id, agentId: agent.id });
         } else if (contract.stage === STAGE_WORK) {
           // Leaving the contact mid-persuasion loses the progress; being seen
           // does not, because a grab is a risk you take, not a stealth reset.
-          if (!atSite(state, agent, contract.siteId)) {
+          if (!atObjective(state, agent, contract)) {
             contract.stageTicks = 0;
           } else if (accessBlocked(state, agent, contract, contract.siteId)) {
             // S16 8f: the contact is BEHIND access control, so a grab at a
@@ -589,7 +680,19 @@ export function stepContracts(state, cfg, detCfg) {
           } else if (contract.stageTicks >= (spec.secureTicks ?? 900)) {
             contract.stage = STAGE_RETURN; contract.stageTicks = 0;
             agent.carryKind = 3; agent.carryRef = contract.id;   // CARRY_AGENT
-            state.events.push({ type: "contactSecured", contractId: contract.id, agentId: agent.id });
+            // D51: on a recovery the "contact" is your own operative, and this
+            // is the moment they walk out of the Holding Site.
+            if ((contract.recoverAgentId ?? -1) >= 0) {
+              const freed = state.agents[contract.recoverAgentId];
+              const here = agentCell(agent);
+              if (freed) releaseAgent(state, freed, state.rules.agents, here.x, here.y);
+              state.events.push({
+                type: "agentRecovered", contractId: contract.id,
+                agentId: contract.recoverAgentId, byAgentId: agent.id,
+              });
+            } else {
+              state.events.push({ type: "contactSecured", contractId: contract.id, agentId: agent.id });
+            }
           }
         } else if (contract.stage === STAGE_RETURN) {
           const hq = hqOf(state, agent.firmId);

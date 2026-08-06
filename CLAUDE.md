@@ -142,6 +142,11 @@ is undeclared. A missed mirror field silently invalidates every future battery.
   M5 gate went red with "the world is not alive", which is the M6
   acquisition-0% defect verbatim. `requiresCredential` is now imported by both
   the contract machine and the AI scorer.
+- **RE-BASELINE BEFORE EVERY EDIT.** Two replacements in one script sharing one
+  `before` snapshot: the second `assert s != before` compares against the
+  original text, which the FIRST replacement already changed — so a no-op
+  replacement passes its own assertion. This is the assert-the-mutation-applied
+  rule failing from the inside, and it cost a full measurement cycle in D51.
 - **A tested function with no caller is not a feature.** 8e shipped
   `liftCredentialFromGuard` with five passing tests and no command wiring it to
   anything, so one of the three credential sources did not exist in the game at

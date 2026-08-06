@@ -120,6 +120,12 @@ M7 in progress and playable in a browser (updated 2026-08-06)
 | D49 | Defend | **Both a contract type and an event.** Rival raids happen to your HQ unprompted (the threat exists whether or not you took the job); Defend also joins the board in M8 after 8g, so you can choose it |
 | D50 | Progression | **Full upgrade tree, season-scoped and disclosed.** Upgrades reset with the world beside bank and tier (D33); recognition still carries (D39). A joining player sees the world's day-of-season and the tier range of competing Firms. Multiple hosted worlds across servers are explicit |
 
+## Tenth decision batch (2026-08-06, Q42 custody)
+
+| # | Decision | Ruling |
+|---:|---|---|
+| D51 | Custody | **An abandoned operative is a debt, not a loss.** A Firm may fold and extract leaving a captured agent in the Holding Site; a **recovery contract** is offered on a later deployment to get them back. `leadAgent` must never select a held operative |
+
 **All owner questions are answered.** The live queue in `../dev-questions.md`
 holds only tracked gaps.
 

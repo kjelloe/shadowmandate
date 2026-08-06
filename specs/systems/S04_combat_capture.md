@@ -74,7 +74,51 @@ happens inside D40's grace window it also restores the contracts the agent was
 running. The two rulings only pay off together.
 
 **Still NOT implemented:** the auto-generated Extraction contract for an agent
-left in custody (D17's other half).
+left in custody (D17's other half) — **SHIPPED 2026-08-07 as D51**, see below.
+
+## AS BUILT — custody and recovery (D51, 2026-08-07)
+
+**An operative left in custody is ABANDONED, not lost.** The Firm may fold and
+extract without them; on a later deployment a **recovery contract** is waiting.
+Capture stops being a death sentence and becomes a debt with your name on it.
+
+This resolved a genuine dead end: a Firm whose only agent was captured could
+neither work (the agent cannot act) nor leave (the beacon cancelled when the
+lead was held). **3 of 8 battery seeds ended with a Firm frozen for the rest of
+the world-day.**
+
+The recovery reuses the EXTRACTION machine wholesale — travel, a secure timer on
+the objective, carry home — because that is exactly the shape of the job.
+`objectiveCellOf` is the single definition of where a contract wants you, and it
+returns a Holding Site for a recovery; every stage check and the AI both read
+it, so there are no branches anywhere else.
+
+### Five things that each made the feature silently do nothing
+
+Every one was found by measurement, not by reasoning, and none broke a test:
+
+1. **`leadAgent` matched any state except absent**, so a redeploying Firm chose
+   its own prisoner and folded again immediately — 18 extractions in one
+   world-day. It excludes held agents now, and so does `aiLawfulView`.
+2. **Excluding them made the dead loop SILENT** rather than fixing it: 977 ticks
+   of `no_agent` with the Firm still marked deployed. Worse than the loud
+   version, because nothing in the telemetry looked wrong. The fold now happens
+   from the no-agent branch.
+3. **`rebuildOffers` released the reservation** when the Firm went home —
+   correct for ordinary work, fatal for a debt, which became an anonymous
+   contract nobody was on the hook for. Recoveries are exempt.
+4. **It was never put on a board.** `rebuildOffers` only considers contracts
+   with `reservedBy < 0`, so a job pre-reserved to one Firm was invisible to it.
+   Recoveries are inserted directly, at the front.
+5. **The AI scored it as unscorable** (`state.sites.find` on a contract with no
+   site returns undefined), then scored it *below a courier run*. It is now
+   priced through `objectiveCellOf` and weighted by `recoveryPriority` — a value
+   judgement stated as a priority rather than smuggled into the reward, since
+   inflating the money would distort the economy to say something that is really
+   "you do not go back for your own people because it pays well".
+
+Measured after: **0 of 8 seeds stuck** (was 3–4), deployments back to a normal
+3–8 per world-day, zero AI rejections, and recoveries completing in live worlds.
 
 ## To pin
 

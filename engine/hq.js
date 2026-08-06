@@ -9,11 +9,12 @@
 // banks it.
 
 import {
-  AGENT_ACTIVE, AGENT_DOWNED, AGENT_HELD,
+  AGENT_ABSENT, AGENT_ACTIVE, AGENT_DOWNED, AGENT_HELD,
   FIRM_UNDEPLOYED, FIRM_DEPLOYED, FIRM_EVACUATING,
 } from "./state.js";
 import { agentCell, districtAt } from "./detection.js";
 import { clearCredentials } from "./access.js";
+import { recoveryContractFor } from "./contracts.js";
 import { cellToWorld, worldToCellFloor } from "../shared/fixedmath.js";
 import { isPassable } from "./terrain.js";
 import { tileAt } from "./state.js";
@@ -84,6 +85,8 @@ export function dropIn(state, firmId, cellX, cellY, cfg, agentsCfg, ledger = nul
     agent.route = [];
     agent.routeIdx = 0;
   }
+  // D51: anyone this Firm left in custody becomes a job waiting on arrival.
+  offerRecoveries(state, firmId, state.rules?.contracts);
   state.events.push({
     type: "firmDeployed", firmId, hqId: hq.id, cellX, cellY,
     agentId: agent ? agent.id : -1,
@@ -99,6 +102,22 @@ export function activateEvac(state, firmId, cfg) {
   if (hq.evacActive !== EVAC_NONE) return "already_evacuating";
   const firm = state.firms[firmId];
   const lead = leadAgent(state, firmId);
+
+  // D51: FOLDING WITH NOBODY LEFT. If every operative this Firm has is in
+  // custody there is no one to stand in the perimeter, and both guards below
+  // would refuse — which is exactly how a captured Firm became permanently
+  // stuck: it could not work and could not leave. Folding up is allowed, the
+  // prisoner stays in the Holding Site, and a recovery contract is waiting on
+  // the next drop-in. This is safe only because `leadAgent` excludes prisoners:
+  // the redeploy lands a FRESH operative rather than the one still in custody.
+  if (!lead && abandonedAgents(state, firmId).length > 0) {
+    hq.evacActive = EVAC_RUNNING;
+    hq.evacTicks = cfg.evacHoldTicks;
+    hq.evacPaused = 0;
+    firm.state = FIRM_EVACUATING;
+    state.events.push({ type: "evacStarted", firmId, ticks: hq.evacTicks, abandoning: 1 });
+    return null;
+  }
   if (!lead) return "no_agent";
   if (lead.state !== AGENT_ACTIVE) return "agent_not_active";
   const cell = agentCell(lead);
@@ -123,8 +142,19 @@ export function cancelEvac(state, firmId) {
   return null;
 }
 
+// The Firm's operative IN THE FIELD. A held agent is deliberately excluded
+// (D51): they are in a Holding Site, they cannot act, and treating them as the
+// lead made a Firm redeploy onto its own prisoner and fold again immediately —
+// 18 extractions in one world-day before this rule was written down. Bail and
+// the recovery contract address a held agent by id, never through this.
 export function leadAgent(state, firmId) {
-  return state.agents.find((a) => a.firmId === firmId && a.state !== 0) ?? null;
+  return state.agents.find((a) =>
+    a.firmId === firmId && a.state !== AGENT_ABSENT && a.state !== AGENT_HELD) ?? null;
+}
+
+// Everyone this Firm has left behind (D51). A debt, not a loss.
+export function abandonedAgents(state, firmId) {
+  return state.agents.filter((a) => a.firmId === firmId && a.state === AGENT_HELD);
 }
 
 // Emergency evac (S05): the HQ is gone; reach a safe zone before the clock runs
@@ -212,7 +242,20 @@ function stepEvac(state, hq, cfg) {
     return;
   }
 
-  // A downed or captured operative cannot be extracted.
+  // D51: FOLDING WITH EVERYONE IN CUSTODY. Nobody can hold the perimeter, so
+  // the clock simply runs and the Firm goes home without them. Checked before
+  // the cancel below — that cancel is for a Firm that loses its operative
+  // mid-evac and should stand down to go and get them, which is a different
+  // situation from having nobody left to get.
+  if (!lead && abandonedAgents(state, hq.firmId).length > 0) {
+    hq.evacPaused = 0;
+    hq.evacTicks -= 1;
+    if (hq.evacTicks <= 0) state.events.push({ type: "evacReady", firmId: hq.firmId });
+    return;
+  }
+
+  // A downed operative cannot be extracted — they are in the street and can
+  // still be rescued, so the beacon stands down and you go and get them.
   if (!lead || lead.state === AGENT_DOWNED || lead.state === AGENT_HELD) {
     hq.evacActive = EVAC_NONE;
     hq.evacTicks = 0;
@@ -243,6 +286,17 @@ function stepEvac(state, hq, cfg) {
 
 // Extraction: the dropship lands, the HQ folds up, the cache banks.
 // This is the ONLY path by which resources become permanent (D7/D30).
+// D51: the debt follows you to the next deployment. Called from dropIn so a
+// Firm that left somebody behind finds the job waiting the moment it lands.
+export function offerRecoveries(state, firmId, contractsCfg) {
+  if (!contractsCfg) return 0;
+  let made = 0;
+  for (const held of abandonedAgents(state, firmId)) {
+    if (recoveryContractFor(state, firmId, contractsCfg, held)) made++;
+  }
+  return made;
+}
+
 export function extract(state, firmId, cfg) {
   const hq = hqOf(state, firmId);
   const firm = state.firms[firmId];

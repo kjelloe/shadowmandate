@@ -37,5 +37,7 @@
     ]
   },
   "cacheEvacTarget": 260,
-  "decisionCadence": 10
+  "decisionCadence": 10,
+  "recoveryPriority": 4,
+  "note_recovery": "D51. A recovery contract is scored x4 so an operative left in custody outranks ordinary work. Expressed as a priority rather than as money: inflating the reward would distort the economy to say something that is really a value judgement \u2014 you do not go back for your own people because it pays well."
 }
