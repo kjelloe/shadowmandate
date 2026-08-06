@@ -59,6 +59,31 @@ deploys to tier 3   5.0                                 (target 3-4)
 Applying the 2–4x human deliberation factor, both bands *overlap* their targets
 but neither sits inside them, and tier-3 pace is out of band at 5.0.
 
+**RE-MEASURED AFTER M8 (2026-08-06) — and this is the finding.** The criterion
+was deferred on the grounds that its remedy was opposition content rather than
+reward tuning (D41/D42), so it should be re-read once M8 landed. M8 has landed
+in full (8a–8l: alarms, cameras, beams, junctions, credentials, secured
+facilities, contested contracts, raids, Defend). Pacing has **not moved**:
+
+```
+                 before M8      after M8       target
+sortie              4.4 m         4.6 m        15-20 m
+deployment         13.8 m        14.9 m        40-60 m
+deploys to tier 3     5.0           5.0            3-4
+```
+
+**M8 fixed the MIX, not the PACING.** D42 was right that extraction was
+under-opposed rather than mispriced — it fell from 1.43x over-chosen to 0.58x
+and five of six types now sit in a 0.58–1.11x band. But dominance and duration
+are different problems, and opposition only addressed the first. A sortie is
+still short because the *work itself* is short, which is what D41 said all along:
+length comes from content — multi-stage work and timing windows — not from
+difficulty layered on top of the same short jobs.
+
+So criterion 10 can no longer be deferred to M8. It needs its own slice, and the
+lever is contract CONTENT length, with the economy pass (Q42a) alongside it
+because `cacheEvacTarget` currently ends a deployment after one or two jobs.
+
 Two things worth saying plainly:
 
 - **The remedy is not more reward tuning.** D42 rules that extraction and

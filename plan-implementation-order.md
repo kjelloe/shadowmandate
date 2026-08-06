@@ -216,7 +216,15 @@ census complete; battery within provisional bands.
 
 ---
 
-## M8 — Opposition & Site Security 🟡 IN PROGRESS (8a–8g, 8i, 8j done; 8h next)
+## MX — Opposition & Site Security ✅ DONE (8a–8l)
+
+**NAMING COLLISION, flagged for the owner.** This milestone was added mid-V1 as
+"M8", but `plan-version2.md` already uses **M8 for "Humans Online"**. Two
+different milestones share a number across the two plans. Proposal: this one
+becomes **MX (Opposition)** since it is a V1 difficulty layer rather than a V2
+milestone, and V2's M8–M13 keep their numbers. Slice ids (8a–8l) are left alone
+— they are referenced throughout `dev-log.md`, S16 and every commit message, and
+renaming them would break the trail for no gain.
 
 The difficulty layer. D42 rules that extraction and acquisition are
 under-opposed rather than mispriced, so this is what the contract balance is
