@@ -16,5 +16,9 @@
   "junction": {
     "blackoutTicks": 400,
     "districtHeat": 1
+  },
+  "note_access": "S16 8e. guardTier is what a disabled guard is carrying. Deliberately 1: the lowest tier, so lifting a badge opens the SIMPLER facilities and the tier-2 ones still need buying from a vendor. That keeps all three sources useful instead of making the free one strictly best.",
+  "access": {
+    "guardTier": 1
   }
 }

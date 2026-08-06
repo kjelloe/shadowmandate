@@ -216,7 +216,7 @@ census complete; battery within provisional bands.
 
 ---
 
-## M8 — Opposition & Site Security 🟡 IN PROGRESS (8a done)
+## M8 — Opposition & Site Security 🟡 IN PROGRESS (8a–8f done)
 
 The difficulty layer. D42 rules that extraction and acquisition are
 under-opposed rather than mispriced, so this is what the contract balance is
@@ -247,11 +247,18 @@ Ordered so each slice is playable and measurable on its own.
   Blacks out every camera and beam at a site for a window, costs district heat,
   must be reached and touched. Derived from what was actually placed, so no
   switch exists with nothing behind it.
-- **8e** **Access control.** Credential tiers on doors and interior rooms;
-  sources are informant, vendor (S09) and a disabled guard.
-- **8f** **Secured facilities.** Wire 8a–8e into acquisition and extraction:
-  the crack timer elapses inside a facility with an alarm climbing, and the
-  contact sits behind access control. **This is the slice D42 is waiting for.**
+- **8e** ✅ **DONE (2026-08-06)** — credentials in `engine/access.js`. Three
+  diegetic sources (informant, vendor, lifted off a disabled guard), per-agent
+  and per-sortie, lost on capture and extraction. Gave S04 a real disabled-guard
+  state, which it did not have.
+- **8f** ✅ **DONE (2026-08-06)** — **the slice D42 was waiting for, delivered.**
+  Site `securityTier` derived from the fixtures placed; working inside a secured
+  facility climbs the alarm unseen, so acquisition's crack timer elapses with an
+  alarm rising and **stage 3 is reachable in ordinary play** for the first time.
+  Measured: escalations 5 → 14, stage 3 on three of six seeds, extraction's
+  completion share ~63% → ~51% with no reward change. Secured share retuned from
+  a compounded 56–80% down to ~31%. **Follow-up: the AI cannot yet get a pass,
+  so secured work is player-only** — 8g should carry it.
   Showcase content is the **defended snatch** — D6 already turns the reference
   corpus's assassination family into capture-and-extract, and a defended one
   exercises access control, staged alarm and a rival arrival together

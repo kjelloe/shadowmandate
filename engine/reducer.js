@@ -77,6 +77,7 @@ export function copyState(state) {
     offers: state.offers.map((o) => ({ ...o, contractIds: o.contractIds.slice() })),
     standoffs: state.standoffs.map((s) => ({ ...s })),
     alarms: (state.alarms ?? []).map((a) => ({ ...a })),
+    credentials: (state.credentials ?? []).map((c) => ({ ...c })),
     pacts: state.pacts.map((p) => ({ ...p })),
     vehicles: state.vehicles.map((v) => ({ ...v })),
 

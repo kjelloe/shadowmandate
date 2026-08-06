@@ -20,7 +20,8 @@ import {
 import { agentCell, districtAt } from "./detection.js";
 import { orderMove } from "./agents.js";
 import { hqOf, dropIn, activateEvac, extract } from "./hq.js";
-import { acceptContract, KIND_NAMES } from "./contracts.js";
+import { acceptContract, KIND_NAMES, requiresCredential } from "./contracts.js";
+import { hasCredential } from "./access.js";
 import { findDropZones, autoSelectDropZone } from "./citygen.js";
 import { findPath } from "./pathfind.js";
 import { inStandoff, aiStandoffChoice, CHOICE_NONE } from "./standoff.js";
@@ -117,9 +118,26 @@ export function workTicksFor(spec) {
 // from AI runs, a blind scorer produces confident, wrong balance numbers. Work
 // ticks are converted to cell-equivalents at the Move rate so the two costs are
 // in the same currency.
-export function scoreContract(state, view, contract, personality, rules) {
+export function scoreContract(state, view, contract, personality, rules, agent = null) {
   const site = state.sites.find((s) => s.id === contract.siteId);
   if (!site || !view.hq) return -1;
+  // S16 8f — A RULE THE ACTOR MUST KNOW. Secured facilities need a credential,
+  // and an AI that cannot get one must not take the job: it would walk there,
+  // stand at a door that never opens, and the contract would sit at 0% forever.
+  // That is precisely the acquisition-0% defect of M6, and it reappeared the
+  // moment 8f landed — the M5 gate went red with "the world is not alive".
+  //
+  // The AI has no way to BUY a pass yet (it never enters buildings) and no
+  // doctrine for disabling a guard to lift one, so for now it simply declines
+  // secured work. Tracked as an 8f follow-up in S16: until then, secured
+  // contracts are player-only, and the honest consequence is that the AI's
+  // supply of easy extraction and acquisition work is reduced rather than made
+  // dangerous — which is a real D42 effect, just a smaller one than intended.
+  if (requiresCredential(contract.kind)
+    && (site.securityTier | 0) > 0
+    && !(agent && hasCredential(state, agent.id, site.securityTier | 0))) {
+    return -1;
+  }
   let distance = Math.abs(view.hq.cellX - site.cellX) + Math.abs(view.hq.cellY - site.cellY);
   // A second site is a second journey, not a free stop on the way.
   const siteB = state.sites.find((s) => s.id === contract.siteIdB);
@@ -282,7 +300,7 @@ export function aiDecide(state, firmId, rules) {
   if (view.offered.length && view.myContracts.length < rules.contracts.maxActivePerAgent) {
     let best = null, bestScore = -1;
     for (const contract of view.offered) {
-      const score = scoreContract(state, view, contract, personality, rules);
+      const score = scoreContract(state, view, contract, personality, rules, agent);
       if (score > bestScore) { bestScore = score; best = contract; }
     }
     if (best) return { command: { type: 40, agentId: agent.id, contractId: best.id }, telemetry }; // ACCEPT_CONTRACT

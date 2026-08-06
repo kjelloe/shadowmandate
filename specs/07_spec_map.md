@@ -39,7 +39,7 @@ and end at its gate. Here that layer is split into one file per system
 | `S13_data_rulesets_i18n.md` | Ruleset JSON layout, catalogs, keys registry | M0 | — |
 | `S14_testing_validation.md` | Fixtures, sim harness, probes, batteries, metrics | M0, every gate | — |
 | `S15_art_assets.md` | Asset list, pipeline, palettes, splash | M7 | — |
-| `S16_opposition_security.md` | Contested contracts, rival teams, alarms/sensors/cameras/lockdowns | V2 (design pinned V1) | D42–D44 |
+| `S16_opposition_security.md` | Contested contracts, rival teams, alarms/sensors/cameras/lockdowns | **M8 — 8a–8d AS BUILT** | D42–D45, D49 |
 
 ## Milestone → spec matrix
 
@@ -52,7 +52,8 @@ and end at its gate. Here that layer is split into one file per system
 | M4 Tier 1 Contracts | S06 (tier 1 part), S12 (board) |
 | M5 AI Rival Firms | S07, S08, S09 (informant dialogue) |
 | M6 Depth & Tier 2–3 | S06 (tier 2–3), S09 (vendor), S10 (dormancy) |
-| M7 Presentation & Ship | S15, S11 (ops part), S12 (polish) |
+| M7 Presentation & Ship | S15, S11 (ops part), S12 (polish), S10 (seasons) |
+| M8 Opposition & Site Security | S16, S03 (detection currency), S06 (secured contracts) |
 
 ## Authoring rules
 

@@ -4,11 +4,11 @@ Drop-in/drop-out covert-ops game. Sibling of Fireline Command
 (`~/GIT/firepower` — the fork source, never modified from here).
 
 **Status: M0–M6 complete; M7 done as far as it can go solo, and PLAYABLE in a
-browser. `npm test` = 240 green**, plus four browser gates (`smoke`, `ui`,
+browser. `npm test` = 313 green**, plus four browser gates (`smoke`, `ui`,
 `mobile`, `gallery`). Batch lane verified (`BATCH_PC.md`). **Remaining in M7**:
 the VM deploy (7e) and native GPU perf (7f) — both need the owner's hardware.
-**M8 — opposition and site security — IS IN PROGRESS** (8a alarms, 8b cameras,
-8c sensor beams done; 8d–8j remain). It is what the contract balance is waiting
+**M8 — opposition and site security — IS IN PROGRESS** (8a–8f done: alarms,
+cameras, beams, junctions, credentials and secured facilities; 8g–8j remain). It is what the contract balance is waiting
 on (D42/D43). All owner questions are answered (D1–D50).
 
 ## Read first
@@ -133,6 +133,15 @@ is undeclared. A missed mirror field silently invalidates every future battery.
 - **A mechanic the player cannot see is an ambush.** The visual ships in the
   same slice as the mechanism, through the manifest (D46), and a dark beam is
   still drawn — you must see the line to plan a crossing through it.
+- **A gating rule must live in ONE place both readers import.** 8f gated
+  acquisition and extraction behind a credential and the AI was not told — the
+  M5 gate went red with "the world is not alive", which is the M6
+  acquisition-0% defect verbatim. `requiresCredential` is now imported by both
+  the contract machine and the AI scorer.
+- **Independent placement rolls COMPOUND.** Cameras at 35% and beams at 25% made
+  56–80% of sites secured, not 35%. Measure the resulting share across seeds and
+  assert it; D42 asks for *some* contracts harder, and the difference between
+  "some" and "most" is the difference between a texture and a wall.
 - **Distinguish what each thing knows.** A camera SEES you (feeds detection); a
   beam only knows *something* crossed (raises the alarm, leaves detection
   alone). That asymmetry is what makes "trip it and hurry" a real choice.

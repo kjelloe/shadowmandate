@@ -13,6 +13,7 @@ import {
   FIRM_UNDEPLOYED, FIRM_DEPLOYED, FIRM_EVACUATING,
 } from "./state.js";
 import { agentCell, districtAt } from "./detection.js";
+import { clearCredentials } from "./access.js";
 import { cellToWorld, worldToCellFloor } from "../shared/fixedmath.js";
 import { isPassable } from "./terrain.js";
 import { tileAt } from "./state.js";
@@ -260,6 +261,10 @@ export function extract(state, firmId, cfg) {
 
   // The agent and the HQ both leave the world.
   if (lead) {
+    // S16 8e: credentials are per-SORTIE. They leave with the agent, so next
+    // time you want the tier-2 door you go and get another pass — which keeps
+    // them a thing you plan around rather than a permanent unlock.
+    clearCredentials(state, lead.id);
     lead.state = 0;
     lead.firmId = -1;
     lead.route = [];

@@ -30,6 +30,7 @@ import { generateCity } from "../engine/citygen.js";
 import { refillPool, rebuildOffers } from "../engine/contracts.js";
 import { spawnAiFirms, stepAiFirms } from "../engine/ai_firms.js";
 import { raiseAlarm, ALARM_LOCKDOWN } from "../engine/security.js";
+import { grantCredential } from "../engine/access.js";
 import { RULES } from "./helpers.js";
 
 const SEED = 20260805;
@@ -47,6 +48,7 @@ function populatedWorld() {
   // reappeared the moment a new collection was added. Populate every
   // hash-inert collection here, or the guarantee quietly rots again.
   raiseAlarm(s, s.sites[0], RULES.security.alarm, ALARM_LOCKDOWN, "fixture");
+  grantCredential(s, 0, 2, "fixture");
   
   return s;
 }
@@ -63,6 +65,7 @@ test("the populated world actually populates — otherwise this file proves noth
   assert.ok(s.cameras.length > 0, "no cameras — the twins' camera writers go uncompared");
   assert.ok(s.beams.length > 0, "no beams — the twins' beam writers go uncompared");
   assert.ok(s.junctions.length > 0, "no junctions — the twins' junction writers go uncompared");
+  assert.ok(s.credentials.length > 0, "no credentials — the twins' credential writers go uncompared");
   assert.ok(s.alarms.length > 0,
     "no alarms — the twins' alarm writers would never be compared, which is "
     + "exactly the hole this file exists to close");

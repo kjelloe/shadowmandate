@@ -8,6 +8,7 @@
 
 import { AGENT_ACTIVE, AGENT_HELD } from "./state.js";
 import { agentCell } from "./detection.js";
+import { hasCredential } from "./access.js";
 import { hqOf } from "./hq.js";
 import { sfc32Next } from "../shared/prng.js";
 import { worldToCellFloor } from "../shared/fixedmath.js";
@@ -238,6 +239,42 @@ export function windowOpen(state, siteId, cfg) {
   return true;
 }
 
+// WHICH contract kinds a secured facility actually gates. ONE definition, used
+// by both the contract machine and the AI scorer — when D41 moved acquisition's
+// delivery and only the contract side was told, acquisition completed 0% for 24
+// world-days. A rule the actor does not know is a rule nobody follows, so the
+// rule lives in one place and both readers import it.
+//
+// Only D42's two types are gated: those are the ones that are meant to get
+// harder as a season progresses. Gating courier or surveillance as well would
+// make every contract type uniformly harder, which is the opposite of "some
+// contracts harder" and would flatten the mix D19 measures.
+export function requiresCredential(kind) {
+  return kind === KIND_EXTRACTION || kind === KIND_ACQUISITION;
+}
+
+// S16 8f. A secured facility will not let you work without a pass, and says so
+// — a work stage that silently never advances is indistinguishable from a bug,
+// which is exactly how the acquisition-0% defect hid in M6.
+//
+// Emitted at most once per contract per stage entry (`accessNoted`), because a
+// refusal repeated ten times a second is not information, it is noise.
+export function accessBlocked(state, agent, contract, siteId) {
+  if (!requiresCredential(contract.kind)) return false;
+  const site = state.sites.find((s) => s.id === siteId);
+  const need = site?.securityTier | 0;
+  if (need <= 0) return false;
+  if (hasCredential(state, agent.id, need)) return false;
+  if (!contract.accessNoted) {
+    contract.accessNoted = 1;
+    state.events.push({
+      type: "accessDenied", contractId: contract.id, agentId: agent.id,
+      siteId, need, held: 0,
+    });
+  }
+  return true;
+}
+
 function atSite(state, agent, siteId, radius = 1) {
   const cell = siteCell(state, siteId);
   if (!cell) return false;
@@ -389,6 +426,10 @@ export function stepContracts(state, cfg, detCfg) {
           // does not, because a grab is a risk you take, not a stealth reset.
           if (!atSite(state, agent, contract.siteId)) {
             contract.stageTicks = 0;
+          } else if (accessBlocked(state, agent, contract, contract.siteId)) {
+            // S16 8f: the contact is BEHIND access control, so a grab at a
+            // secured facility needs the pass before the persuasion can start.
+            contract.stageTicks = 0;
           } else if (contract.stageTicks >= (spec.secureTicks ?? 900)) {
             contract.stage = STAGE_RETURN; contract.stageTicks = 0;
             agent.carryKind = 3; agent.carryRef = contract.id;   // CARRY_AGENT
@@ -447,7 +488,9 @@ export function stepContracts(state, cfg, detCfg) {
           contract.stage = STAGE_WORK; contract.stageTicks = 0;
         } else if (contract.stage === STAGE_WORK) {
           if (!atSite(state, agent, contract.siteId)) contract.stageTicks = 0;
-          else if (contract.stageTicks >= (spec.crackTicks ?? 200)) {
+          else if (accessBlocked(state, agent, contract, contract.siteId)) {
+            contract.stageTicks = 0;      // the door does not open; the clock does not run
+          } else if (contract.stageTicks >= (spec.crackTicks ?? 200)) {
             agent.carryKind = 2; agent.carryRef = contract.id;   // CARRY_INTEL
             contract.stage = STAGE_RETURN; contract.stageTicks = 0;
             state.events.push({ type: "vaultCracked", contractId: contract.id, agentId: agent.id });

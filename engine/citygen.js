@@ -472,6 +472,7 @@ export function generateCity(seed, size, cfg) {
         x: route[startIdx].x, y: route[startIdx].y,
         routeIdx: startIdx,
         alertTicks: 0,
+        stunnedUntil: 0,          // S16 8e: disrupted by an item (S04)
         targetX: -1, targetY: -1,
         route,
       });
@@ -480,6 +481,18 @@ export function generateCity(seed, size, cfg) {
 
   const cameras_ = placeCameras(sites, siteRng, cfg.cameras, roll, size);
   const beams_ = placeBeams(sites, siteRng, cfg.beams, roll, size);
+  // S16 8f: a site is SECURED if it actually has security on it. Derived from
+  // what was placed rather than rolled separately, so a facility can never
+  // demand a credential while standing wide open, or stand watched while
+  // letting anyone walk in.
+  {
+    const watched = new Set(cameras_.map((c) => c.siteId));
+    const beamed = new Set(beams_.map((x) => x.siteId));
+    for (const site of sites) {
+      const both = watched.has(site.id) && beamed.has(site.id);
+      site.securityTier = both ? 2 : (watched.has(site.id) || beamed.has(site.id)) ? 1 : 0;
+    }
+  }
   return {
     map, districtOwner: owner, districts, sites, buildings, holdingSites, patrols,
     // S16 cameras (8b). Placed here because world LAYOUT belongs in one place;

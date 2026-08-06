@@ -12,7 +12,8 @@
       "range": 3,
       "disableTicks": 600,
       "noise": 1,
-      "ticks": 20
+      "ticks": 20,
+      "stunTicks": 300
     },
     "sidearm": {
       "range": 4,

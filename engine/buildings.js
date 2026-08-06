@@ -12,6 +12,7 @@
 
 import { AGENT_ACTIVE, AGENT_INSIDE, DET_UNSEEN, DET_BURNED } from "./state.js";
 import { agentCell } from "./detection.js";
+import { grantCredential } from "./access.js";
 import { cellToWorld } from "../shared/fixedmath.js";
 import { BUILDING_COVERSHOP } from "./citygen.js";
 
@@ -31,6 +32,7 @@ export const DISGUISE_COUNT = 6;   // see data/buildings/disguises.json
 
 export const EFFECT_REVEAL_RIVAL_HQ = "revealRivalHq";
 export const EFFECT_HEAT_INTEL = "heatIntel";
+export const EFFECT_CREDENTIAL = "credential";   // S16 8e
 export const EFFECT_UPGRADE = "upgrade";
 export const EFFECT_HEAL = "heal";
 export const EFFECT_COVER = "cover";
@@ -84,6 +86,15 @@ export function applyEffect(state, agent, firm, effect, ctx) {
       state.events.push({
         type: "heatIntelBought", firmId: firm.id, districtId: ctx.districtId,
       });
+      return null;
+    }
+    case EFFECT_CREDENTIAL: {
+      // S16 8e. Two of the three ways to get a credential are bought (S09), and
+      // both land here so the engine never needs to know WHICH source; the
+      // third is lifted off a disabled guard (engine/access.js).
+      if (!grantCredential(state, agent.id, effect.tier | 0, "bought")) {
+        return "already_held";
+      }
       return null;
     }
     case EFFECT_HEAL: {

@@ -152,6 +152,10 @@ export function createInitialState(options = {}) {
     // so a world with nothing wrong writes no alarm bytes and hashes exactly as
     // it did before site security existed.
     alarms: [],
+    // M8 — S16 8e. Per-AGENT and per-SORTIE: a Firm cannot buy one card and
+    // walk every operative through the same door, and the card does not
+    // survive capture or extraction. Hash-inert while empty, like alarms.
+    credentials: [],
     vehicles: [],       // M6 — S02
 
     nextContractId: 0,

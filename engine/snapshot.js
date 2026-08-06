@@ -54,6 +54,7 @@ export function hashState(state) {
   for (const s of state.sites) {
     w.writeI32LE(s.id); w.writeI32LE(s.type); w.writeI32LE(s.districtId);
     w.writeI32LE(s.cellX); w.writeI32LE(s.cellY); w.writeI32LE(s.status);
+    w.writeI32LE(s.securityTier ?? 0);
   }
   for (const b of state.buildings) {
     w.writeI32LE(b.id); w.writeI32LE(b.kind); w.writeI32LE(b.districtId);
@@ -89,6 +90,7 @@ export function hashState(state) {
     w.writeI32LE(p.id); w.writeI32LE(p.districtId);
     w.writeI32LE(p.x); w.writeI32LE(p.y);
     w.writeI32LE(p.routeIdx); w.writeI32LE(p.alertTicks); w.writeI32LE(p.targetX);
+    w.writeI32LE(p.stunnedUntil ?? 0);
     w.writeI32LE(p.targetY);
   }
   for (const h of state.holdingSites) {
@@ -130,6 +132,9 @@ export function hashState(state) {
   for (const a of (state.alarms ?? [])) {
     w.writeI32LE(a.siteId); w.writeI32LE(a.stage);
     w.writeI32LE(a.ticks); w.writeI32LE(a.calm);
+  }
+  for (const c of (state.credentials ?? [])) {
+    w.writeI32LE(c.agentId); w.writeI32LE(c.tier);
   }
   for (const v of state.vehicles) {
     w.writeI32LE(v.id); w.writeI32LE(v.kind); w.writeI32LE(v.firmId);

@@ -9,6 +9,7 @@ import {
   AGENT_ACTIVE, AGENT_DOWNED, AGENT_HELD, DET_BURNED, DET_UNSEEN,
 } from "./state.js";
 import { agentCell, burnAgent, districtAt, raiseHeat } from "./detection.js";
+import { clearCredentials } from "./access.js";
 import { worldToCellFloor, cellToWorld } from "../shared/fixedmath.js";
 
 export const ITEM_SUPPRESSOR = 0;
@@ -74,6 +75,9 @@ export function captureAgent(state, target, byFirmId, detCfg, cfg) {
   target.detection = DET_UNSEEN;
   target.condition = Math.trunc(cfg.conditionMax / 4);
   if (!site.heldAgentIds.includes(target.id)) site.heldAgentIds.push(target.id);
+  // S16 8e: the badge does not survive being arrested. Losing a credential you
+  // walked across the map for is what gives capture a cost beyond the timer.
+  clearCredentials(state, target.id);
   state.events.push({
     type: "agentCaptured", agentId: target.id, firmId: target.firmId,
     byFirmId, holdingSiteId: site.id,
@@ -126,7 +130,14 @@ export function useItem(state, actor, slot, targetCellX, targetCellY, combatCfg,
     for (const p of state.patrols) {
       if (Math.abs(p.x - targetCellX) + Math.abs(p.y - targetCellY) <= 1) {
         p.alertTicks = 0; p.targetX = -1; p.targetY = -1;
-        state.events.push({ type: "sensorDisrupted", patrolId: p.id });
+        // A disrupted patrol is now DISTINGUISHABLE from a calm one. It was
+        // not: this set alertTicks to 0, which is exactly what an untroubled
+        // patrol looks like, so nothing downstream could tell "I put this guard
+        // out" from "this guard was never bothered". S16 8e needs that
+        // difference, because lifting a credential off a disabled guard is one
+        // of the three ways to get one.
+        p.stunnedUntil = (state.tick + (spec.stunTicks | 0)) | 0;
+        state.events.push({ type: "sensorDisrupted", patrolId: p.id, until: p.stunnedUntil });
       }
     }
     return null;

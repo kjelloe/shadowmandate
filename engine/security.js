@@ -29,6 +29,7 @@
 
 import { agentCell, districtAt, raiseHeat } from "./detection.js";
 import { beamLiveAt, beamCoversCell } from "./sensors.js";
+import { STAGE_WORK } from "./contracts.js";
 
 export const ALARM_CLEAR = 0;
 export const ALARM_LOCAL = 1;      // nearby guards would converge (8b+)
@@ -64,12 +65,34 @@ export function triggersAt(state, site, cfg) {
   const out = [];
   for (const agent of state.agents) {
     if (agent.state !== AGENT_ACTIVE) continue;
-    if (agent.detection !== DET_BURNED) continue;
     if (agent.insideBuildingId >= 0) continue;
     const cell = agentCell(agent);
-    if (withinCells(cell.x, cell.y, site.cellX, site.cellY, radius)) out.push(agent);
+    if (!withinCells(cell.x, cell.y, site.cellX, site.cellY, radius)) continue;
+    // Burned near any site: somebody has seen you and the facility reacts.
+    if (agent.detection === DET_BURNED) { out.push(agent); continue; }
+    // S16 8f — THE SLICE D42 WAS WAITING FOR. Working inside a SECURED
+    // facility climbs the alarm on its own, unseen or not. This is what makes
+    // acquisition's crack timer elapse "inside a facility with an alarm
+    // climbing" rather than in a quiet street, and it is the first thing in the
+    // game that can reach alarm stage 3 in ordinary play. Extraction and
+    // acquisition get their difficulty here, exactly as D42 said they should —
+    // from opposition, not from a reward cut.
+    if ((site.securityTier | 0) > 0 && workingAt(state, agent, site.id)) out.push(agent);
   }
   return out;
+}
+
+// Is this agent currently doing the WORK stage of a contract at this site?
+// Read from state rather than by importing the contract machine's internals:
+// the contract pool is data, and reading data keeps the module graph honest.
+export function workingAt(state, agent, siteId) {
+  for (const c of state.contractPool) {
+    if (c.stage !== STAGE_WORK) continue;
+    if (c.siteId !== siteId) continue;
+    if (!agent.contractIds.includes(c.id)) continue;
+    return true;
+  }
+  return false;
 }
 
 function ensureAlarm(state, site) {

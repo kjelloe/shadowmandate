@@ -165,7 +165,11 @@ test("the world-day harness produces the full metric row", async () => {
 test("contract scoring prices time-on-objective and second legs", () => {
   const s = aiWorld(4711);
   const view = { hq: { cellX: 10, cellY: 10 } };
-  const site = s.sites[0];
+  // An UNSECURED site on purpose. 8f makes the scorer decline extraction and
+  // acquisition at a facility the agent has no pass for, which is correct — but
+  // the subject here is time-on-objective pricing, and a fixture that trips the
+  // access rule would compare -1 against -1 and prove nothing.
+  const site = s.sites.find((x) => (x.securityTier | 0) === 0) ?? s.sites[0];
   const p = personalityOf(RULES, 0);
   // Identical pay, site and district. The ONLY difference is that one demands
   // three 1200-tick holds and the other demands nothing.

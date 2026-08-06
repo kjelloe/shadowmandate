@@ -1,7 +1,7 @@
 # S16 — Opposition & Site Security
 
 *Feeds: M8 · Depends on: S03, S04, S07, S08, S09 ·
-Status: **8a–8d AS BUILT** (alarms, cameras, beams, junction boxes); 8e–8j specced*
+Status: **8a–8f AS BUILT** (alarms, cameras, beams, junctions, access control, secured facilities); 8g–8j specced*
 
 ## Purpose
 
@@ -399,3 +399,85 @@ drop-zone map preview. The 7a-4 guard scanned `scene.js`, `minimap.js` and
 it exists to prevent was still present in a file it did not read. **A guard only
 protects what it reads.** The palette now comes from tokens there too, and the
 guard scans all four surfaces.
+
+## AS BUILT — 8e access control + 8f secured facilities (2026-08-06)
+
+`engine/access.js` and the site `securityTier`. **8f is the slice D42 was
+waiting for**, and it delivers: acquisition and extraction now happen inside a
+facility that is reacting rather than in a quiet street.
+
+### 8e — credentials
+
+The lock whose counter-play is not a widget. Three sources, all diegetic: an
+informant sells one (tier 1), a vendor stocks one (tier 2), or you **lift one
+off a guard you disabled** (tier 1). The guard source is the one that makes the
+system breathe — it turns a patrol from a thing to avoid into a thing you might
+deliberately seek out.
+
+The guard tier is deliberately the LOWEST. If a lifted badge opened everything,
+buying one would be pointless and two of the three sources would be dead
+content; a test asserts the bought tier exceeds the lifted one.
+
+Credentials are **per-agent and per-sortie**: a Firm cannot buy one card and
+walk every operative through the door, and the card is lost on capture and on
+extraction. That keeps them a thing you plan around rather than a permanent
+unlock — the same reasoning D50 applies to upgrades one level up.
+
+**S04 had no notion of a disabled guard.** The disruptor set `alertTicks = 0`,
+which is exactly what an untroubled patrol looks like, so nothing downstream
+could tell "I put this guard out" from "this guard was never bothered". It now
+stamps `stunnedUntil`, and `isDisrupted` is the single named predicate both
+systems read.
+
+### 8f — secured facilities
+
+A site's `securityTier` is **derived from the fixtures actually placed** (a
+camera or a beam → tier 1; both → tier 2), so a facility can never demand a
+credential while standing wide open, or stand watched while letting anyone walk
+in.
+
+**Working inside a secured facility climbs the alarm on its own, unseen or
+not.** This is the D42 wiring: acquisition's crack timer now elapses with an
+alarm rising, and it is the first thing in the game that reaches **alarm stage
+3 in ordinary play** — the stage 8a shipped as deliberately unreachable.
+
+Measured over six world-days: escalations 5 → 14, and stage 3 reached on three
+seeds. **Seed 1274 reaches stage 3 with ZERO burns** — pure secured-facility
+work, which is precisely the mechanism that did not exist before.
+
+Only D42's two types are **gated** (`requiresCredential`), because gating every
+type would make all contracts uniformly harder and flatten the mix D19 measures.
+The alarm, by contrast, climbs for *any* work at a secured site — the facility
+notices anyone doing anything at it, which gives a surveillance hold at a
+watched building real texture without gating it.
+
+### Two things measured rather than assumed
+
+**The secured share.** Camera and beam placement roll independently, so their
+shares compound: 35% + 25% produced **56–80% of sites secured** — "most
+contracts harder" rather than D42's "some". Retuned to 20% + 12%, giving ~31%,
+and the range is asserted across five seeds because this is the number that
+decides whether opposition is a texture or a wall.
+
+**Extraction's completion share moved ~63% → ~51%** across six seeds without a
+single reward change — the D42 prediction, showing up. **This is a direction,
+not a verdict**: six seeds convict nothing, and 8h re-runs the real battery.
+
+### Follow-up, tracked honestly
+
+**The AI cannot obtain a credential.** It never enters buildings and has no
+doctrine for disabling a guard to lift a badge, so it simply declines secured
+extraction and acquisition. The M5 gate caught this the moment 8f landed —
+"the world is not alive" — which is the M6 acquisition-0% defect recurring:
+a rule the actor does not know is a rule nobody follows. The rule now lives in
+ONE place (`requiresCredential`) that both the contract machine and the AI
+scorer import.
+
+The honest consequence is that secured work is currently **player-only**, so the
+AI experiences 8f as *reduced supply* of easy extraction rather than as danger.
+That is a real D42 effect but a smaller one than intended, and teaching the AI
+to buy or lift a pass is the first thing 8g should carry.
+
+*(Unrelated to 8f but noted from the same sweep: `off_acquisition` is 0 across
+seeds — acquisition is never offered to a tier-2 AI at all. That is D19 tier
+gating working as documented, not a regression, and belongs to 8h.)*

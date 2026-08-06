@@ -133,5 +133,11 @@
   "toast.junctionCut": "Power cut — the lights are out",
   "toast.beamTripped": "Sensor tripped",
   "toast.alarmRaised": "Alarm — the site has noticed",
-  "toast.alarmEscalated": "Alarm rising"
+  "toast.alarmEscalated": "Alarm rising",
+  "dialog.informant.askCredential": "A pass for the east gate?",
+  "shop.credential": "Contractor badge (tier 2)",
+  "access.locked": "LOCKED — you need a pass",
+  "access.lifted": "Badge lifted from the guard",
+  "toast.credentialGained": "Credential in hand",
+  "toast.credentialsLost": "Credentials gone"
 }

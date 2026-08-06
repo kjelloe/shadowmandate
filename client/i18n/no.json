@@ -133,5 +133,11 @@
   "toast.junctionCut": "Strømmen er kuttet — lysene er av",
   "toast.beamTripped": "Sensor utløst",
   "toast.alarmRaised": "Alarm — stedet har oppdaget noe",
-  "toast.alarmEscalated": "Alarmen stiger"
+  "toast.alarmEscalated": "Alarmen stiger",
+  "dialog.informant.askCredential": "Et adgangskort til østporten?",
+  "shop.credential": "Entreprenørskilt (nivå 2)",
+  "access.locked": "LÅST — du trenger et adgangskort",
+  "access.lifted": "Skiltet er tatt fra vakten",
+  "toast.credentialGained": "Adgangskort i hånd",
+  "toast.credentialsLost": "Adgangskortene er borte"
 }

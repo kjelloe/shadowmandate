@@ -130,6 +130,7 @@ export function mirrorState(state) {
     // mutate its twin, which is the silent kind of battery corruption the
     // MIRROR AUDIT exists to prevent.
     alarms: (state.alarms ?? []).map((a) => ({ ...a })),
+    credentials: (state.credentials ?? []).map((c) => ({ ...c })),
     pacts: state.pacts.map((p) => ({ ...p })),
     firms: state.firms.map((f) => ({
       ...f,

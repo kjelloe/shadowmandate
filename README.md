@@ -9,16 +9,19 @@ self-hostable Node server, deterministic engine. Sibling of **Fireline
 Command**, built on the same forked stack (pure reducer, fog-filtered views,
 painted low-poly art).
 
-**Status: playable in a browser.** Rulings D1–D47 locked; V1/V2 plans and
-system specs written. **M0–M6 are implemented and green, and M7 is in
-progress:** seeded city generation, agents with stances, detection/heat,
-disable-only combat with capture, the Field HQ session loop with the world
-ledger, the contract economy, AI rival Firms, hosted worlds and identity, and
-the 2.5D diorama client with procedurally generated art.
+**Status: playable in a browser.** Rulings D1–D50 locked; V1/V2 plans and
+system specs written. **M0–M6 are complete, M7 is done as far as it can go
+without the owner's hardware, and M8 (opposition) is under way:** seeded city
+generation, agents with stances, detection/heat, disable-only combat with
+capture, the Field HQ session loop with the world ledger, the contract economy,
+AI rival Firms, hosted worlds, identity and seasons, the 2.5D diorama client
+with procedurally generated art, and the beginnings of site security — staged
+alarms, sweeping camera cones, sensor beams and the junction boxes that cut
+them.
 
 ```bash
 npm install && npm start     # then open http://localhost:8080 and play
-npm test                     # 220 tests
+npm test                     # 313 tests
 npm run gallery              # every visual and portrait -> reports/gallery.png
 ```
 
