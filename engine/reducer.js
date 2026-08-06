@@ -73,7 +73,14 @@ export function copyState(state) {
     patrols: state.patrols.map((p) => ({ ...p, route: p.route.slice() })),
     holdingSites: state.holdingSites.map((h) => ({ ...h, heldAgentIds: h.heldAgentIds.slice() })),
     hqs: state.hqs.map((h) => ({ ...h })),
-    contractPool: state.contractPool.map((c) => ({ ...c })),
+    contractPool: state.contractPool.map((c) => ({
+      ...c,
+      // S16 8g: both are ARRAYS. A spread copies the reference, so without
+      // these two lines a contested contract's contenders would be shared
+      // between every state in the chain and the reducer would stop being pure.
+      contenders: (c.contenders ?? []).slice(),
+      contestedBy: (c.contestedBy ?? []).slice(),
+    })),
     offers: state.offers.map((o) => ({ ...o, contractIds: o.contractIds.slice() })),
     standoffs: state.standoffs.map((s) => ({ ...s })),
     alarms: (state.alarms ?? []).map((a) => ({ ...a })),

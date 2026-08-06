@@ -196,7 +196,18 @@ export function buildView(state, firmId, detCfg) {
           id: c.id, kind: c.kind, tier: c.tier, districtId: c.districtId,
           siteId: c.siteId, siteIdB: c.siteIdB, reward: c.reward,
           expiresTick: c.expiresTick, stage: c.stage, legsDone: c.legsDone ?? 0,
-          acceptedByMe: c.acceptedBy === firmId ? 1 : 0,
+          acceptedByMe: (c.contested
+            ? (c.contenders ?? []).includes(firmId)
+            : c.acceptedBy === firmId) ? 1 : 0,
+          // S16 8g. The flag is the informed-choice half of D18: better pay,
+          // someone else is coming. WITHOUT it a contested contract is just a
+          // job that mysteriously vanishes, which is exactly the experience
+          // disjoint boards exist to prevent. `rivals` is a COUNT, never
+          // identities — knowing which Firm is racing you would leak the rival
+          // board across the fog.
+          contested: c.contested ? 1 : 0,
+          rivals: c.contested
+            ? Math.max(0, (c.contenders ?? []).filter((f) => f !== firmId).length) : 0,
         };
       };
       const teaser = pick(offers.teaserId ?? -1);

@@ -50,18 +50,49 @@ test("D18: each deployed Firm is shown exactly 5 offers", () => {
   }
 });
 
-test("D18: concurrent boards are DISJOINT — nobody sees the neighbour's leftovers", () => {
-  // This is the assertion the whole D18 economy exists for.
+test("D18: concurrent boards are DISJOINT, except where deliberately contested", () => {
+  // This is the assertion the whole D18 economy exists for, NARROWED by S16 8g.
+  //
+  // D18's purpose is that nobody is handed the neighbour's leftovers — you must
+  // not discover, after walking across the city, that the job was never really
+  // yours. A CONTESTED contract does not break that promise: it is flagged on
+  // the board and it pays a premium precisely because someone else is coming,
+  // so taking it is an informed choice rather than a surprise. Everything else
+  // stays strictly disjoint, and the test asserts both halves.
   const s = seededWorld(4711, 4);
   const seen = new Map();
+  let contestedSeen = 0;
   for (const board of s.offers) {
     for (const id of board.contractIds) {
+      const c = s.contractPool.find((x) => x.id === id);
+      if (c?.contested) { contestedSeen++; continue; }
       assert.ok(!seen.has(id),
-        `contract ${id} offered to Firm ${board.firmId} AND Firm ${seen.get(id)}`);
+        `UNCONTESTED contract ${id} offered to Firm ${board.firmId} AND Firm ${seen.get(id)}`);
       seen.set(id, board.firmId);
     }
   }
-  assert.equal(seen.size, 4 * RULES.contracts.offersShown);
+  assert.equal(seen.size + contestedSeen, 4 * RULES.contracts.offersShown,
+    "boards are no longer full");
+});
+
+test("a contract on two boards is ALWAYS flagged contested", () => {
+  // The half of D18 that must never bend: an unflagged contract on two boards
+  // means someone walks across the city for a job that was never theirs, which
+  // is the exact experience D18 exists to prevent.
+  for (const seed of [4711, 90210, 1548]) {
+    const s = seededWorld(seed, 4);
+    const seen = new Map();
+    for (const board of s.offers) {
+      for (const id of board.contractIds) {
+        if (seen.has(id)) {
+          const c = s.contractPool.find((x) => x.id === id);
+          assert.ok(c?.contested,
+            `seed ${seed}: contract ${id} is on two boards without being flagged contested`);
+        }
+        seen.set(id, board.firmId);
+      }
+    }
+  }
 });
 
 test("D29: the board carries one greyed next-tier teaser", () => {
@@ -263,9 +294,17 @@ test("D18: every deployed Firm gets five offers, disjoint across seats", () => {
       // Two distinct failures share this check, and they mean different things:
       // the same job on two seats' boards breaks D18's promise, while the same
       // job twice on ONE board is a reservation bug. Say which.
-      assert.ok(!seen.has(id), seen.get(id) === firm.id
-        ? `contract ${id} appears TWICE on firm ${firm.id}'s own board`
-        : `contract ${id} is on BOTH firm ${seen.get(id)}'s and firm ${firm.id}'s board`);
+      //
+      // S16 8g narrows the first case: a CONTESTED contract is meant to be on
+      // several boards. The same job twice on ONE board is still always a bug,
+      // contested or not, and that half is checked for everything.
+      const c = s.contractPool.find((x) => x.id === id);
+      const dupOnOwnBoard = seen.get(id) === firm.id;
+      assert.ok(!dupOnOwnBoard, `contract ${id} appears TWICE on firm ${firm.id}'s own board`);
+      if (!c?.contested) {
+        assert.ok(!seen.has(id),
+          `contract ${id} is on BOTH firm ${seen.get(id)}'s and firm ${firm.id}'s board`);
+      }
       seen.set(id, firm.id);
     }
   }
@@ -280,6 +319,8 @@ test("D18: every deployed Firm gets five offers, disjoint across seats", () => {
   for (const firm of deployed) {
     const board = s.offers.find((o) => o.firmId === firm.id);
     for (const id of board.contractIds) {
+      const c = s.contractPool.find((x) => x.id === id);
+      if (c?.contested) { seenAgain.set(id, firm.id); continue; }
       assert.ok(!seenAgain.has(id), seenAgain.get(id) === firm.id
         ? `after 30 ticks, contract ${id} appears twice on firm ${firm.id}'s own board`
         : `after 30 ticks, contract ${id} is on two boards (${seenAgain.get(id)} and ${firm.id})`);

@@ -113,6 +113,14 @@ export function hashState(state) {
     w.writeI32LE(c.stageTicks);
     w.writeI32LE(c.graceTicks ?? 0); w.writeI32LE(c.burnsTaken ?? 0);
     w.writeI32LE(c.legsDone ?? 0);
+    // S16 8g. Length-prefixed so two contracts with different contender sets
+    // can never hash the same, and hash-inert for the ordinary case where both
+    // lists are empty.
+    w.writeI32LE(c.contested ?? 0);
+    w.writeI32LE((c.contenders ?? []).length);
+    for (const f of (c.contenders ?? [])) w.writeI32LE(f);
+    w.writeI32LE((c.contestedBy ?? []).length);
+    for (const f of (c.contestedBy ?? [])) w.writeI32LE(f);
   }
   for (const o of state.offers) {
     w.writeI32LE(o.firmId);

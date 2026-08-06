@@ -121,7 +121,11 @@ export function mirrorState(state) {
     })),
     hqs: state.hqs.map((h) => ({ ...h, cellX: mirrorCellX(h.cellX, width) })),
     districts: state.districts.map((d) => ({ ...d, coreX: mirrorCellX(d.coreX, width) })),
-    contractPool: state.contractPool.map((c) => ({ ...c })),
+    contractPool: state.contractPool.map((c) => ({
+      ...c,
+      contenders: (c.contenders ?? []).slice(),
+      contestedBy: (c.contestedBy ?? []).slice(),
+    })),
     offers: state.offers.map((o) => ({ ...o, contractIds: o.contractIds.slice() })),
     standoffs: state.standoffs.map((s) => ({ ...s })),
     // Alarms key off siteId and carry no coordinate, so there is nothing to

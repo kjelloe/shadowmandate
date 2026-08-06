@@ -1,7 +1,7 @@
 # S16 — Opposition & Site Security
 
 *Feeds: M8 · Depends on: S03, S04, S07, S08, S09 ·
-Status: **8a–8f AS BUILT** (alarms, cameras, beams, junctions, access control, secured facilities); 8g–8j specced*
+Status: **8a–8g AS BUILT**; 8h–8j remain*
 
 ## Purpose
 
@@ -481,3 +481,39 @@ to buy or lift a pass is the first thing 8g should carry.
 *(Unrelated to 8f but noted from the same sweep: `off_acquisition` is 0 across
 seeds — acquisition is never offered to a tier-2 AI at all. That is D19 tier
 gating working as documented, not a regression, and belongs to 8h.)*
+
+## AS BUILT — 8g, contested contracts (2026-08-06)
+
+A contract offered to several Firms at once, flagged on the board, paying a
+premium for it: better money, and someone else is coming. A minority of the
+pool (~18%) on purpose — if most work were contested the board would stop being
+a choice and every sortie would be a race.
+
+**This narrows D18, and the narrowing is the point.** D18 promises disjoint
+boards so nobody walks across the city for a job that was never theirs. A
+contested contract keeps that promise by *saying so*: it is flagged, it pays
+more, and the view reports how many rivals are on it. What must never bend is
+the other half — an UNFLAGGED contract on two boards — and a test now asserts
+exactly that across three seeds. **This is a real change to D18's scope and is
+flagged for the owner** rather than assumed.
+
+**The finisher is paid, not the first taker.** `acceptedBy` stays the first
+taker so every existing reader keeps working, but `contenders` is the authority
+and whoever completes it is credited. Paying the first taker for someone else's
+work would be the quietest possible way to make the whole race pointless.
+
+**Losers are told and released** (`contractLost`): an objective that silently
+stops being completable reads as a broken game rather than as a loss. And the
+second taker's arrival is **telegraphed** at accept time, because a rival team
+that materialises unannounced reads as unfair while one you can hear coming is a
+decision — hurry, hide, or set up.
+
+**The view reports a rival COUNT, never identities.** Knowing which Firm is
+racing you would leak the rival board straight across the fog.
+
+Two things worth keeping: both new fields are ARRAYS, so `copyState` and
+`mirrorState` slice them — a spread copies the reference and would have made the
+reducer quietly impure. And the contender cap test needed FOUR Firms against a
+cap of two: with only two deployed the cap could never be exceeded, so the
+assertion held with the check deleted. A world has to be able to break the rule
+before a test can claim the rule is enforced.

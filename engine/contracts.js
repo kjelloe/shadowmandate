@@ -84,6 +84,8 @@ function generateContract(state, cfg, detCfg) {
     siteB = other.id;
   }
   const expiry = cfg.types[KIND_NAMES[kind]]?.expiryTicks ?? 0;
+  const contested = roll(state, 1, 100) <= (cfg.contested?.percent ?? 0) ? 1 : 0;
+  const baseReward = rewardFor(state, cfg, detCfg, kind, site.districtId);
   return {
     id: state.nextContractId++,
     kind,
@@ -91,9 +93,23 @@ function generateContract(state, cfg, detCfg) {
     districtId: site.districtId,
     siteId: site.id,
     siteIdB: siteB,
-    reward: rewardFor(state, cfg, detCfg, kind, site.districtId),
+    // The premium is what makes taking a contested job a decision rather than a
+    // trap: better money, and someone else is coming.
+    reward: contested
+      ? Math.trunc((baseReward * (cfg.contested?.rewardPct ?? 100)) / 100)
+      : baseReward,
     expiresTick: expiry > 0 ? (state.tick + expiry) | 0 : 0,
     reservedBy: -1,
+    // S16 8g. A contested contract is offered to SEVERAL Firms at once and pays
+    // more for it: better money, and someone else is coming. `contenders` are
+    // the Firms that took it — the first to finish wins and the rest fail, so
+    // both sides are really working it rather than racing to click first.
+    // S16 8g. Rolled from the seeded stream like everything else, so a world is
+    // reproducible. A MINORITY on purpose: if most work were contested the board
+    // would stop being a choice and every sortie would be a race.
+    contested,
+    contenders: [],
+    contestedBy: [],
     acceptedBy: -1,
     stage: STAGE_OFFERED,
     stageTicks: 0,
@@ -144,10 +160,14 @@ export function rebuildOffers(state, cfg, detCfg) {
     let board = state.offers.find((o) => o.firmId === firm.id);
     if (!board) { board = { firmId: firm.id, contractIds: [] }; state.offers.push(board); }
 
-    // Drop entries that are gone, taken, or expired.
+    // Drop entries that are gone, taken, or expired. A CONTESTED contract is
+    // the exception to D18's disjoint boards: it is deliberately on more than
+    // one, so it survives this filter while nobody has finished it.
     board.contractIds = board.contractIds.filter((id) => {
       const c = state.contractPool.find((x) => x.id === id);
-      return c && c.reservedBy === firm.id && c.acceptedBy < 0;
+      if (!c) return false;
+      if (c.contested) return c.stage !== STAGE_DONE && c.stage !== STAGE_FAILED;
+      return c.reservedBy === firm.id && c.acceptedBy < 0;
     });
 
     // Preferred: contracts inside the Firm's unlocked tier AND radius phase.
@@ -160,16 +180,29 @@ export function rebuildOffers(state, cfg, detCfg) {
     // you are offered FIRST, it does not get to leave a player with no work.
     const fill = (predicate) => {
       while (board.contractIds.length < cfg.offersShown) {
-        const candidates = state.contractPool.filter((c) =>
-          c.reservedBy < 0 && c.acceptedBy < 0
-          && c.stage === STAGE_OFFERED
-          && c.tier <= firm.tierUnlocked
-          && predicate(c));
+        const candidates = state.contractPool.filter((c) => {
+          if (c.stage !== STAGE_OFFERED) return false;
+          if (c.tier > firm.tierUnlocked) return false;
+          if (!predicate(c)) return false;
+          if (c.contested) {
+            // Offered to SEVERAL Firms, up to a cap: a job everyone in the city
+            // is chasing is a scrum, not a contest.
+            const on = (c.contestedBy ?? []).length;
+            return !(c.contestedBy ?? []).includes(firm.id)
+              && on < (cfg.contested?.maxFirms ?? 2);
+          }
+          return c.reservedBy < 0 && c.acceptedBy < 0;
+        });
         if (!candidates.length) return;
         candidates.sort((a, b) => distanceFromHq(state, firm.id, a) - distanceFromHq(state, firm.id, b)
           || a.id - b.id);
         const pick = candidates[0];
-        pick.reservedBy = firm.id;
+        if (pick.contested) {
+          pick.contestedBy = pick.contestedBy ?? [];
+          pick.contestedBy.push(firm.id);
+        } else {
+          pick.reservedBy = firm.id;
+        }
         board.contractIds.push(pick.id);
       }
     };
@@ -189,19 +222,42 @@ export function rebuildOffers(state, cfg, detCfg) {
 export function acceptContract(state, agent, contractId, cfg) {
   const contract = state.contractPool.find((c) => c.id === contractId);
   if (!contract) return "no_such_contract";
-  if (contract.acceptedBy >= 0) return "already_taken";
-  if (contract.reservedBy !== agent.firmId) return "not_offered_to_you";
+  const contested = !!contract.contested;
+  // A contested contract can be taken by more than one Firm; an ordinary one
+  // still cannot. Keeping D18's promise for everything else matters — disjoint
+  // boards are what stop two players being sent to the same doorway by default.
+  if (!contested && contract.acceptedBy >= 0) return "already_taken";
+  if (contested && (contract.contenders ?? []).includes(agent.firmId)) return "already_taken";
+  if (!contested && contract.reservedBy !== agent.firmId) return "not_offered_to_you";
+  if (contested && !(contract.contestedBy ?? []).includes(agent.firmId)) {
+    return "not_offered_to_you";
+  }
   const firm = state.firms[agent.firmId];
   if (contract.tier > firm.tierUnlocked) return "tier_locked";
   if (agent.contractIds.length >= cfg.maxActivePerAgent) return "too_many_active";
 
-  contract.acceptedBy = agent.firmId;
+  if (contested) {
+    contract.contenders = contract.contenders ?? [];
+    contract.contenders.push(agent.firmId);
+    // TELEGRAPHED (S16): the moment a second Firm takes the job, everyone
+    // already on it is told. A rival team that materialises unannounced reads
+    // as unfair; one you can hear coming is a decision — hurry, hide, or set up.
+    if (contract.contenders.length > 1) {
+      state.events.push({
+        type: "contractContested", contractId,
+        firmIds: contract.contenders.slice(), siteId: contract.siteId,
+      });
+    }
+  }
+  // `acceptedBy` stays the FIRST taker so every existing reader keeps working;
+  // `contenders` is the authority for who is racing.
+  if (contract.acceptedBy < 0) contract.acceptedBy = agent.firmId;
   contract.stage = STAGE_TRAVEL;
   contract.stageTicks = 0;
   agent.contractIds.push(contract.id);
   state.events.push({
     type: "contractAccepted", contractId, firmId: agent.firmId,
-    agentId: agent.id, kind: contract.kind,
+    agentId: agent.id, kind: contract.kind, contested: contested ? 1 : 0,
   });
   return null;
 }
@@ -518,10 +574,34 @@ export function stepContracts(state, cfg, detCfg) {
 }
 
 // Rewards land in the HQ CACHE, never the bank. Only extraction banks (D7/D30).
+// Everyone who was racing and did not win. Their copy of the job is over: the
+// contact left with the other Firm, the vault is already empty. Told explicitly,
+// because an objective that silently stops being completable is the failure mode
+// that reads as a broken game rather than as a loss.
+function releaseLosers(state, contract, winnerFirmId) {
+  if (!contract.contested) return;
+  for (const firmId of contract.contenders ?? []) {
+    if (firmId === winnerFirmId) continue;
+    for (const a of state.agents) {
+      if (a.firmId !== firmId) continue;
+      a.contractIds = a.contractIds.filter((id) => id !== contract.id);
+    }
+    state.events.push({
+      type: "contractLost", contractId: contract.id, firmId,
+      toFirmId: winnerFirmId, kind: contract.kind,
+    });
+  }
+}
+
 export function completeContract(state, contract, agent, cfg) {
   contract.stage = STAGE_DONE;
-  const firm = state.firms[contract.acceptedBy];
-  const hq = hqOf(state, contract.acceptedBy);
+  // S16 8g: on a contested contract the winner is whoever FINISHED it, which is
+  // not necessarily `acceptedBy` (the first taker). Paying the first taker for
+  // someone else's work would be the quietest possible way to make the whole
+  // race pointless, so the completing agent's Firm is credited.
+  const winnerId = contract.contested ? agent.firmId : contract.acceptedBy;
+  const firm = state.firms[winnerId];
+  const hq = hqOf(state, winnerId);
   if (hq) hq.cacheResources += contract.reward;
   else if (firm) firm.cacheResources += contract.reward;
   if (firm) {
@@ -546,9 +626,11 @@ export function completeContract(state, contract, agent, cfg) {
     }
   }
   agent.contractIds = agent.contractIds.filter((id) => id !== contract.id);
+  releaseLosers(state, contract, winnerId);
   state.events.push({
-    type: "contractCompleted", contractId: contract.id, firmId: contract.acceptedBy,
+    type: "contractCompleted", contractId: contract.id, firmId: winnerId,
     kind: contract.kind, reward: contract.reward,
+    contested: contract.contested ? 1 : 0,
   });
 }
 

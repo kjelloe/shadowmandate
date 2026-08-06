@@ -216,7 +216,7 @@ census complete; battery within provisional bands.
 
 ---
 
-## M8 — Opposition & Site Security 🟡 IN PROGRESS (8a–8f done)
+## M8 — Opposition & Site Security 🟡 IN PROGRESS (8a–8g done)
 
 The difficulty layer. D42 rules that extraction and acquisition are
 under-opposed rather than mispriced, so this is what the contract balance is
@@ -263,9 +263,11 @@ Ordered so each slice is playable and measurable on its own.
   corpus's assassination family into capture-and-extract, and a defended one
   exercises access control, staged alarm and a rival arrival together
   (`specs/08_reference_mission_taxonomy.md`).
-- **8g** **Contested contracts.** A contract offered to more than one Firm,
-  flagged on the board, with a telegraphed rival arrival (S05 dropship
-  choreography). Pairwise-in-pinned-order standoffs rather than N-way.
+- **8g** ✅ **DONE (2026-08-06)** — contested contracts: offered to several
+  Firms (capped), flagged on the board, paying a premium, arrival telegraphed at
+  accept time. The finisher is paid, not the first taker; losers are told and
+  released. **Narrows D18** — disjoint boards except where deliberately flagged
+  — which is recorded and flagged for the owner.
 - **8i** **Rival raids on your Field HQ — the EVENT half of D49.** Unprompted:
   a rival Firm turns up at your HQ whether or not you took a job about it. Comes
   before the contract deliberately — it is what teaches the mechanic and what

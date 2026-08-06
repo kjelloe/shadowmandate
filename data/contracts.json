@@ -79,5 +79,11 @@
     "note": "D41: an objective can only be worked while no patrol is within this radius. Waiting for the window is the decision that fills the minutes.",
     "radius": 7,
     "enabled": true
+  },
+  "note_contested": "S16 8g. A contested contract goes to several Firms at once and pays a premium for it: better money, and someone else is coming. Deliberately a MINORITY \u2014 if most work were contested the board would stop being a choice and every sortie would be a race. The premium is what makes taking one a decision rather than a trap.",
+  "contested": {
+    "percent": 18,
+    "maxFirms": 2,
+    "rewardPct": 150
   }
 }
