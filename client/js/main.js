@@ -11,7 +11,7 @@ import {
   STANCES, DETECTION_KEYS, DETECTION_CLASS, HEAT_KEYS, HEAT_CLASS,
   ownAgent, heatDisplay, districtUnder, boardRows, activeRows, objectiveFor,
   objectiveBearing, evacDisplay, toastsFor, debriefRows, reputationBar,
-  payloadForBuilding, overlayRows, disguiseFor, districtChoices,
+  payloadForBuilding, overlayRows, disguiseFor, districtChoices, standingRows,
   HEAT_CLASS as HEAT_CLASSES,
 } from "./models.js";
 
@@ -59,6 +59,7 @@ function splashText(b) {
   return [
     t("splash.title"), t("splash.terminal"), "",
     pad(t("splash.world"), b?.worldId ?? "—"),
+    ...standingRows(b?.standing).map(([k, v, ...a]) => pad(t(k), t(v, ...a))),
     pad(t("splash.activeFirms"), b?.activeFirms ?? 0),
     pad(t("splash.contracts"), b?.contracts ?? 0),
     pad(t("splash.yourFirm"), session.firmId ?? "—"),
@@ -67,6 +68,11 @@ function splashText(b) {
 }
 
 session.onChange((s, events) => {
+  // BEFORE the no-view guard, and that ordering is the whole point: a rotation
+  // deliberately clears the view, so handling it after `if (!s.view) return`
+  // would drop the one message that explains why everything vanished.
+  const rotated = (events ?? []).find((e) => e.type === "seasonRotated");
+  if (rotated) { showSeasonRotated(rotated); return; }
   if (!s.view) return;
   if ((events ?? []).some((e) => e.type === "dropZonesReady")) showZonePicker();
   if ((events ?? []).some((e) => e.type === "debriefReady")) { showDebrief(s); return; }
@@ -270,6 +276,23 @@ function renderActive(view) {
 // screen; this handles the much more common case where it is not.
 // The payoff. Without this an extraction — the thing the whole deployment is
 // aimed at — looked exactly like the game freezing.
+// A season ended while this player was in the world (D33). Reuses the debrief
+// terminal deliberately: it is already the screen that means "your sortie is
+// over, here is what it came to", and a season ending is the largest version of
+// that. Sending them back to the splash silently would be indistinguishable
+// from a crash.
+function showSeasonRotated(e) {
+  const lines = [
+    t("season.rotated", e.closed.season), "",
+    t("season.carried"), "",
+    ...standingRows(e.opened).map(([k, v, ...a]) => `${t(k).padEnd(26, ".")} ${t(v, ...a)}`),
+  ];
+  $("#debrief-terminal").textContent = lines.join("\n");
+  // The renderer is holding geometry for a city that no longer exists.
+  boardSignature = ""; activeSignature = "";
+  show("debrief");
+}
+
 function showDebrief(s) {
   const d = s.debrief;
   const ledger = s.briefing?.ledger ?? null;

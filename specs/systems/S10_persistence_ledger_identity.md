@@ -56,6 +56,51 @@ Store keyed `(worldId, firmId)`:
   seasons — the V3 meta layer designs what else accumulates.
 - Self-host: `season.days` configurable, 0 = never rotate.
 
+### AS BUILT (7d, 2026-08-06)
+
+**The season clock is DERIVED, never stored** (`engine/season.js`). Everything
+is a pure function of `state.tick` and the ruleset, so the season adds no
+positional state, no `copyState` entry, no snapshot field and no mirror
+declaration — and cannot drift from the tick it describes. A stored `seasonDay`
+counter would have been a second source of truth for one fact, which is the
+defect this project keeps finding elsewhere in its own code.
+
+This works only because `state.tick` is **real-time anchored**: `applyDormancy`
+adds the slept ticks, so a world nobody visits for a week still ages a week.
+Rotation is therefore checked on the **wake path as well as the pump** — a
+season measured in awake ticks would never end on a quiet world, which is
+backwards, and a per-tick-only check passes every test while being wrong on the
+live host.
+
+The **season number** is deliberately not in engine state: rotation resets the
+tick to zero, so "which season is this" is server bookkeeping. It lives in the
+ledger (`seasonOf`/`setSeason`) so a host that reboots mid-season does not
+silently reopen as season 1 and re-archive over its own dump.
+
+On rotation: archive the standings **before** the reset (archiving after dumps
+the empty world that replaced the season), `rotateSeason` the ledger, derive the
+next city seed from the current one (`nextSeasonSeed` — deterministic, because a
+random seed would make season 2 unreproducible from config), rebuild through the
+same path a new world uses, and **tell every seated player**. A client whose
+agent and HQ silently vanished is indistinguishable from a crash.
+
+### Disclosure before joining — D50
+
+A joining player sees **day-of-season and the tier range of the Firms competing
+in the world**, because D50 permits a full upgrade tree only on the condition
+that its parity cost is bounded (by the season) and *disclosed*. Meeting
+stronger agents is unfair only when it was unforeseeable.
+
+- `World.standing()` — season, day, days, daysRemaining, tier low/high, seats,
+  size. Tier range **includes AI Firms**: reporting only human tiers would
+  describe a world that is mostly AI as empty of strong opponents, which is the
+  precise misinformation this exists to prevent.
+- `GET /worlds` — public and unauthenticated on purpose; you must be able to
+  read it before you have an identity on this server. It instantiates the
+  configured world so a freshly restarted host does not answer "no worlds here".
+- The **briefing** carries the standing too, so it renders on the splash screen
+  where the drop-in button is — not in a server list nobody visits.
+
 ## Gates & fixtures
 
 Server tests: save/rotate/reload byte-exact; dormancy replay-exact with

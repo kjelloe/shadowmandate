@@ -4,6 +4,7 @@
   "slots": 16,
   "worldSize": 64,
   "carriesAcrossSeasons": ["recognition"],
-  "resetsWithWorld": ["bank", "tierUnlocked", "reputation"],
+  "note_reset": "D50 puts `upgrades` on this side of the line deliberately. The full upgrade tree is allowed BECAUSE the season bounds it: a veteran's advantage expires with the world instead of compounding across seasons, so craft persists (recognition) and power does not. The key is listed before upgrades exist so the rule is recorded where the tuning lives, not only in a spec.",
+  "resetsWithWorld": ["bank", "tierUnlocked", "reputation", "upgrades"],
   "reconnectGraceTicks": 1200
 }

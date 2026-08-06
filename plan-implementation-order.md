@@ -6,9 +6,9 @@ pushed to `dev_night`. M7 in progress and PLAYABLE in a browser: views, hosted
 worlds, identity, the 2.5D diorama, objective marking, debrief, building
 overlays, the drop-zone picker, the mobile pass (7b), the browser gates (7h),
 the acceptance sweep (7g) and the procedural art pipeline (7a) have all landed.
-Remaining in M7: season rotation (7d) — the only one that can be done solo — the
-VM deploy itself (7e, needs the box) and native GPU perf (7f, needs the gaming
-PC). M8 added for S16 opposition: the difficulty layer D42/D43 say the contract
+Remaining in M7: the VM deploy itself (7e, needs the box) and native GPU perf
+(7f, needs the gaming PC) — **both need the owner's hardware, so M7 is done as
+far as it can be taken solo.** M8 added for S16 opposition: the difficulty layer D42/D43 say the contract
 balance is waiting on.**
 
 *Written 2026-08-04, for the implementing agent (me). The operational plan is
@@ -182,8 +182,14 @@ census complete; battery within provisional bands.
   passed first time; mutation-verified by shrinking `min-height`.
 - **7c** Identity: firmToken + recovery code + `claimFirm`, per-server
   scope (D32).
-- **7d** Season config + rotation + archive (D33: bank/tier reset,
-  recognition carries as lifetime honor).
+- **7d** ✅ **DONE (2026-08-06)** — season config, rotation and archive (D33),
+  plus **D50's disclosure surface**: a joining player sees the world's
+  day-of-season and the tier range of the Firms competing in it, on the splash
+  screen and at `GET /worlds`. The season clock is DERIVED from `state.tick`
+  rather than stored beside it, so it adds no positional state and cannot drift
+  from the tick it describes. Rotation is checked on the **wake** path as well
+  as the pump: dormancy adds slept ticks in one jump, so a season nobody
+  attended must still end.
 - **7e** VM deploy: systemd unit, caddy, rsync allowlist, `/version`,
   official public sample world; deploy runbook written as `RUNNING.md`.
 - **7f** 🟡 **PARTIAL (2026-08-05)** — D26 128×128 render check PASSES
@@ -242,9 +248,18 @@ Ordered so each slice is playable and measurable on its own.
 - **8g** **Contested contracts.** A contract offered to more than one Firm,
   flagged on the board, with a telegraphed rival arrival (S05 dropship
   choreography). Pairwise-in-pinned-order standoffs rather than N-way.
-- **8i** *(pending Q39)* **Defend contracts** — the one whole family the
+- **8i** **Rival raids on your Field HQ — the EVENT half of D49.** Unprompted:
+  a rival Firm turns up at your HQ whether or not you took a job about it. Comes
+  before the contract deliberately — it is what teaches the mechanic and what
+  makes an HQ feel like a place worth defending, and D28 already rules that evac
+  activation is always allowed because "the hold is the fight".
+- **8j** **Defend contracts — the CHOSEN half of D49.** The one whole family the
   reference corpus has and we do not; every current type is outbound. Needs 8g
-  first, since defending is meaningless without rivals who arrive.
+  and 8i first: defending is meaningless without rivals who arrive, and the
+  contract is the player *selling* competence at a threat 8i already made real.
+  It is also the only contract type where being seen is not automatically
+  failure, and the only one that is naturally co-operative for a second player
+  who drops in mid-session.
 - **8h** **Re-run the pacing battery and re-read D19** on the preference ratio.
   Only now is a dominance number a verdict (D43). Expect extraction's ratio to
   fall without a single reward change; if it does not, THEN the price is wrong.

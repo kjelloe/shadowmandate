@@ -28,7 +28,7 @@ export function emptyLedger(worldId, firmId) {
 export class LedgerStore {
   constructor(path) {
     this.path = path;
-    this.data = { firms: {}, tokens: {} };
+    this.data = { firms: {}, tokens: {}, worlds: {} };
     this.load();
   }
 
@@ -36,6 +36,10 @@ export class LedgerStore {
     if (!existsSync(this.path)) return;
     try {
       this.data = JSON.parse(readFileSync(this.path, "utf8"));
+      // Ledgers written before 7d have no `worlds` section. Defaulted rather
+      // than migrated: an existing world is season 1 by definition, and a
+      // missing key must never read as season `undefined`.
+      if (!this.data.worlds) this.data.worlds = {};
     } catch (err) {
       // A corrupt ledger must be loud, not silently replaced with an empty one:
       // silently starting fresh would erase every player's progression.
@@ -79,6 +83,19 @@ export class LedgerStore {
     this.data.firms[this.key(worldId, firmId)] = led;
     this.save();
     return true;
+  }
+
+  // Which season a world is on. Survives a restart, so a host that reboots
+  // mid-season does not silently reopen as season 1 and re-archive over the
+  // dump it already wrote.
+  seasonOf(worldId) {
+    return this.data.worlds?.[worldId]?.season ?? 1;
+  }
+
+  setSeason(worldId, season) {
+    if (!this.data.worlds) this.data.worlds = {};
+    this.data.worlds[worldId] = { season: season | 0 };
+    this.save();
   }
 
   // Season rotation (D33): the world's numbers reset; lifetime honor carries.

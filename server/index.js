@@ -47,6 +47,27 @@ const http = createServer((req, res) => {
     res.end(JSON.stringify({ ruleset: rules.version, worlds: [...worlds.keys()] }));
     return;
   }
+  // D50's disclosure surface: what a player can see about a world BEFORE
+  // joining it. Day-of-season and the tier range of the Firms competing there,
+  // so meeting stronger agents is an informed choice rather than an ambush.
+  // Deliberately public and unauthenticated — the whole point is that you can
+  // read it before you have an identity on this server.
+  if (url.pathname === "/worlds") {
+    // The configured world is instantiated so it can be DISCLOSED. Worlds are
+    // otherwise built lazily on first connection, which meant a freshly
+    // restarted host answered this route with an empty list — telling a player
+    // choosing a world that there was nothing here, which is the exact opposite
+    // of what D50 asks this route to do. Building it costs one citygen.
+    getWorld(WORLD_ID);
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({
+      ruleset: rules.version,
+      seasonDays: rules.season.days | 0,
+      defaultWorld: WORLD_ID,
+      worlds: [...worlds.values()].map((w) => w.standing()),
+    }));
+    return;
+  }
   // The deploy guard's probe. It reports the TICK rather than a bare "ok",
   // because a wedged pump still answers HTTP and a liveness-only check would
   // call that a successful deploy. The guard curls twice and requires the tick

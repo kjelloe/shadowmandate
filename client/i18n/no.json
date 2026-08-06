@@ -2,7 +2,7 @@
   "splash.title": "SHADOW MANDATE",
   "splash.terminal": "FELTTERMINAL v1.0",
   "splash.world": "VERDEN",
-  "splash.day": "DAG {0} AV SESONGEN",
+  "splash.day": "DAG",
   "splash.activeFirms": "AKTIVE FIRMAER",
   "splash.contracts": "TILGJENGELIGE OPPDRAG",
   "splash.yourFirm": "DITT FIRMA",
@@ -123,5 +123,10 @@
   "trait.research": "Forskning",
   "trait.port": "Havn",
   "dropzone.contracts": "oppdrag",
-  "dropzone.recommended": "ANBEFALT"
+  "dropzone.recommended": "ANBEFALT",
+  "splash.season": "SESONG",
+  "splash.dayEndless": "{0} (UTEN SLUTT)",
+  "splash.rivalTiers": "RIVALNIVÅ",
+  "season.rotated": "SESONG {0} ER OVER. BYEN ER TEGNET PÅ NYTT.",
+  "season.carried": "Anerkjennelse beholdes. Bank og nivå nullstilles."
 }

@@ -112,8 +112,16 @@ M7 in progress and playable in a browser (updated 2026-08-06)
 | D46 | Art pipeline | **Art ships as CODE** — fork the sibling's procedural pipeline. Style tokens are the single source of truth, the manifest is the seam, and art is unit-testable because three.js builds geometry in node with no DOM |
 | D47 | Portraits | **Procedural feature-layer stacks**, so a D38 disguise is a *diff on the layers*. The comic requirement is combinatorial, not illustrative: a fixed image set can only produce unrelated pictures, never "the same person, different glasses" |
 
-**Still open: Q41c — the final tile and figure look.** The owner's judgement,
-and now a token-file edit rather than a rewrite (`npm run gallery`).
+## Ninth decision batch (2026-08-06, Q39–Q41c)
+
+| # | Decision | Ruling |
+|---:|---|---|
+| D48 | The V1 look | **The 7a gallery look is pinned as shipped.** Approved art for V1, not immutable art — the whole look is a token file, so a revision is an edit |
+| D49 | Defend | **Both a contract type and an event.** Rival raids happen to your HQ unprompted (the threat exists whether or not you took the job); Defend also joins the board in M8 after 8g, so you can choose it |
+| D50 | Progression | **Full upgrade tree, season-scoped and disclosed.** Upgrades reset with the world beside bank and tier (D33); recognition still carries (D39). A joining player sees the world's day-of-season and the tier range of competing Firms. Multiple hosted worlds across servers are explicit |
+
+**All owner questions are answered.** The live queue in `../dev-questions.md`
+holds only tracked gaps.
 
 ## Sibling project references
 

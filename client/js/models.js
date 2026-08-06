@@ -271,3 +271,36 @@ export function buildingRole(kind) {
 export function siteRole(role) {
   return role === "active" ? "siteActive" : role === "offered" ? "siteOffered" : "siteScenery";
 }
+
+// D50's disclosure, as a view-model decision so it is testable without a DOM.
+// A newcomer meeting Firms four tiers above them is only unfair if it was
+// unforeseeable, so "DAY 24 OF 28" and "RIVAL TIERS 1–4" belong on the screen
+// that has the drop-in button on it — not in a server list nobody visits.
+//
+// Returns [labelKey, value, ...args] rows. The caller renders each as
+// `t(labelKey)` and `t(value, ...args)` — and because `t` returns its key
+// unchanged when the catalog has no such entry, a plain value like "0 / 28"
+// passes straight through while "splash.dayEndless" gets translated. That is
+// what keeps every visible word in the catalog (S13) without forcing a second
+// row shape for the one row that needs interpolation.
+//
+// Learned the hard way: the first version used the interpolated key
+// "DAY {0} OF {1}" as the LABEL, so the splash rendered "DAY  OF ..... 0/28"
+// with both slots empty. It was correct data and unreadable text, and no unit
+// test would ever have noticed — only looking at the live screen did.
+export function standingRows(standing) {
+  if (!standing) return [];
+  const rows = [["splash.season", `${standing.season | 0}`]];
+  rows.push(standing.endless
+    ? ["splash.day", "splash.dayEndless", standing.day | 0]
+    : ["splash.day", `${standing.day | 0} / ${standing.days | 0}`]);
+  // A world with no Firms in it yet has no tier range, and printing "0–0"
+  // would read as a claim about the opposition rather than as its absence.
+  if ((standing.tierHigh | 0) > 0) {
+    rows.push(["splash.rivalTiers",
+      standing.tierLow === standing.tierHigh
+        ? `${standing.tierLow}`
+        : `${standing.tierLow}–${standing.tierHigh}`]);
+  }
+  return rows;
+}

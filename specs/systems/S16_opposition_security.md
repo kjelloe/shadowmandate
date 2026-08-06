@@ -153,10 +153,32 @@ This applies to all future difficulty content, not only S16. It also means a
 challenge must stay legible to a spectator and to a second player standing next
 to it — if it cannot be watched, it is the wrong design.
 
+## Defend: both a contract and an event — RULED (D49)
+
+The owner ruled **both** halves of Q39, and they are not alternatives — they are
+the chosen and unchosen versions of the same fiction.
+
+- **The event (8i).** Rival raids happen to your Field HQ **unprompted**. This
+  is what makes an HQ a place worth defending at all, and it teaches the
+  mechanic before anyone is asked to sell it. D28 already rules that evac
+  activation is always allowed because "the hold is the fight", and Q20 already
+  established that rival Firms run their own missions.
+- **The contract (8j).** Defend then joins the board as a sixth type, so a
+  player can *choose* the job. It is the only contract where **being seen is not
+  automatically failure** — a genuinely different texture in a stealth-first
+  game — and the only one that is naturally co-operative for a second player who
+  drops in mid-session.
+
+Shipping only the event would mean you can never choose it; only the contract
+would mean an HQ is attacked strictly by appointment. Both, in that order:
+8i teaches the threat, 8j sells competence against it.
+
 ## Not decided
 
 - Whether contested contracts are opt-in (a "contested" board flag you accept
   knowingly) or assigned.
+- Whether a Defend contract's attackers are a real rival Firm's agents or a
+  scripted force — the first is more honest, the second is schedulable.
 - Whether site security is per-site static or generated per contract.
 - Whether a blackout should be usable offensively against a rival Firm's
   in-progress contract.

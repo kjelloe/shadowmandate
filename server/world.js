@@ -14,6 +14,7 @@ import { hashState } from "../engine/snapshot.js";
 import { refillPool, rebuildOffers } from "../engine/contracts.js";
 import { spawnAiFirms, stepAiFirms } from "../engine/ai_firms.js";
 import { worldNews } from "../engine/dormancy.js";
+import { isSeasonOver, seasonStanding } from "../engine/season.js";
 
 // 10 Hz. Overridable for OPS ONLY — the browser gates run slower because
 // headless software rendering cannot keep up with a 10Hz diorama and every
@@ -22,24 +23,120 @@ import { worldNews } from "../engine/dormancy.js";
 // different rate replays identically and changes no outcome.
 export const TICK_MS = Number(process.env.TICK_MS ?? 100);
 
+// The next season's city, derived from this one. Deterministic on purpose: a
+// world is meant to be reproducible from its config, and a random seed here
+// would mean season 2 could never be replayed or archived meaningfully.
+export function nextSeasonSeed(seed, seasonNumber) {
+  const mixed = Math.imul((seed >>> 0) ^ Math.imul(seasonNumber | 0, 0x9e3779b1), 0x85ebca6b);
+  return (mixed ^ (mixed >>> 15)) >>> 0;
+}
+
 export class World {
   constructor({ id, seed, size, rules, ledger, aiCount = 3, now = () => Date.now() }) {
     this.id = id;
     this.rules = rules;
     this.ledger = ledger;
     this.now = now;                       // injectable so tests never sleep
-    this.state = createInitialState({
-      seed, size, rules, city: generateCity(seed, size, rules.citygen),
-    });
-    spawnAiFirms(this.state, rules, aiCount, {});
-    refillPool(this.state, rules.contracts, rules.detection);
-    rebuildOffers(this.state, rules.contracts, rules.detection);
+    this.seed = seed;
+    this.size = size;
+    this.aiCount = aiCount;
+    // Which season this world is on. Lives in the ledger rather than in engine
+    // state: rotation resets the tick to zero, so "which season is this" is a
+    // fact about the SERVER's history of this world, not about the simulation.
+    this.seasonNumber = ledger?.seasonOf?.(id) ?? 1;
+    this.buildWorld();
 
     this.queue = [];
     this.seats = new Map();               // firmId -> { send, lastSeen }
     this.commandLog = [];
+    this.archives = [];                   // season standings dumps (S10)
     this.sleepingSince = this.now();      // empty at birth
     this.timer = null;
+  }
+
+  // A fresh city for a fresh season. Also used by the constructor, so a rotated
+  // world is built by exactly the same path a new one is — a season 2 world
+  // that differed from a season 1 world would be a bug nobody would find until
+  // the first rotation on the live host.
+  buildWorld() {
+    this.state = createInitialState({
+      seed: this.seed, size: this.size, rules: this.rules,
+      city: generateCity(this.seed, this.size, this.rules.citygen),
+    });
+    spawnAiFirms(this.state, this.rules, this.aiCount, {});
+    refillPool(this.state, this.rules.contracts, this.rules.detection);
+    rebuildOffers(this.state, this.rules.contracts, this.rules.detection);
+  }
+
+  // ── Seasons (D15/D33/D50) ───────────────────────────────────────────────
+
+  // What a player is shown BEFORE joining (D50): how far into the season this
+  // world is, and the tier range of the Firms competing in it. A newcomer
+  // meeting stronger agents is only unfair if it was unforeseeable.
+  standing() {
+    return {
+      id: this.id,
+      season: this.seasonNumber,
+      seats: this.seats?.size ?? 0,
+      size: this.state.map.width,
+      tick: this.state.tick,
+      sleeping: this.sleepingSince !== null,
+      ...seasonStanding(this.state, this.rules.season),
+    };
+  }
+
+  // Called from BOTH the pump and the wake path. The wake path is the one that
+  // matters: dormancy adds the slept ticks in a single jump, so a world left
+  // alone across its season end would otherwise come back still running a
+  // season that expired days ago. A season a nobody attended must still end.
+  checkSeason() {
+    if (!isSeasonOver(this.state.tick, this.rules.season)) return null;
+    return this.rotateSeason();
+  }
+
+  rotateSeason() {
+    const closing = this.standing();
+    const standings = this.state.firms.map((f) => ({
+      firmId: f.id, isAi: !!f.isAi,
+      tierUnlocked: f.tierUnlocked | 0,
+      recognition: f.recognition | 0,
+      reputation: f.reputation | 0,
+      ledger: this.ledger ? this.ledger.get(this.id, f.id) : null,
+    }));
+
+    // Archive BEFORE the reset, or the standings dump records the empty world
+    // it just created rather than the season that was played.
+    const archive = {
+      worldId: this.id, season: this.seasonNumber,
+      seed: this.seed, endedAtTick: this.state.tick,
+      days: closing.days, standings,
+    };
+    this.archives.push(archive);
+
+    // D33: bank and tier unlocks reset with the world; recognition carries as
+    // lifetime honour. D50 adds upgrades to the reset side of that line.
+    if (this.ledger) this.ledger.rotateSeason(this.id);
+    this.seasonNumber += 1;
+    if (this.ledger?.setSeason) this.ledger.setSeason(this.id, this.seasonNumber);
+
+    // A new seed, derived rather than random: season 2 of world "alpha" must be
+    // the same city on every host that replays it, and `Math.random()` here
+    // would make the world unreproducible from its config alone.
+    this.seed = nextSeasonSeed(this.seed, this.seasonNumber);
+    this.buildWorld();
+    this.commandLog = [];
+    this.queue = [];
+
+    // Everyone seated is now standing in a world that no longer exists. Tell
+    // them explicitly: a client whose agent and HQ silently vanished would look
+    // exactly like a server crash.
+    const opening = this.standing();
+    for (const [firmId, seat] of this.seats) {
+      try {
+        seat.send({ type: "seasonRotated", closed: closing, opened: opening, archive });
+      } catch { this.seats.delete(firmId); }
+    }
+    return archive;
   }
 
   // ── Sleep and waking (D3/D16) ───────────────────────────────────────────
@@ -57,6 +154,8 @@ export class World {
     // other command so the sleep replays exactly.
     this.submit({ type: CMD_DORMANCY_TICK, elapsedMs });
     this.drain();
+    // The sleep may have carried the world straight past its season end.
+    this.checkSeason();
     return elapsedMs;
   }
 
@@ -113,6 +212,9 @@ export class World {
     this.state = apply(this.state, { type: CMD_ADVANCE_TICK });
     for (const e of this.state.events) events.push(e);
     this.broadcast(events);
+    // After the broadcast: the last view of a season should be the season's
+    // last view, not the empty world that replaces it.
+    this.checkSeason();
     this.sleepIfEmpty();
     return events;
   }
@@ -216,6 +318,10 @@ export class World {
       news: worldNews(this.state, led?.lastExtractTick ?? 0, this.rules.detection),
       activeFirms: this.state.firms.filter((f) => f.state !== 0).length,
       contracts: this.state.contractPool.filter((c) => c.acceptedBy < 0).length,
+      // D50: the briefing is read on the splash screen BEFORE dropping in,
+      // which makes it the right carrier for the disclosure. A player deciding
+      // whether to join should not have to go and find a server list.
+      standing: this.standing(),
     };
   }
 

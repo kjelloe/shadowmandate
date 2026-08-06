@@ -86,6 +86,17 @@ export function createRemoteSession({ url, token }) {
           session.zoneDistricts = msg.districts ?? [];
           emit([{ type: "dropZonesReady" }]);
           break;
+        // The world just reset under this player's feet (D33/D50). Their agent,
+        // HQ and contracts belong to a season that no longer exists, so the
+        // stale view must be dropped rather than left on screen: a diorama
+        // still showing a city that has been redrawn is worse than no diorama.
+        case "seasonRotated":
+          session.view = null;
+          session.tiles = null;
+          session.seasonRotated = { closed: msg.closed, opened: msg.opened };
+          session.briefing = { ...(session.briefing ?? {}), standing: msg.opened };
+          emit([{ type: "seasonRotated", closed: msg.closed, opened: msg.opened }]);
+          break;
         case "claimed":
           localStorage.setItem("sm.token", msg.token);
           location.reload();

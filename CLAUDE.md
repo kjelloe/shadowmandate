@@ -3,16 +3,16 @@
 Drop-in/drop-out covert-ops game. Sibling of Fireline Command
 (`~/GIT/firepower` — the fork source, never modified from here).
 
-**Status: M0–M6 complete; M7 in progress and PLAYABLE in a browser.
-`npm test` = 220 green**, plus four browser gates (`smoke`, `ui`, `mobile`,
-`gallery`). Batch lane verified (`BATCH_PC.md`). **Remaining in M7**: season
-rotation (7d), the VM deploy itself (7e, needs the box) and native GPU perf
-(7f, needs the gaming PC). **M8 — opposition and site security — is specced and
-is what the contract balance is waiting on** (D42/D43).
+**Status: M0–M6 complete; M7 done as far as it can go solo, and PLAYABLE in a
+browser. `npm test` = 240 green**, plus four browser gates (`smoke`, `ui`,
+`mobile`, `gallery`). Batch lane verified (`BATCH_PC.md`). **Remaining in M7**:
+the VM deploy (7e) and native GPU perf (7f) — both need the owner's hardware.
+**M8 — opposition and site security — is specced and is what the contract
+balance is waiting on** (D42/D43). All owner questions are answered (D1–D50).
 
 ## Read first
 
-1. `specs/00_document_index.md` — document map, rulings D1–D47
+1. `specs/00_document_index.md` — document map, rulings D1–D50
 2. `plan-version1.md` — the operational plan (milestones M0–M7, gates)
 3. `plan-implementation-order.md` — slice-by-slice execution order, per-milestone
    STATUS markers, and the gaming-PC battery runbook (hub port 8972)
@@ -137,6 +137,13 @@ is undeclared. A missed mirror field silently invalidates every future battery.
   tick destroys its own buttons between mousedown and mouseup, so clicks never
   land and nothing errors. Re-render interactive DOM only when its content
   changes (see `boardSignature` in main.js).
+- **A test can prove the DATA right while the TEXT is gibberish.** The season
+  disclosure passed every unit test while the splash rendered
+  `DAY  OF ....... 0 / 28` — an interpolated catalog entry used as a *label*,
+  so both slots came out empty. Assert the rendered string, not just the row.
+- **Never `git checkout <file>` to undo a mutation test.** It reverts
+  uncommitted work with it; twice in one session. Restore from the backup copy
+  the harness already made.
 - **A silent client is the worst client.** Failures must surface on the page
   (`fatal()` in main.js). An empty canvas looks identical whether the renderer
   threw, the data never arrived, or everything drew in the background colour —

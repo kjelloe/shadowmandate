@@ -2,7 +2,7 @@
   "splash.title": "SHADOW MANDATE",
   "splash.terminal": "FIELD TERMINAL v1.0",
   "splash.world": "WORLD",
-  "splash.day": "DAY {0} OF SEASON",
+  "splash.day": "DAY",
   "splash.activeFirms": "ACTIVE FIRMS",
   "splash.contracts": "CONTRACTS AVAILABLE",
   "splash.yourFirm": "YOUR FIRM",
@@ -123,5 +123,10 @@
   "trait.research": "Research",
   "trait.port": "Port",
   "dropzone.contracts": "contracts",
-  "dropzone.recommended": "RECOMMENDED"
+  "dropzone.recommended": "RECOMMENDED",
+  "splash.season": "SEASON",
+  "splash.dayEndless": "{0} (NO END)",
+  "splash.rivalTiers": "RIVAL TIERS",
+  "season.rotated": "SEASON {0} HAS ENDED. THE CITY HAS BEEN REDRAWN.",
+  "season.carried": "Recognition carries. Bank and tier reset."
 }

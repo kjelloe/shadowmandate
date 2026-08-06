@@ -1,7 +1,7 @@
 # S15 — Art & Assets
 
 *Feeds: M7 (full set), earlier milestones use placeholders · Depends on: — ·
-Status: **AS BUILT** (7a-1…7a-4). Only Q41c, the look itself, is unpinned.*
+Status: **AS BUILT** (7a-1…7a-4); the look is pinned (D48). Splash styling open.*
 
 ## Purpose
 
@@ -172,11 +172,18 @@ checked to show every visual the game can draw, and `models.js`'s role tables
 are checked against the manifest — so a role the renderer can ask for cannot be
 missing from either.
 
-## To pin — **Q41c, the owner's call**
+## PINNED — D48 (2026-08-06)
 
-`❑` **final tile/figure look.** Now genuinely cheap to answer for both halves: a
-candidate look is a token file, not a rewrite. Run `npm run gallery` and look at
-`reports/gallery.png`. · `❑` splash styling.
+`☑` **final tile/figure look — the 7a gallery look is the V1 look.** Owner
+reviewed `reports/gallery.png` and approved it as shipped: the marks, body
+palette, Firm identity, tile palette and lighting currently in
+`style_tokens.json`.
+
+This is *approved* art, not immutable art. Because the whole look is now a token
+file, a later revision is an edit rather than a project — which is the entire
+point of having done 7a-1 and 7a-4 before asking the question.
+
+`❑` splash styling is still unpinned.
 
 **One honest exception:** portrait colours (skin, hair, frames, hi-vis) still
 live in `portraits.js` rather than the tokens, because they read as part of the
