@@ -7,11 +7,12 @@ Drop-in/drop-out covert-ops game. Sibling of Fireline Command
 browser. `npm test` = 313 green**, plus four browser gates (`smoke`, `ui`,
 `mobile`, `gallery`). Batch lane verified (`BATCH_PC.md`). **Remaining in M7**:
 the VM deploy (7e) and native GPU perf (7f) — both need the owner's hardware.
-**M8 — opposition and site security — IS IN PROGRESS** (8a–8j done: alarms, cameras,
+**M8 — opposition and site security — IS IN PROGRESS** (8a–8k done: alarms, cameras,
 beams, junctions, credentials, secured facilities, contested contracts, raids
-and the Defend contract). **8h ran and its verdict is BLOCKED**: the AI cannot
-obtain a credential, so it declines a third of the contract space and no
-balance number can be read until 8k fixes that. It is what the contract balance is waiting
+and the Defend contract). **8h re-run after 8k**: five of six contract types now
+read in a 0.75–1.21x preference band and extraction is no longer dominant.
+Credentials are still rare, pacing is still short, and one seed shows
+unexplained accept churn — all flagged in S16. It is what the contract balance is waiting
 on (D42/D43). All owner questions are answered (D1–D50).
 
 ## Read first
@@ -141,6 +142,11 @@ is undeclared. A missed mirror field silently invalidates every future battery.
   M5 gate went red with "the world is not alive", which is the M6
   acquisition-0% defect verbatim. `requiresCredential` is now imported by both
   the contract machine and the AI scorer.
+- **A tested function with no caller is not a feature.** 8e shipped
+  `liftCredentialFromGuard` with five passing tests and no command wiring it to
+  anything, so one of the three credential sources did not exist in the game at
+  all. Unit tests prove behaviour, never REACHABILITY. When adding a mechanic,
+  check the path from a player input to the code — and from the AI too.
 - **A battery tool that restates the engine's type list will silently measure
   the wrong game.** Both pacing instruments hardcoded five contract kinds while
   the game had six, so every Defend contract fell into a column that did not

@@ -321,6 +321,21 @@ export function standingRows(standing) {
   return rows;
 }
 
+// S16 8k: the disabled guard whose badge the operative could take, or null.
+// Same shape and the same reasoning as `cuttableJunction` — the engine refuses
+// beyond Manhattan 1, and a button that offers what the server will refuse is
+// worse than no button.
+export function liftableGuard(view) {
+  const agent = ownAgent(view);
+  if (!agent) return null;
+  const cx = Math.floor(agent.x / 256), cy = Math.floor(agent.y / 256);
+  for (const p of view.patrols ?? []) {
+    if (!p.disabled) continue;
+    if (Math.abs(p.x - cx) + Math.abs(p.y - cy) <= 1) return p;
+  }
+  return null;
+}
+
 // S16 8d: the junction the operative could cut right now, or null.
 //
 // A view-model decision so the RULE is unit-tested even though the button is

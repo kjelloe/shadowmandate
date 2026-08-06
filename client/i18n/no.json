@@ -146,5 +146,6 @@
   "toast.contractLost": "Forbikjørt — oppdraget er borte",
   "toast.accessDenied": "Låst — du trenger et adgangskort",
   "contract.defend": "FORSVAR",
-  "toast.defenceBreached": "De er på stedet — hold det"
+  "toast.defenceBreached": "De er på stedet — hold det",
+  "access.lift": "TA SKILTET"
 }

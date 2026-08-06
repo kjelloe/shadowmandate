@@ -146,5 +146,6 @@
   "toast.contractLost": "Beaten to it — the job is gone",
   "toast.accessDenied": "Locked — you need a pass",
   "contract.defend": "DEFEND",
-  "toast.defenceBreached": "They are on the site — hold it"
+  "toast.defenceBreached": "They are on the site — hold it",
+  "access.lift": "TAKE BADGE"
 }

@@ -82,7 +82,13 @@ export function buildView(state, firmId, detCfg) {
 
     patrols: state.patrols
       .filter((p) => visible(p.x, p.y))
-      .map((p) => ({ id: p.id, x: p.x, y: p.y, alerted: p.alertTicks > 0 ? 1 : 0 })),
+      .map((p) => ({
+        id: p.id, x: p.x, y: p.y, alerted: p.alertTicks > 0 ? 1 : 0,
+        // S16 8k. Without this the client cannot tell a guard you put down from
+        // one merely standing still, so the badge is unreachable for a player
+        // even though the command exists.
+        disabled: (p.stunnedUntil | 0) > state.tick ? 1 : 0,
+      })),
 
     // D20: the band always; the exact number only with intel.
     districts: state.districts.map((d) => {

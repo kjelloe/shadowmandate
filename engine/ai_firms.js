@@ -21,7 +21,7 @@ import { agentCell, districtAt } from "./detection.js";
 import { orderMove } from "./agents.js";
 import { hqOf, dropIn, activateEvac, extract } from "./hq.js";
 import { acceptContract, KIND_NAMES, requiresCredential } from "./contracts.js";
-import { hasCredential } from "./access.js";
+import { hasCredential, isDisrupted } from "./access.js";
 import { raidBy, RAID_INBOUND } from "./raids.js";
 import { findDropZones, autoSelectDropZone } from "./citygen.js";
 import { findPath } from "./pathfind.js";
@@ -223,7 +223,147 @@ export function aiDecide(state, firmId, rules) {
       return { command: { type: 20, agentId: agent.id, cellX: hq.cellX, cellY: hq.cellY }, telemetry }; // MOVE
     }
     if (hq.evacTicks <= 0) return { command: { type: 13, firmId }, telemetry };  // EXTRACT
+    // AT the HQ but still walking somewhere: STOP. Returning null here let an
+    // in-progress route carry the agent straight back out of the perimeter,
+    // which pauses the beacon (S05) and strands the evacuation indefinitely.
+    // It never mattered before 8k, because evac was only ever raised from the
+    // go-home branch and the agent was standing still by then; the moment the
+    // AI could be mid-errand when the beacon went up, the hold broke.
+    // Guarded exactly like every other move: never re-order a move to the cell
+    // you are already standing on. That is the documented source of 1324
+    // `move:no_route` rejections, and it reappeared here the moment this branch
+    // was added. If the agent IS on the tent, it is inside the perimeter and the
+    // beacon is running anyway — the `!atHq` branch above catches it the moment
+    // its stale route carries it back out.
+    const onTent = cell.x === hq.cellX && cell.y === hq.cellY;
+    if (!onTent && (agent.route ?? []).length && (agent.routeIdx ?? 0) < agent.route.length
+      && reachable(state, cell, { x: hq.cellX, y: hq.cellY })) {
+      debug("holding_for_evac");
+      return { command: { type: 20, agentId: agent.id, cellX: hq.cellX, cellY: hq.cellY }, telemetry };
+    }
     return { command: null, telemetry };
+  }
+
+  // ── S16 8k: get a pass, so secured work is not permanently off limits ──
+  //
+  // WHY THIS EXISTS. 8f gated acquisition and extraction behind a credential
+  // and the AI had no way to get one, so it declined a third of the contract
+  // space. The 8h battery then measured a world where acquisition read 0.08x —
+  // which looks like "nobody wants this job" and actually meant "the only actor
+  // being measured cannot take it". No balance number could be read.
+  //
+  // OPPORTUNISTIC, not planned. The AI does not set out to acquire a badge; it
+  // takes one when a guard is conveniently placed and it is not already busy.
+  // A full "go and get a credential" errand would need goal planning the AI
+  // does not have, and would be a much bigger behavioural change than the
+  // measurement problem justifies.
+  //
+  // The guard route rather than the vendor: buying needs the BANK, which lives
+  // in the server ledger and never enters the engine (D30), so a vendor purchase
+  // would mean plumbing the ledger through the AI seam. Lifting is entirely
+  // in-engine, and it is the source S16 calls the interesting one anyway — it
+  // turns a patrol from a thing to avoid into a thing worth seeking out.
+  //
+  // The unseen check guards STARTING the job, not finishing it. It gated the
+  // whole block at first — and the disruptor makes noise, so the agent was
+  // noticed by its own action and then refused to walk the three cells to the
+  // guard it had just put down. 15 disruptions, zero lifts. Breaking stealth is
+  // the price of the badge; refusing to collect it afterwards is just waste.
+  //
+  // PURPOSEFUL, not idle. The first version went guard-hunting whenever it had
+  // nothing else on, and the two settings traded directly against each other:
+  // a 20-cell seek radius produced credentials but cut completions from 7.5 to
+  // 4.0 and clean extractions to zero, while a 10-cell radius kept throughput
+  // and produced ONE credential across six world-days. Wandering off to mug
+  // somebody on the off-chance is simply not worth an operative's time.
+  //
+  // So the errand now needs a REASON: a job on this Firm's own board that the
+  // credential would actually unlock. That makes it rare and targeted instead
+  // of frequent and speculative, which is the same shape as every other piece
+  // of AI doctrine here.
+  const wantsPass = !hasCredential(state, agent.id, 1)
+    && (view.offered ?? []).some((c) => {
+      if (!requiresCredential(c.kind)) return false;
+      const site = state.sites.find((x) => x.id === c.siteId);
+      return (site?.securityTier | 0) > 0;
+    });
+  if (wantsPass) {
+    const itemCfg = rules.combat.items.disruptor;
+    const here = agentCell(agent);
+    const near = (p, r) => Math.abs(p.x - here.x) + Math.abs(p.y - here.y) <= r;
+
+    // Already down and within reach? Take the badge.
+    const downed = state.patrols.find((p) => isDisrupted(p, state.tick) && near(p, 1));
+    if (downed) {
+      debug("lifting_credential", { patrolId: downed.id });
+      return {
+        command: { type: 44, agentId: agent.id, patrolId: downed.id },
+        telemetry,
+      };
+    }
+    // Down but not yet within reach: WALK OVER. Without this step the AI
+    // disrupted guards from three cells away and then never closed — 13
+    // disruptions, zero lifts, across a world-day. Stunning a guard you never
+    // reach is worse than doing nothing: it costs the item and the noise and
+    // buys nothing at all.
+    const walkTo = state.patrols.find((p) =>
+      isDisrupted(p, state.tick) && near(p, (rules.security.access.approachCells | 0) || 8));
+    if (walkTo && ((agent.route ?? []).length === 0 || (agent.routeIdx ?? 0) >= agent.route.length)) {
+      if (reachable(state, here, { x: walkTo.x, y: walkTo.y })) {
+        debug("closing_on_guard", { patrolId: walkTo.id });
+        return {
+          command: { type: 20, agentId: agent.id, cellX: walkTo.x, cellY: walkTo.y },
+          telemetry,
+        };
+      }
+    }
+    if (walkTo) return { command: null, telemetry };   // already walking there
+
+    // NOTHING DOWN YET, AND IDLE: go and find a guard.
+    //
+    // The purely opportunistic version — act only if a patrol happens to be
+    // within three cells — produced 15 disruptions and zero credentials across
+    // four world-days, because that situation almost never arises while the AI
+    // is free to act on it. A badge the AI can only get by coincidence is not a
+    // route to secured work; it is a rounding error.
+    //
+    // Gated on being between jobs, so seeking a guard never competes with a
+    // contract in progress. Throughput is checked in the world-day sweep.
+    if ((agent.contractIds ?? []).length === 0 && agent.detection === 0
+      && ((agent.route ?? []).length === 0 || (agent.routeIdx ?? 0) >= agent.route.length)) {
+      let best = null, bestD = (rules.security.access.seekCells | 0) || 20;
+      for (const p of state.patrols) {
+        const d = Math.abs(p.x - here.x) + Math.abs(p.y - here.y);
+        if (d < bestD && reachable(state, here, { x: p.x, y: p.y })) { best = p; bestD = d; }
+      }
+      if (best && bestD > itemCfg.range) {
+        debug("seeking_guard", { patrolId: best.id, distance: bestD });
+        return {
+          command: { type: 20, agentId: agent.id, cellX: best.x, cellY: best.y },
+          telemetry,
+        };
+      }
+    }
+    // Standing next to a guard that is still up? Put them out first.
+    // Once in range, TAKE THE SHOT whatever your detection state.
+    //
+    // Requiring unseen here looked prudent and was the third thing to kill this
+    // behaviour outright. A trace of the approach tells the story: the agent
+    // closes from 18 cells to 1, and is noticed at 8 and burned at 2 — by the
+    // guard it is walking up to. Refusing to act at that point means it walked
+    // the whole way, broke its own stealth, and went home empty. Being seen is
+    // the PRICE of the badge; the disruptor clears the guard's alert anyway,
+    // and the existing abort-when-hot rule pulls the Firm out if the district
+    // turns dangerous.
+    const target = state.patrols.find((p) =>
+      !isDisrupted(p, state.tick) && near(p, itemCfg.range));
+    if (target && (agent.contractIds ?? []).length === 0) {
+      debug("disrupting_guard", { patrolId: target.id });
+      return {
+        command: { type: 30, agentId: agent.id, slot: 1, cellX: target.x, cellY: target.y },
+        telemetry,
+      };
+    }
   }
 
   // ── S16 8i: an ORDERED raid outranks CONTRACT WORK ──

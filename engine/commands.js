@@ -35,6 +35,10 @@ export const CMD_SITE_ACTION = 42;   // plant / crack / hold — type-specific
 // S16 8d. The counter-play to cameras and beams, and DIEGETIC per D45: you walk
 // to the junction box and cut it, in the world, in time — no modal panel.
 export const CMD_CUT_JUNCTION = 43;
+// S16 8k. The third credential source (8e) shipped with a function, tests, and
+// NO COMMAND — so lifting a badge off a disabled guard did not exist in the
+// game for anyone. This is the missing half.
+export const CMD_LIFT_CREDENTIAL = 44;
 
 // Encounters (S08)
 export const CMD_STANDOFF_CHOICE = 50;
@@ -72,6 +76,8 @@ export function validate(command) {
         && INT(command.cellX) && INT(command.cellY);
     case CMD_CUT_JUNCTION:
       return INT(command.agentId) && INT(command.junctionId);
+    case CMD_LIFT_CREDENTIAL:
+      return INT(command.agentId) && INT(command.patrolId);
     case CMD_RESCUE:
     case CMD_CAPTURE:
       return INT(command.agentId) && INT(command.targetAgentId);

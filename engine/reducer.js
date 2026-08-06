@@ -14,7 +14,7 @@ import {
   CMD_ADVANCE_TICK, CMD_SET_STANCE, CMD_MOVE, CMD_USE_ITEM,
   CMD_RESCUE, CMD_CAPTURE, CMD_DROP_IN, CMD_ACTIVATE_EVAC, CMD_CANCEL_EVAC,
   CMD_EXTRACT, CMD_ACCEPT_CONTRACT, CMD_ABANDON_CONTRACT, CMD_SITE_ACTION,
-  CMD_CUT_JUNCTION,
+  CMD_CUT_JUNCTION, CMD_LIFT_CREDENTIAL,
   CMD_ENTER_BUILDING, CMD_EXIT_BUILDING, CMD_BUY_ITEM, CMD_STANDOFF_CHOICE,
   CMD_PAY_BAIL, CMD_DIALOGUE_CHOICE, CMD_DORMANCY_TICK,
   CMD_ENTER_VEHICLE, CMD_EXIT_VEHICLE,
@@ -36,6 +36,7 @@ import {
 import { stepStandoffs, submitChoice } from "./standoff.js";
 import { stepAlarms, cutJunction } from "./security.js";
 import { stepRaids } from "./raids.js";
+import { liftCredentialFromGuard } from "./access.js";
 import { applyDormancy } from "./dormancy.js";
 import { sfc32Next } from "../shared/prng.js";
 
@@ -414,6 +415,17 @@ function applyCutJunction(next, command) {
   return next;
 }
 
+// S16 8k. Reasons, like every other refusal: the AI rejection log is how this
+// project finds AI bugs, and a silent no-op is how a control looks broken.
+function applyLiftCredential(next, command) {
+  const agent = next.agents[command.agentId];
+  if (!agent) return reject(next, command, "no_agent");
+  const patrol = next.patrols.find((p) => p.id === command.patrolId);
+  const r = liftCredentialFromGuard(next, agent, patrol, next.rules.security.access);
+  if (!r.ok) return reject(next, command, r.reason);
+  return next;
+}
+
 export function apply(state, command) {
   const next = copyState(state);
   if (!validate(command)) return reject(next, command ?? { type: -1 }, "invalid_command");
@@ -445,6 +457,8 @@ export function apply(state, command) {
       return applyAbandonContract(next, command);
     case CMD_CUT_JUNCTION:
       return applyCutJunction(next, command);
+    case CMD_LIFT_CREDENTIAL:
+      return applyLiftCredential(next, command);
     case CMD_SITE_ACTION:
       return applySiteAction(next, command);
     case CMD_ENTER_BUILDING:

@@ -288,7 +288,11 @@ Ordered so each slice is playable and measurable on its own.
   it". Pacing also worsened (sortie 4.8 min vs D11's 15–20) for the same reason.
   The instrument was wrong first — both battery tools hardcoded five contract
   types while the game had six, hiding Defend, which is 30.5% of completions.
-- **8k** **NEXT: teach the AI to obtain a credential** — vendor purchase (needs
+- **8k** ✅ **DONE (2026-08-06)** — the AI can obtain a credential, and so can a
+  player: the guard source shipped in 8e with no command at all. Five of six
+  contract types now read in a 0.75–1.21x preference band. Credentials are still
+  rare and one seed shows unexplained accept churn — both flagged in S16.
+- ~~**8k** teach the AI to obtain a credential~~ — vendor purchase (needs
   the ledger in the AI seam, D30) or lifting one off a disabled guard. Until
   this lands every battery measures a world where a third of the contract space
   is closed to the only actor being measured.

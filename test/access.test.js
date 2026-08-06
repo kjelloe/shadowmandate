@@ -16,6 +16,9 @@ import {
 import { accessBlocked, requiresCredential, STAGE_WORK } from "../engine/contracts.js";
 import { stepAlarms, triggersAt, workingAt, alarmStageOf, ALARM_LOCAL } from "../engine/security.js";
 import { captureAgent } from "../engine/combat.js";
+import { buildView } from "../engine/view.js";
+import { CMD_LIFT_CREDENTIAL } from "../engine/commands.js";
+import { liftableGuard } from "../client/js/models.js";
 import { makeWorld, placeAgent, RULES } from "./helpers.js";
 
 const ACFG = RULES.security.access;
@@ -279,4 +282,56 @@ test("secured sites are SOME of the world, not most of it", () => {
   assert.ok(share > 0.15, `only ${(share * 100).toFixed(0)}% of sites are secured — 8f barely exists`);
   assert.ok(share < 0.45,
     `${(share * 100).toFixed(0)}% of sites are secured — that is "most contracts harder", not "some"`);
+});
+
+// ── 8k: the third source, made reachable ───────────────────────────────────
+
+test("REACHABILITY: lifting a badge has a command, not just a function", () => {
+  // 8e shipped `liftCredentialFromGuard` with five passing tests and NO caller.
+  // One of the three credential sources did not exist in the game for anyone —
+  // player or AI — and every test was green. Unit tests prove behaviour, never
+  // reachability.
+  const s = makeWorld();
+  const patrol = s.patrols[0];
+  patrol.stunnedUntil = s.tick + 100;
+  const agent = placeAgent(s, { cellX: patrol.x, cellY: patrol.y });
+  const next = apply(s, { type: CMD_LIFT_CREDENTIAL, agentId: agent.id, patrolId: patrol.id });
+  assert.equal(credentialTier(next, agent.id), ACFG.guardTier,
+    "the command exists but does not grant the credential");
+});
+
+test("the lift command refuses with a REASON", () => {
+  const s = makeWorld();
+  const patrol = s.patrols[0];                     // not disabled
+  const agent = placeAgent(s, { cellX: patrol.x, cellY: patrol.y });
+  const next = apply(s, { type: CMD_LIFT_CREDENTIAL, agentId: agent.id, patrolId: patrol.id });
+  assert.ok(next.events.some((e) => e.type === "rejected" && e.reason === "guard_not_disabled"),
+    "the refusal was silent");
+});
+
+test("the view tells the client which guard is down", () => {
+  // Without this the player cannot tell a guard they put down from one standing
+  // still, so the badge stays unreachable even though the command exists.
+  const s = makeWorld();
+  const patrol = s.patrols[0];
+  placeAgent(s, { cellX: patrol.x, cellY: patrol.y });
+  const before = buildView(s, 0, RULES.detection).patrols.find((p) => p.id === patrol.id);
+  assert.equal(before.disabled, 0);
+  patrol.stunnedUntil = s.tick + 100;
+  const after = buildView(s, 0, RULES.detection).patrols.find((p) => p.id === patrol.id);
+  assert.equal(after.disabled, 1, "a disabled guard does not read as disabled in the view");
+});
+
+test("the HUD offers the lift only when it would succeed", () => {
+  const patrolCell = { x: 12, y: 12 };
+  const view = {
+    agents: [{ id: 0, state: 1, x: 12 * 256 + 128, y: 12 * 256 + 128 }],
+    patrols: [{ id: 3, x: patrolCell.x, y: patrolCell.y, disabled: 1 }],
+  };
+  assert.equal(liftableGuard(view)?.id, 3);
+  view.patrols[0].disabled = 0;
+  assert.equal(liftableGuard(view), null, "offered a lift on a guard that is not down");
+  view.patrols[0].disabled = 1;
+  view.patrols[0].x = 30;
+  assert.equal(liftableGuard(view), null, "offered a lift on a guard across the street");
 });

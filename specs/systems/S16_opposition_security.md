@@ -1,7 +1,7 @@
 # S16 — Opposition & Site Security
 
 *Feeds: M8 · Depends on: S03, S04, S07, S08, S09 ·
-Status: **8a–8j AS BUILT**; 8h RUN and its verdict is BLOCKED — see below*
+Status: **8a–8k AS BUILT**; 8h re-run after 8k — most of D19 is now readable*
 
 ## Purpose
 
@@ -408,6 +408,13 @@ facility that is reacting rather than in a quiet street.
 
 ### 8e — credentials
 
+**Correction (found while starting 8k):** the guard source shipped
+UNREACHABLE. `liftCredentialFromGuard` was written and tested, but no command
+ever called it — so of the three sources described below, only the two bought
+ones (informant, vendor) actually existed in the game. A function with tests and
+no caller looks exactly like a working feature. 8k adds `CMD_LIFT_CREDENTIAL`
+and makes it real for players and AI alike.
+
 The lock whose counter-play is not a widget. Three sources, all diegetic: an
 informant sells one (tier 1), a vendor stocks one (tier 2), or you **lift one
 off a guard you disabled** (tier 1). The guard source is the one that makes the
@@ -651,3 +658,83 @@ that can engage with it.
 plumbed into the AI seam, since D30 makes purchases bank-only) or lift one from
 a guard it disabled. Until then every battery measures a world where a third of
 the contract space is closed to the only actor being measured.
+
+## AS BUILT — 8k, the AI can get a pass (2026-08-06)
+
+### First: the source did not exist
+
+`liftCredentialFromGuard` shipped in 8e with five passing tests and **no
+command**. Lifting a badge off a disabled guard was unreachable for the AI *and*
+for players — one of the three credential sources described in this spec simply
+was not in the game. A function with tests and no caller looks exactly like a
+working feature. `CMD_LIFT_CREDENTIAL` and a HUD control fix that, and the view
+now reports which guard is down (without it the client cannot tell a guard you
+put down from one standing still).
+
+### Then: teaching the AI, and three failed shapes
+
+The guard route rather than the vendor, because buying needs the BANK, which
+lives in the server ledger and never enters the engine (D30) — a vendor purchase
+would mean plumbing the ledger through the AI seam.
+
+Three versions did nothing, each for a different reason, and each found by
+tracing rather than reasoning:
+
+1. **No approach step.** It disrupted guards from three cells away and never
+   closed: 13 disruptions, zero lifts. Stunning a guard you never reach is worse
+   than doing nothing — it spends the item and the noise for nothing.
+2. **The unseen gate was on the whole block.** The disruptor makes noise, so the
+   agent was noticed by its own action and then refused to walk the three cells
+   to the guard it had just put down.
+3. **No intent.** Acting only when a patrol happened to wander within range
+   produced 15 disruptions and zero credentials across four world-days.
+
+A trace of the approach settled it: the agent closes from 18 cells to 1, is
+noticed at 8 and burned at 2 — *by the guard it is walking up to*. Being seen is
+the price of the badge, not a disqualification.
+
+### The trade-off, stated plainly
+
+Idle guard-hunting and throughput trade **directly** against each other:
+
+| seek radius | credentials / 6 world-days | completions (median) | clean extracts |
+|---|---:|---:|---:|
+| 20 cells, idle | ~3 | 4.0 | 0.0 |
+| 10 cells, idle | 1 | restored | restored |
+| 20 cells, **purposeful** | 2 | restored | restored |
+
+The errand now needs a REASON — a job on the Firm's own board that the credential
+would actually unlock — which makes it rare and targeted instead of frequent and
+speculative. Wandering off to mug somebody on the off-chance is not worth an
+operative's time, and the numbers said so before the design did.
+
+### What the battery says now
+
+Re-run at the wide idle setting (the one that produced the most credentials),
+the D19 mix moved a long way:
+
+| type | before 8k | after 8k |
+|---|---:|---:|
+| courier | 2.10x | **1.16x** |
+| surveillance | 0.65x | 0.75x |
+| extraction | **0.38x** | **0.77x** |
+| sabotage | 3.11x | 1.21x |
+| acquisition | 0.08x | 0.40x |
+| defend | 2.45x | **4.61x** |
+
+**Five of six types now sit in a 0.75–1.21x band**, and extraction is neither
+dominant nor artificially crushed — which is the first genuinely readable
+version of this table since D42 was ruled. Defend is the new outlier at 4.61x
+and is the obvious next balance question.
+
+### Still open, and NOT resolved
+
+- **Credentials remain rare** (2 per six world-days at the shipped setting), so
+  acquisition's 0.40x is still partly "cannot take the job".
+- **Pacing is unchanged and still short**: sortie 4.8 min against D11's 15–20.
+- **One unexplained anomaly**: seed 1411 reports 273 accepts against 2
+  completions in the world-day sweep. Every other seed is normal, the suite is
+  green, and my probe could not reproduce it because `contractAccepted` is
+  emitted inside `stepAiFirms` and overwritten by the following tick — the
+  instrument, not the world. **Flagged rather than explained.** It should be the
+  first thing looked at before any further balance tuning.

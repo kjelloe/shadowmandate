@@ -12,7 +12,7 @@ import {
   ownAgent, heatDisplay, districtUnder, boardRows, activeRows, objectiveFor,
   objectiveBearing, evacDisplay, toastsFor, debriefRows, reputationBar,
   payloadForBuilding, overlayRows, disguiseFor, districtChoices, standingRows,
-  cuttableJunction,
+  cuttableJunction, liftableGuard,
   HEAT_CLASS as HEAT_CLASSES,
 } from "./models.js";
 
@@ -160,6 +160,7 @@ function paint(s, events) {
   renderObjectiveArrow(view);
   renderBuilding(view);
   renderJunction(view);
+  renderLift(view);
   renderStandoff(view);
   renderEvac(view);
   for (const toast of toastsFor(events)) addToast(t(toast.key), toast.alarm);
@@ -356,6 +357,15 @@ function renderJunction(view) {
   const j = cuttableJunction(view);
   btn.hidden = !j;
   btn.dataset.junctionId = j ? String(j.id) : "";
+}
+
+// S16 8k. The third credential source was written, tested, and unreachable —
+// no command and no control. Both halves exist now.
+function renderLift(view) {
+  const btn = $("#lift-btn");
+  const g = liftableGuard(view);
+  btn.hidden = !g;
+  btn.dataset.patrolId = g ? String(g.id) : "";
 }
 
 function renderBuilding(view) {
@@ -561,6 +571,12 @@ $("#zone-map").addEventListener("pointerdown", (ev) => {
   }
   if (best && bestD <= 6) deployAt(best);
 });
+$("#lift-btn").addEventListener("click", () => {
+  const a = ownAgent(session.view);
+  const id = Number($("#lift-btn").dataset.patrolId);
+  if (a && Number.isInteger(id)) session.send({ type: 44, agentId: a.id, patrolId: id });
+});
+
 $("#cut-btn").addEventListener("click", () => {
   const a = ownAgent(session.view);
   const id = Number($("#cut-btn").dataset.junctionId);
