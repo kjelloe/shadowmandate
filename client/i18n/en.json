@@ -144,5 +144,7 @@
   "toast.raidDispatched": "They are on their way",
   "toast.contractContested": "Another Firm has taken this job",
   "toast.contractLost": "Beaten to it — the job is gone",
-  "toast.accessDenied": "Locked — you need a pass"
+  "toast.accessDenied": "Locked — you need a pass",
+  "contract.defend": "DEFEND",
+  "toast.defenceBreached": "They are on the site — hold it"
 }

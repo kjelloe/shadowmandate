@@ -1,7 +1,7 @@
 # S16 — Opposition & Site Security
 
 *Feeds: M8 · Depends on: S03, S04, S07, S08, S09 ·
-Status: **8a–8i AS BUILT**; 8h and 8j remain*
+Status: **8a–8j AS BUILT**; only 8h (the battery re-read) remains*
 
 ## Purpose
 
@@ -565,3 +565,35 @@ and it would have poisoned 8h's battery. A raid order now waits for the current
 job to finish. Measured after: completions 4–7, extractions 0–2, and raids still
 land (4–5 scheduled, 1–2 succeeding). Frequency is tuned **against the AI gate**,
 not by feel.
+
+## AS BUILT — 8j, the Defend contract (2026-08-06, D49a)
+
+The sixth type, and the one **inbound** job. Every other contract is "go
+somewhere, do something, come home"; this is "be somewhere while something comes
+to you". The texture inverts, and that inversion is the whole reason to add it:
+
+- **Being seen is not failure.** It is the only contract with no stealth clause
+  at all — you are supposed to be there. A genuine rest from the one texture the
+  game otherwise has.
+- **Leaving IS failure, immediately.** Everything else forgives a wander by
+  resetting a timer; here the thing you were guarding is behind you the moment
+  you step away.
+- **A rival arriving PAUSES the hold, it does not lose it.** A reset would mean
+  any rival wandering past costs the whole hold, making the contract a coin-flip
+  rather than a job. Who ends up standing there is the standoff machine's
+  business (S08), which is exactly the division of labour S16 asked for.
+
+Tier 2 rather than 1, because it needs rivals who actually arrive (8g/8i), and
+priced on its 1800-tick hold like every other type since the effort pass. The AI
+scorer sees that hold — a scorer blind to it prices the job as free, which is
+precisely the blindness that made surveillance look cheap before.
+
+Two integration details worth keeping: `stageTicks` is advanced once for every
+contract kind *above* the switch, so pausing means giving that tick back rather
+than skipping an increment that never happened; and `stageTargetTicks` needed a
+Defend case or the HUD bar sits blank for three minutes, which reads as a hung
+game rather than as a contract in progress.
+
+`KIND_COUNT` is the single place that decides whether a type is ever generated,
+so a test asserts the pool actually rolls Defend (~22% of tier-2 work) — a type
+the generator never produces is dead content whatever the constants say.

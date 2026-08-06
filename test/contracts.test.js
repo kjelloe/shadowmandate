@@ -119,7 +119,13 @@ test("D29: an agent may hold at most 2 active contracts", () => {
 test("a contract offered to another Firm cannot be accepted", () => {
   let s = seededWorld(4711, 2);
   const mine = s.agents.find((a) => a.firmId === 0);
-  const theirs = s.offers.find((o) => o.firmId === 1).contractIds[0];
+  // An UNCONTESTED entry on the neighbour's board. Since 8g a contested
+  // contract is deliberately on several boards, so picking blindly can land on
+  // one that Firm 0 is genuinely entitled to take — the accept then succeeds,
+  // correctly, and the test reads it as a broken guard.
+  const theirs = s.offers.find((o) => o.firmId === 1).contractIds
+    .find((id) => !s.contractPool.find((c) => c.id === id)?.contested);
+  assert.ok(theirs !== undefined, "the neighbour's board is entirely contested");
   const bad = apply(s, { type: CMD_ACCEPT_CONTRACT, agentId: mine.id, contractId: theirs });
   assert.equal(bad.events[0].reason, "not_offered_to_you");
 });

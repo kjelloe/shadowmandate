@@ -65,6 +65,14 @@
       "crackTicks": 1200,
       "expiryTicks": 0,
       "dropOff": true
+    },
+    "defend": {
+      "tier": 2,
+      "reward": 240,
+      "holdTicks": 1800,
+      "expiryTicks": 0,
+      "passes": 1,
+      "breachRadius": 3
     }
   },
   "captureGraceTicks": 1800,
@@ -85,5 +93,6 @@
     "percent": 18,
     "maxFirms": 2,
     "rewardPct": 150
-  }
+  },
+  "note_defend": "S16 8j / D49a. The one INBOUND contract: you are stationary and something comes to you. Being SEEN is not failure here \u2014 you are meant to be there \u2014 which is why it has no stealth clause at all. It is tier 2 rather than 1 because it needs rivals who actually arrive (8g/8i), and it pays well because 1800 stationary ticks is a long time to be somewhere a rival wants to be."
 }

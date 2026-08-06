@@ -101,6 +101,9 @@ export function spawnAiFirms(state, rules, count, { swap = false } = {}) {
 export function workTicksFor(spec) {
   if (!spec) return 0;
   const legs = spec.legs ?? 1;
+  // Defend's whole cost is its hold, and it is a LONG one — the scorer must see
+  // that or it prices 1800 stationary ticks as free, which is exactly the
+  // blindness that made surveillance look cheap before the effort pass.
   return ((spec.holdTicks ?? 0) * (spec.passes ?? 1))
     + ((spec.plantTicks ?? 0) * legs)
     + (spec.crackTicks ?? 0)

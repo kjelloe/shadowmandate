@@ -15,7 +15,7 @@ export const HEAT_KEYS = ["hud.heat.calm", "hud.heat.tense", "hud.heat.lockdown"
 export const HEAT_CLASS = ["calm", "tense", "lockdown"];
 export const CONTRACT_KEYS = [
   "contract.courier", "contract.surveillance", "contract.extraction",
-  "contract.sabotage", "contract.acquisition",
+  "contract.sabotage", "contract.acquisition", "contract.defend",
 ];
 
 export function ownAgent(view) {
@@ -240,6 +240,7 @@ const TOASTS = {
   contractContested: { key: "toast.contractContested", alarm: true },
   contractLost: { key: "toast.contractLost", alarm: true },
   accessDenied: { key: "toast.accessDenied" },
+  defenceBreached: { key: "toast.defenceBreached", alarm: true },
   credentialGained: { key: "toast.credentialGained" },
 };
 

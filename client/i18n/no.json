@@ -144,5 +144,7 @@
   "toast.raidDispatched": "De er på vei",
   "toast.contractContested": "Et annet firma har tatt dette oppdraget",
   "toast.contractLost": "Forbikjørt — oppdraget er borte",
-  "toast.accessDenied": "Låst — du trenger et adgangskort"
+  "toast.accessDenied": "Låst — du trenger et adgangskort",
+  "contract.defend": "FORSVAR",
+  "toast.defenceBreached": "De er på stedet — hold det"
 }

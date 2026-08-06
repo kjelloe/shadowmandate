@@ -18,9 +18,17 @@ export const KIND_SURVEILLANCE = 1;
 export const KIND_EXTRACTION = 2;
 export const KIND_SABOTAGE = 3;
 export const KIND_ACQUISITION = 4;
-export const KIND_COUNT = 5;
+// S16 8j (D49a). Defend is the sixth type and the one INBOUND job: every other
+// contract is "go somewhere, do something, come home". It is also the only one
+// where being seen is not automatically failure — you are supposed to be there
+// — which is a genuinely different texture in a stealth-first game and a rest
+// from the one it has.
+export const KIND_DEFEND = 5;
+export const KIND_COUNT = 6;
 
-export const KIND_NAMES = ["courier", "surveillance", "extraction", "sabotage", "acquisition"];
+export const KIND_NAMES = [
+  "courier", "surveillance", "extraction", "sabotage", "acquisition", "defend",
+];
 
 // Objective stages. Every contract walks 0 -> ... -> DONE.
 export const STAGE_OFFERED = 0;
@@ -390,6 +398,10 @@ export function stageTargetTicks(contract, cfg) {
     case KIND_SABOTAGE: return spec.plantTicks ?? 100;
     case KIND_ACQUISITION: return spec.crackTicks ?? 600;
     case KIND_EXTRACTION: return spec.secureTicks ?? 900;
+    // Without this the defence HUD bar is blank for 3 minutes, which reads as a
+    // hung game rather than as a contract in progress — the exact reason this
+    // function exists.
+    case KIND_DEFEND: return spec.holdTicks ?? 1800;
     default: return 0;
   }
 }
@@ -447,6 +459,62 @@ export function stepContracts(state, cfg, detCfg) {
         } else if (contract.stage === STAGE_RETURN && atSite(state, agent, contract.siteIdB)) {
           agent.carryKind = 0; agent.carryRef = -1;
           completeContract(state, contract, agent, cfg);
+        }
+        break;
+      }
+      // S16 8j (D49a). THE INBOUND CONTRACT. You hold a site while somebody
+      // tries to take it, so the whole texture is inverted:
+      //
+      //   - being SEEN is not failure. You are supposed to be there. This is
+      //     the only contract with no stealth clause at all, and that is the
+      //     point of adding it — a rest from the one texture the game has.
+      //   - leaving IS failure, immediately. Everything else forgives a wander
+      //     by resetting a timer; here the thing you were guarding is behind
+      //     you the moment you step away.
+      //   - a rival reaching the site does not end it either. You are meant to
+      //     be contested; the standoff machine (S08) resolves who is standing
+      //     there afterwards, and the hold simply pauses while an intruder is
+      //     on it. Holding under pressure is the job.
+      case KIND_DEFEND: {
+        if (contract.stage === STAGE_TRAVEL && atSite(state, agent, contract.siteId)) {
+          contract.stage = STAGE_WORK; contract.stageTicks = 0;
+          state.events.push({ type: "defenceBegan", contractId: contract.id, agentId: agent.id });
+        } else if (contract.stage === STAGE_WORK) {
+          if (!atSite(state, agent, contract.siteId, 1)) {
+            // Abandoning the post is the one way to lose this.
+            failContract(state, contract, agent, "post_abandoned");
+            break;
+          }
+          const site = state.sites.find((x) => x.id === contract.siteId);
+          const breached = site ? state.agents.some((other) =>
+            other.state === AGENT_ACTIVE
+            && other.firmId !== agent.firmId
+            && other.insideBuildingId < 0
+            && Math.abs(worldToCellFloor(other.x) - site.cellX)
+              + Math.abs(worldToCellFloor(other.y) - site.cellY) <= (spec.breachRadius ?? 3))
+            : false;
+          if (breached) {
+            // The clock STOPS while a rival is on you; it does not reset. A
+            // reset would mean any rival wandering past costs you the whole
+            // hold, which makes the contract a coin-flip rather than a job.
+            //
+            // `stageTicks` was already advanced once above the switch, for
+            // every contract kind, so pausing means giving that tick back —
+            // not skipping an increment that never happened here.
+            contract.stageTicks = (contract.stageTicks - 1) | 0;
+            if (!contract.breachNoted) {
+              contract.breachNoted = 1;
+              state.events.push({
+                type: "defenceBreached", contractId: contract.id, agentId: agent.id,
+                siteId: contract.siteId,
+              });
+            }
+          } else {
+            contract.breachNoted = 0;
+            if (contract.stageTicks >= (spec.holdTicks ?? 1800)) {
+              completeContract(state, contract, agent, cfg);
+            }
+          }
         }
         break;
       }

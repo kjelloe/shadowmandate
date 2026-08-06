@@ -216,7 +216,7 @@ census complete; battery within provisional bands.
 
 ---
 
-## M8 — Opposition & Site Security 🟡 IN PROGRESS (8a–8g, 8i done)
+## M8 — Opposition & Site Security 🟡 IN PROGRESS (8a–8g, 8i, 8j done; 8h next)
 
 The difficulty layer. D42 rules that extraction and acquisition are
 under-opposed rather than mispriced, so this is what the contract balance is
@@ -273,7 +273,7 @@ Ordered so each slice is playable and measurable on its own.
   before the contract deliberately — it is what teaches the mechanic and what
   makes an HQ feel like a place worth defending, and D28 already rules that evac
   activation is always allowed because "the hold is the fight".
-- **8j** **Defend contracts — the CHOSEN half of D49.** The one whole family the
+- **8j** ✅ **DONE (2026-08-06)** — **Defend contracts, the CHOSEN half of D49.** The one whole family the
   reference corpus has and we do not; every current type is outbound. Needs 8g
   and 8i first: defending is meaningless without rivals who arrive, and the
   contract is the player *selling* competence at a threat 8i already made real.
