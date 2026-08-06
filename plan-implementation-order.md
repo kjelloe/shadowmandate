@@ -216,7 +216,7 @@ census complete; battery within provisional bands.
 
 ---
 
-## M8 — Opposition & Site Security 🟡 IN PROGRESS (8a–8g done)
+## M8 — Opposition & Site Security 🟡 IN PROGRESS (8a–8g, 8i done)
 
 The difficulty layer. D42 rules that extraction and acquisition are
 under-opposed rather than mispriced, so this is what the contract balance is
@@ -268,7 +268,7 @@ Ordered so each slice is playable and measurable on its own.
   accept time. The finisher is paid, not the first taker; losers are told and
   released. **Narrows D18** — disjoint boards except where deliberately flagged
   — which is recorded and flagged for the owner.
-- **8i** **Rival raids on your Field HQ — the EVENT half of D49.** Unprompted:
+- **8i** ✅ **DONE (2026-08-06)** — **Rival raids on your Field HQ, the EVENT half of D49.** Unprompted:
   a rival Firm turns up at your HQ whether or not you took a job about it. Comes
   before the contract deliberately — it is what teaches the mechanic and what
   makes an HQ feel like a place worth defending, and D28 already rules that evac

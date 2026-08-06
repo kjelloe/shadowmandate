@@ -156,10 +156,12 @@ export function createInitialState(options = {}) {
     // walk every operative through the same door, and the card does not
     // survive capture or extraction. Hash-inert while empty, like alarms.
     credentials: [],
+    raids: [],           // M8 — S16 8i (D49b), hash-inert while quiet
     vehicles: [],       // M6 — S02
 
     nextContractId: 0,
     nextStandoffId: 0,
+    nextRaidId: 0,
 
     events: [],
   };

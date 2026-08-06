@@ -139,5 +139,10 @@
   "access.locked": "LÅST — du trenger et adgangskort",
   "access.lifted": "Skiltet er tatt fra vakten",
   "toast.credentialGained": "Adgangskort i hånd",
-  "toast.credentialsLost": "Adgangskortene er borte"
+  "toast.credentialsLost": "Adgangskortene er borte",
+  "toast.raidIncoming": "RAID PÅ VEI — noen rykker mot HQ-en din",
+  "toast.raidDispatched": "De er på vei",
+  "toast.contractContested": "Et annet firma har tatt dette oppdraget",
+  "toast.contractLost": "Forbikjørt — oppdraget er borte",
+  "toast.accessDenied": "Låst — du trenger et adgangskort"
 }

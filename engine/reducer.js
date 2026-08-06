@@ -35,7 +35,17 @@ import {
 } from "./buildings.js";
 import { stepStandoffs, submitChoice } from "./standoff.js";
 import { stepAlarms, cutJunction } from "./security.js";
+import { stepRaids } from "./raids.js";
 import { applyDormancy } from "./dormancy.js";
+import { sfc32Next } from "../shared/prng.js";
+
+// One seeded stream, borrowed. The engine has exactly one PRNG in state and it
+// must not fork — a second stream would make replays diverge in a way no test
+// would notice until a battery disagreed with itself.
+function rollFrom(state, lo, hi) {
+  if (hi <= lo) return lo;
+  return (lo + (sfc32Next(state.rng) % ((hi - lo + 1) >>> 0))) | 0;
+}
 
 export function copyState(state) {
   return {
@@ -85,11 +95,13 @@ export function copyState(state) {
     standoffs: state.standoffs.map((s) => ({ ...s })),
     alarms: (state.alarms ?? []).map((a) => ({ ...a })),
     credentials: (state.credentials ?? []).map((c) => ({ ...c })),
+    raids: (state.raids ?? []).map((r) => ({ ...r })),
     pacts: state.pacts.map((p) => ({ ...p })),
     vehicles: state.vehicles.map((v) => ({ ...v })),
 
     nextContractId: state.nextContractId,
     nextStandoffId: state.nextStandoffId,
+    nextRaidId: state.nextRaidId ?? 0,
 
     events: [],
   };
@@ -373,6 +385,10 @@ function applyAdvanceTick(next) {
   stepHeat(next, r.detection);
   stepArrests(next, r.detection, r.combat, r.agents);
   stepHqs(next, r.hq);
+  // S16 8i. After HQs, because a raid is a thing that happens TO an HQ and the
+  // perimeter must have been stepped first; the roll is handed the state's own
+  // seeded stream so the engine keeps exactly one.
+  stepRaids(next, r.security?.raids, (lo, hi) => rollFrom(next, lo, hi));
   stepStandoffs(next, r.standoff, r.detection, r.agents);
   stepContracts(next, r.contracts, r.detection);
   if (reapContracts(next) > 0) refillPool(next, r.contracts, r.detection);

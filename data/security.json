@@ -20,5 +20,13 @@
   "note_access": "S16 8e. guardTier is what a disabled guard is carrying. Deliberately 1: the lowest tier, so lifting a badge opens the SIMPLER facilities and the tier-2 ones still need buying from a vendor. That keeps all three sources useful instead of making the free one strictly best.",
   "access": {
     "guardTier": 1
+  },
+  "note_raids": "S16 8i / D49b. Raids happen UNPROMPTED \u2014 that is what makes an HQ a place worth defending, and it is why the event ships before the Defend contract (8j). warningTicks is the fairness of the whole mechanism: the target is told, then has ~40s before the raider is sent. durationTicks expires a raid that never landed, or a raider arrested on the way would leave its target permanently under threat and permanently un-raidable. FREQUENCY IS TUNED AGAINST THE AI, not by feel: an ordered raid outranks contract work, so at everyTicks 600 / chance 25 / duration 3000 a raid was almost always live and the AI stopped completing contracts entirely \u2014 the M5 gate went red with 'the world is not alive'. These numbers give roughly one raid per world-day per Firm, which is an event rather than a state.",
+  "raids": {
+    "enabled": 1,
+    "everyTicks": 1200,
+    "chancePct": 15,
+    "warningTicks": 400,
+    "durationTicks": 2400
   }
 }

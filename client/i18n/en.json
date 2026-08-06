@@ -139,5 +139,10 @@
   "access.locked": "LOCKED — you need a pass",
   "access.lifted": "Badge lifted from the guard",
   "toast.credentialGained": "Credential in hand",
-  "toast.credentialsLost": "Credentials gone"
+  "toast.credentialsLost": "Credentials gone",
+  "toast.raidIncoming": "RAID INCOMING — someone is moving on your HQ",
+  "toast.raidDispatched": "They are on their way",
+  "toast.contractContested": "Another Firm has taken this job",
+  "toast.contractLost": "Beaten to it — the job is gone",
+  "toast.accessDenied": "Locked — you need a pass"
 }

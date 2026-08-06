@@ -233,6 +233,14 @@ const TOASTS = {
   alarmRaised: { key: "toast.alarmRaised", alarm: true },
   alarmEscalated: { key: "toast.alarmEscalated", alarm: true },
   junctionCut: { key: "toast.junctionCut" },
+  // S16 8i. A raid you are not told about is exactly the unfairness the
+  // warning window exists to prevent.
+  raidIncoming: { key: "toast.raidIncoming", alarm: true },
+  raidDispatched: { key: "toast.raidDispatched", alarm: true },
+  contractContested: { key: "toast.contractContested", alarm: true },
+  contractLost: { key: "toast.contractLost", alarm: true },
+  accessDenied: { key: "toast.accessDenied" },
+  credentialGained: { key: "toast.credentialGained" },
 };
 
 export function toastsFor(events) {

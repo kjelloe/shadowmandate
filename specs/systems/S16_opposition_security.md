@@ -1,7 +1,7 @@
 # S16 — Opposition & Site Security
 
 *Feeds: M8 · Depends on: S03, S04, S07, S08, S09 ·
-Status: **8a–8g AS BUILT**; 8h–8j remain*
+Status: **8a–8i AS BUILT**; 8h and 8j remain*
 
 ## Purpose
 
@@ -517,3 +517,51 @@ reducer quietly impure. And the contender cap test needed FOUR Firms against a
 cap of two: with only two deployed the cap could never be exceeded, so the
 assertion held with the check deleted. A world has to be able to break the rule
 before a test can claim the rule is enforced.
+
+## AS BUILT — 8i, scheduled rival raids (2026-08-06, D49b)
+
+`engine/raids.js`. The UNCHOSEN half of D49: a rival turns up at your HQ whether
+or not you took a job about it. It ships before the Defend contract on purpose —
+sell someone competence at a threat they have never felt and the contract is an
+abstraction.
+
+The MECHANICS already existed (`stepPerimeter` raises an alarm and lets an
+intruder loot the cache). What did not exist was **intent**: a raid was an
+accident of AI mood, so it was rare, unpredictable and impossible to design
+around. This schedules it, **telegraphs it**, and gives it a window.
+
+**D31 is load-bearing**: a Firm inside its disconnect grace is never a target.
+Raiding somebody whose connection just dropped is the most obviously unfair
+thing this system could do, and the rule already existed to be read.
+
+### Four defects, each found by a different instrument
+
+**1. The raider parked one cell short.** `arrivedAt` tolerates a cell of slop —
+rightly, since demanding exactness once caused 1324 `move:no_route` rejections —
+but looting requires standing exactly ON the tent. Result: 6 raids dispatched, 5
+perimeter alarms, **zero loots**, every seed. Found by `debugging/dbg_raids.mjs`,
+not by a test.
+
+**2. The order was placed below the contract logic** while its own comment
+claimed it outranked everything. The code did not do what the comment said.
+
+**3. Then it outranked evacuation** — and the AI stopped extracting entirely.
+Precedence is now: forced choice (standoff), getting out (evac), orders (raid),
+work.
+
+**4. A successful raid never ended**, so the raider camped on the tent and
+re-looted every time the owner banked anything: **5020 loots in one world-day**.
+That is a siege, not a raid. A raid now ends when it succeeds, and `lootTicks`
+resets — a latent hq.js bug that was invisible while raids were rare accidents.
+A raider that arrives to an EMPTY tent is also released, rather than standing
+there for the whole window.
+
+### The economy check that mattered
+
+With raids outranking contract work, **world throughput fell ~40%** —
+completions 4–9 → 1–5 per world-day, clean extractions all but stopped. That is
+not a difficulty effect, it is the economy being rewritten by a side feature,
+and it would have poisoned 8h's battery. A raid order now waits for the current
+job to finish. Measured after: completions 4–7, extractions 0–2, and raids still
+land (4–5 scheduled, 1–2 succeeding). Frequency is tuned **against the AI gate**,
+not by feel.

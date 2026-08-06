@@ -144,6 +144,10 @@ export function hashState(state) {
   for (const c of (state.credentials ?? [])) {
     w.writeI32LE(c.agentId); w.writeI32LE(c.tier);
   }
+  for (const r of (state.raids ?? [])) {
+    w.writeI32LE(r.id); w.writeI32LE(r.targetFirmId); w.writeI32LE(r.byFirmId);
+    w.writeI32LE(r.state); w.writeI32LE(r.dispatchTick); w.writeI32LE(r.expiresTick);
+  }
   for (const v of state.vehicles) {
     w.writeI32LE(v.id); w.writeI32LE(v.kind); w.writeI32LE(v.firmId);
     w.writeI32LE(v.x); w.writeI32LE(v.y); w.writeI32LE(v.riderAgentId);

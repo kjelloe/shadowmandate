@@ -217,6 +217,20 @@ export function buildView(state, firmId, detCfg) {
       };
     })(),
 
+    // S16 8i. The warning window is the whole fairness of the raid, and a
+    // warning the client cannot see is not a warning. Sent as "how long until
+    // they are dispatched", not a raw tick, because the client should not have
+    // to know the world's clock to draw a countdown.
+    raid: (() => {
+      const r = (state.raids ?? []).find((x) => x.targetFirmId === firmId && x.state !== 2);
+      if (!r) return null;
+      return {
+        id: r.id, state: r.state,
+        ticksToDispatch: Math.max(0, r.dispatchTick - state.tick),
+        ticksLeft: Math.max(0, r.expiresTick - state.tick),
+      };
+    })(),
+
     standoff: (() => {
       const mine = state.standoffs.find((s) =>
         own.some((a) => a.id === s.agentA || a.id === s.agentB));

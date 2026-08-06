@@ -22,6 +22,7 @@ import { orderMove } from "./agents.js";
 import { hqOf, dropIn, activateEvac, extract } from "./hq.js";
 import { acceptContract, KIND_NAMES, requiresCredential } from "./contracts.js";
 import { hasCredential } from "./access.js";
+import { raidBy, RAID_INBOUND } from "./raids.js";
 import { findDropZones, autoSelectDropZone } from "./citygen.js";
 import { findPath } from "./pathfind.js";
 import { inStandoff, aiStandoffChoice, CHOICE_NONE } from "./standoff.js";
@@ -220,6 +221,68 @@ export function aiDecide(state, firmId, rules) {
     }
     if (hq.evacTicks <= 0) return { command: { type: 13, firmId }, telemetry };  // EXTRACT
     return { command: null, telemetry };
+  }
+
+  // ── S16 8i: an ORDERED raid outranks CONTRACT WORK ──
+  //
+  // The scheduler (engine/raids.js) picks the target and telegraphs it; this is
+  // the half that makes the raider actually turn up. It sits above the contract
+  // logic because an ordered raid is a commitment, not a mood — it must not be
+  // abandoned because a job looked interesting. It sits BELOW standoff and evac
+  // for the same reason: those are commitments too. Placed above evac at first,
+  // it produced an AI that never extracted, because a Firm mid-evacuation kept
+  // being sent off to raid. Precedence here is: forced choice, then getting
+  // out, then orders, then work.
+  //
+  // It reads the raid straight off state rather than through the lawful view,
+  // and that is correct: this is the AI's OWN order, not knowledge about a
+  // rival. Its target HQ is knowledge it was given with the order.
+  // Own cell, computed here: the shared `cell` binding is declared further
+  // down, after the evac and abort branches this block now sits above.
+  const raidCell = agentCell(agent);
+  const order = raidBy(state, firmId);
+  // ONLY BETWEEN JOBS. A Firm does not abandon a paying contract to go and
+  // turn over a rival's tent, and letting it made raids cost ~40% of world
+  // throughput: completions fell from 4-9 to 1-5 per world-day and clean
+  // extractions all but stopped. That is not a difficulty effect, it is the
+  // economy being quietly rewritten by a side feature. The raid window is
+  // generous enough that a Firm finishing its current job still usually gets
+  // there; if it does not, the raid expires, which is a fine outcome.
+  const freeToRaid = (agent.contractIds ?? []).length === 0;
+  if (order && order.state === RAID_INBOUND && freeToRaid) {
+    const targetHq = state.hqs.find((h) => h.firmId === order.targetFirmId);
+    if (targetHq) {
+      const goal = { x: targetHq.cellX, y: targetHq.cellY };
+      // EXACT cell, not `arrivedAt`. `arrivedAt` tolerates a cell of slop —
+      // rightly, because demanding an exact match everywhere once produced 1324
+      // `move:no_route` rejections — but looting in hq.js requires standing ON
+      // the tent (`cell.x === hq.cellX && cell.y === hq.cellY`). With the slop
+      // the raider parked one cell short, called itself arrived, and waited
+      // forever: 6 raids dispatched, 5 perimeter alarms, ZERO loots, across
+      // every seed. The two systems have to agree on what "there" means.
+      const onTent = raidCell.x === goal.x && raidCell.y === goal.y;
+      if (!onTent) {
+        if ((agent.route ?? []).length && (agent.routeIdx ?? 0) < agent.route.length) {
+          return { command: null, telemetry };
+        }
+        if (reachable(state, raidCell, goal)) {
+          debug("raid_ordered", { targetFirmId: order.targetFirmId });
+          return { command: { type: 20, agentId: agent.id, cellX: goal.x, cellY: goal.y }, telemetry };
+        }
+        debug("raid_unreachable", { targetFirmId: order.targetFirmId });
+      } else if ((targetHq.cacheResources | 0) > 0) {
+        // Standing on it with something to take: hold, and hq.js does the
+        // looting from here.
+        debug("raid_arrived", { targetFirmId: order.targetFirmId });
+        return { command: null, telemetry };
+      } else {
+        // ARRIVED TO AN EMPTY TENT. Holding position here froze the raider for
+        // the whole raid window — 70 idle ticks on one seed, and the Firm never
+        // got back to work or extracted at all. There is nothing to steal, so
+        // the order is spent: fall through and behave normally.
+        debug("raid_empty", { targetFirmId: order.targetFirmId });
+      }
+    }
   }
 
   // ── Burned and the district is hot: break off ──

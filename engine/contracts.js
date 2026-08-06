@@ -166,7 +166,19 @@ export function rebuildOffers(state, cfg, detCfg) {
     board.contractIds = board.contractIds.filter((id) => {
       const c = state.contractPool.find((x) => x.id === id);
       if (!c) return false;
-      if (c.contested) return c.stage !== STAGE_DONE && c.stage !== STAGE_FAILED;
+      if (c.contested) {
+        // Still racing? Then it stays on OTHER Firms' boards. But it must leave
+        // the board of a Firm that has already taken it — that Firm's copy is
+        // now ACTIVE work, not an offer.
+        //
+        // Without the second clause a taken contested contract sat on its own
+        // taker's board forever, filling one of the five slots with something
+        // that could only ever answer "already_taken". Completions fell from ~7
+        // to ~4 per world-day and extraction stopped entirely, because boards
+        // silently ran out of room for real work.
+        if (c.stage === STAGE_DONE || c.stage === STAGE_FAILED) return false;
+        return !(c.contenders ?? []).includes(firm.id);
+      }
       return c.reservedBy === firm.id && c.acceptedBy < 0;
     });
 

@@ -135,6 +135,7 @@ export function mirrorState(state) {
     // MIRROR AUDIT exists to prevent.
     alarms: (state.alarms ?? []).map((a) => ({ ...a })),
     credentials: (state.credentials ?? []).map((c) => ({ ...c })),
+    raids: (state.raids ?? []).map((r) => ({ ...r })),
     pacts: state.pacts.map((p) => ({ ...p })),
     firms: state.firms.map((f) => ({
       ...f,

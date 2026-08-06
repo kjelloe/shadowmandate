@@ -175,6 +175,11 @@ function stepPerimeter(state, hq, cfg) {
         const taken = hq.cacheResources;
         hq.cacheResources = 0;
         hq.lootedBy = intruder.firmId;
+        // Reset the dwell. Without this the timer stays past its threshold and
+        // the tent is emptied on EVERY subsequent tick the owner has anything
+        // in it — invisible while raids were rare accidents, pathological once
+        // 8i started parking a raider on the tent for a scheduled window.
+        hq.lootTicks = 0;
         const raider = state.firms[intruder.firmId];
         const raiderHq = hqOf(state, intruder.firmId);
         if (raiderHq) raiderHq.cacheResources += taken;
