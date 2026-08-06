@@ -305,9 +305,26 @@ function applyPayBail(next, command) {
   const firm = next.firms[command.firmId];
   const agent = next.agents[command.agentId];
   if (!firm || !agent) return reject(next, command, "no_such_agent");
-  const result = payBail(next, firm, agent, next.rules.combat, next.rules.agents,
-    command.bank ?? 0, hqOf(next, command.firmId));
+  const hq = hqOf(next, command.firmId);
+
+  // TWO FUNDING ROUTES, and they are genuinely different money.
+  //
+  // A player pays from the BANK, which lives in the server ledger and reaches
+  // the engine only as `command.bank`; the server deducts it there. An AI has
+  // no ledger — `stepAiFirms` runs inside the engine — so it pays from the HQ
+  // CACHE, the at-risk field resources it is carrying. Buying an operative out
+  // of custody with what you have on hand is exactly what that money is for,
+  // and it does not touch D30, which governs VENDOR purchases.
+  //
+  // The cache route must DEDUCT, and that is the part worth watching: payBail
+  // computes a cost and never subtracts anything, because on the player path
+  // the server does it. An AI paying from the cache with no deduction would
+  // bail out for free, forever.
+  const fromCache = (command.bank ?? 0) <= 0 && hq;
+  const bank = fromCache ? (hq.cacheResources | 0) : (command.bank ?? 0);
+  const result = payBail(next, firm, agent, next.rules.combat, next.rules.agents, bank, hq);
   if (result.error) return reject(next, command, result.error);
+  if (fromCache) hq.cacheResources = Math.max(0, (hq.cacheResources | 0) - (result.cost | 0));
   return next;
 }
 

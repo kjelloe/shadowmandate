@@ -187,7 +187,27 @@ export function aiDecide(state, firmId, rules) {
   if (!agent) { debug("no_agent"); return { command: null, telemetry }; }
 
   // ── Out of action ──
-  if (agent.state === AGENT_HELD) { debug("agent_held"); return { command: null, telemetry }; }
+  if (agent.state === AGENT_HELD) {
+    // BAIL OUT, or the Firm is finished. A captured agent cannot act, and
+    // `stepEvac` cancels the beacon when the lead is held — so the Firm can
+    // neither work nor leave. On seed 1411 that produced 724 consecutive ticks
+    // of "agent_held" and a Firm that never extracted again: capture was a
+    // permanent death sentence rather than the recoverable setback D40 designs
+    // (a grace window, then rescue or bail restores the contract).
+    //
+    // Funded from the HQ cache, which is the only money an AI has in-engine.
+    if (view.hq && (view.hq.cacheResources | 0) > 0) {
+      debug("paying_bail", { agentId: agent.id, cache: view.hq.cacheResources });
+      return { command: { type: 33, firmId, agentId: agent.id }, telemetry };
+    }
+    // Cannot afford bail. The Firm is stuck until someone rescues the agent —
+    // see Q42: folding up and writing the operative off SHOULD be allowed, but
+    // doing it naively made the Firm redeploy onto its own held agent
+    // (`leadAgent` matches any state except absent) and churn 100-275 times a
+    // world-day. The right fix needs D17's custody/ownership half designed.
+    debug("agent_held_broke");
+    return { command: null, telemetry };
+  }
   if (agent.state === AGENT_DOWNED) { debug("agent_downed"); return { command: null, telemetry }; }
   if (agent.state === AGENT_INSIDE) return { command: { type: 35, agentId: agent.id }, telemetry };  // EXIT_BUILDING
 
