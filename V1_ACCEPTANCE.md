@@ -80,9 +80,23 @@ still short because the *work itself* is short, which is what D41 said all along
 length comes from content — multi-stage work and timing windows — not from
 difficulty layered on top of the same short jobs.
 
-So criterion 10 can no longer be deferred to M8. It needs its own slice, and the
-lever is contract CONTENT length, with the economy pass (Q42a) alongside it
-because `cacheEvacTarget` currently ends a deployment after one or two jobs.
+So criterion 10 can no longer be deferred to M8.
+
+**AND IT CANNOT BE MET AS WRITTEN (2026-08-07, Q43).** The criterion applies a
+2–4x human deliberation factor and asks the result to sit *inside* the band. For
+`[2x, 4x]` to fit inside `[lo, hi]` you need `2x >= lo` and `4x <= hi` at once:
+sortie needs AI ≥ 7.5 **and** ≤ 5.0; deployment needs AI ≥ 20.0 **and** ≤ 15.0.
+The factor spans a ratio of 2.0 while the bands span 1.33x and 1.5x, so no AI
+number lands inside either, at any tuning. Q43 proposes judging on **overlap**,
+which the current numbers already satisfy.
+
+**The obvious lever also backfires now.** Giving courier real work and
+lengthening extraction's grab moved sortie 4.0 → 6.0 min but doubled burns
+(13 → 27.5), captures (5.5 → 14) and sextupled failures (2 → 12). Making courier
+unattractive concentrated the AI onto extraction, whose work is standing still —
+and since M8, standing still is what alarms, cameras and beams punish. Reverted.
+Admissible content has narrowed to content that MOVES you: extra legs, a second
+site, a timing window waited out under cover. That is design work, not tuning.
 
 Two things worth saying plainly:
 

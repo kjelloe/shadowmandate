@@ -187,11 +187,24 @@ test("contract scoring prices time-on-objective and second legs", () => {
     assert.ok(oneLeg > twoLeg, "a courier's second leg must not be free");
   }
 
-  assert.equal(workTicksFor(RULES.contracts.types.surveillance), 3600, "holdTicks * passes");
-  // Extraction gained a secure timer (Q37) — it used to be the one type with no
-  // work at all, which is what let its score run away. It still costs far less
-  // than three surveillance passes, which is what the ordering above rests on.
-  assert.equal(workTicksFor(RULES.contracts.types.extraction), 900, "secureTicks");
-  assert.ok(workTicksFor(RULES.contracts.types.surveillance)
-    > workTicksFor(RULES.contracts.types.extraction));
+  // The RELATIONSHIP, not the literal. Pinning `secureTicks` at 900 made this
+  // test fail the moment extraction's grab was lengthened for pacing (D41) —
+  // a tuning knob moving is not a regression, and a test that treats it as one
+  // just has to be edited every time somebody tunes.
+  //
+  // What actually matters here: every work-priced type HAS work (extraction was
+  // once the only one without, which is what let its score run away), and
+  // surveillance's three passes remain the most expensive, since the ordering
+  // asserted above rests on that.
+  const W = (k) => workTicksFor(RULES.contracts.types[k]);
+  assert.equal(W("surveillance"), 3600, "holdTicks * passes");
+  // Courier is excluded: it is priced by TRAVEL, not by time on an objective.
+  // Giving it a work stage was tried for pacing on 2026-08-07 and reverted —
+  // see the dev-log; it doubled burns and captures by pushing the AI onto
+  // extraction instead.
+  for (const k of ["surveillance", "extraction", "sabotage", "acquisition", "defend"]) {
+    assert.ok(W(k) > 0, `${k} has no work at all — its score has no denominator`);
+  }
+  assert.ok(W("surveillance") > W("extraction"),
+    "three surveillance passes should still cost more than one grab");
 });
