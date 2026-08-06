@@ -137,6 +137,7 @@ export function createInitialState(options = {}) {
 
     districts: city ? city.districts : [],
     sites: city ? city.sites : [],
+    cameras: city ? (city.cameras ?? []) : [],   // M8 — S16 8b
     buildings: city ? city.buildings : [],
     patrols: city ? city.patrols : [],
     holdingSites: city ? city.holdingSites : [],

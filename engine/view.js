@@ -15,6 +15,7 @@ import { heatBandFor, agentCell } from "./detection.js";
 import { hasHeatIntel } from "./buildings.js";
 import { stageTargetTicks } from "./contracts.js";
 import { alarmStageOf } from "./security.js";
+import { cameraFacingAt, isDisabled } from "./cameras.js";
 import { worldToCellFloor } from "../shared/fixedmath.js";
 
 const SIGHT = 10;          // what your own agent can make out, in cells
@@ -104,6 +105,20 @@ export function buildView(state, firmId, detCfg) {
       cellX: s.cellX, cellY: s.cellY, status: s.status,
       alarmStage: visible(s.cellX, s.cellY) ? alarmStageOf(state, s.id) : 0,
     })),
+    // S16 8b. A camera is sent only when the Firm can SEE it, and only ever as
+    // where it is and where it is looking RIGHT NOW. The sweep definition —
+    // span, dwell, phase — never crosses the wire: with it a client could
+    // compute every future safe window and play the stealth layer perfectly
+    // without looking. Learning the pattern by watching is the mechanic (D45);
+    // being handed it is the mechanic deleted.
+    cameras: (state.cameras ?? [])
+      .filter((c) => visible(c.cellX, c.cellY))
+      .map((c) => ({
+        id: c.id, siteId: c.siteId, cellX: c.cellX, cellY: c.cellY,
+        facing: cameraFacingAt(c, state.tick),
+        arc: c.arc, range: c.range,
+        disabled: isDisabled(c, state.tick) ? 1 : 0,
+      })),
     buildings: state.buildings.map((b) => ({
       id: b.id, kind: b.kind, cellX: b.entranceX, cellY: b.entranceY,
       exitX: b.exitX ?? -1, exitY: b.exitY ?? -1,

@@ -192,6 +192,12 @@ export function aiDecide(state, firmId, rules) {
     const atHq = Math.abs(hq.cellX - cell.x) + Math.abs(hq.cellY - cell.y) <= rules.hq.perimeterRadius;
     if (!atHq) {
       if ((agent.route ?? []).length && (agent.routeIdx ?? 0) < agent.route.length) return { command: null, telemetry };
+      // Guarded like every other move. An HQ that cannot be pathed to is a
+      // situation to report once, not to re-attempt every cadence tick.
+      if (!reachable(state, cell, { x: hq.cellX, y: hq.cellY })) {
+        debug("hq_unreachable", { stage: "evacuating" });
+        return { command: null, telemetry };
+      }
       return { command: { type: 20, agentId: agent.id, cellX: hq.cellX, cellY: hq.cellY }, telemetry }; // MOVE
     }
     if (hq.evacTicks <= 0) return { command: { type: 13, firmId }, telemetry };  // EXTRACT
@@ -203,8 +209,20 @@ export function aiDecide(state, firmId, rules) {
   const heatHere = state.districts[districtAt(state, cell.x, cell.y)]?.heat ?? 0;
   if (agent.detection === DET_BURNED && heatHere >= personality.abortAtHeat) {
     if (view.hq) {
-      debug("aborting_hot", { heat: heatHere });
-      return { command: { type: 20, agentId: agent.id, cellX: view.hq.cellX, cellY: view.hq.cellY }, telemetry };
+      const home = { x: view.hq.cellX, y: view.hq.cellY };
+      // Already walking home: let it walk. This path had NO in-progress check,
+      // so a burned agent in a hot district re-ordered the same move on every
+      // cadence tick. It was invisible until 8b's cameras made burns common —
+      // 213 `move:no_route` rejections in one seed, from a bug that predates
+      // cameras entirely. The rejection log is what found it, again.
+      if ((agent.route ?? []).length && (agent.routeIdx ?? 0) < agent.route.length) {
+        return { command: null, telemetry };
+      }
+      if (!arrivedAt(cell, home) && reachable(state, cell, home)) {
+        debug("aborting_hot", { heat: heatHere });
+        return { command: { type: 20, agentId: agent.id, cellX: home.x, cellY: home.y }, telemetry };
+      }
+      debug("aborting_hot_stuck", { heat: heatHere });
     }
   }
 
@@ -217,6 +235,10 @@ export function aiDecide(state, firmId, rules) {
     const home = { x: view.hq.cellX, y: view.hq.cellY };
     if (!arrivedAt(cell, home)) {
       if ((agent.route ?? []).length === 0 || (agent.routeIdx ?? 0) >= (agent.route ?? []).length) {
+        if (!reachable(state, cell, home)) {
+          debug("hq_unreachable", { stage: "heading_home" });
+          return { command: null, telemetry };
+        }
         debug("heading_home_to_evac", { cache });
         return { command: { type: 20, agentId: agent.id, cellX: home.x, cellY: home.y }, telemetry };
       }

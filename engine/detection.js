@@ -8,6 +8,8 @@ import { DET_UNSEEN, DET_NOTICED, DET_BURNED, AGENT_ACTIVE, AGENT_DOWNED, STANCE
 import { coverTier, T_BLOCK, T_WATER } from "./terrain.js";
 import { lineCells } from "./pathfind.js";
 import { worldToCellFloor } from "../shared/fixedmath.js";
+// Acyclic: cameras.js imports only agents.js, which imports no detection code.
+import { cameraCoversCell } from "./cameras.js";
 
 export const HEAT_MAX = 5;
 
@@ -81,6 +83,19 @@ export function perceivedBy(state, cfg, agentsCfg, agent, heat) {
     if (d <= sight && hasLineOfSight(state.map, p.x, p.y, cell.x, cell.y)) return p;
     if (noise > 0 && d <= Math.min(cfg.patrolHearRadius, noise)) return p;
   }
+  // S16 8b: a camera feeds the SAME detection currency as a patrol rather than
+  // a second one, so being caught on camera makes you noticed and then burned
+  // through the machine that already exists. A camera cannot HEAR — noise is a
+  // patrol affordance, and a microphone would be a different mechanism with a
+  // different counter-play.
+  //
+  // Cameras are checked last so a patrol is still reported in preference when
+  // both can see you: "who saw me" drives the converge-on-last-known-position
+  // behaviour, and a camera has nowhere to converge from.
+  for (const cam of state.cameras ?? []) {
+    if (!cameraCoversCell(cam, cell.x, cell.y, state.tick)) continue;
+    if (hasLineOfSight(state.map, cam.cellX, cam.cellY, cell.x, cell.y)) return cam;
+  }
   return null;
 }
 
@@ -119,7 +134,17 @@ export function stepDetection(state, cfg, agentsCfg) {
       if (agent.detection === DET_UNSEEN) {
         agent.detection = DET_NOTICED;
         agent.detectTimer = 0;
-        state.events.push({ type: "agentNoticed", agentId: agent.id, patrolId: seen.id });
+        // A camera and a patrol have separate id spaces, so the observer is
+        // tagged rather than crammed into one `patrolId` field. Camera 3 and
+        // patrol 3 are different things, and a consumer that guessed would
+        // converge patrols on a camera's position.
+        const byCamera = seen.siteId !== undefined;
+        state.events.push({
+          type: "agentNoticed", agentId: agent.id,
+          patrolId: byCamera ? -1 : seen.id,
+          cameraId: byCamera ? seen.id : -1,
+          siteId: byCamera ? seen.siteId : -1,
+        });
       } else if (agent.detection === DET_NOTICED && agent.detectTimer >= cfg.burnTicks) {
         burnAgent(state, agent, cfg, districtId);
       }

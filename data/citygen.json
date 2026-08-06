@@ -37,5 +37,18 @@
     "routeLengthMin": 8
   },
   "streetSpacing": 8,
-  "alleyChance": 96
+  "alleyChance": 96,
+  "note_cameras": "S16 8b. Only a FRACTION of sites are watched (sitePercent): a city where every contract site has cameras removes the choice of which job to take, and D42 wants opposition to make some contracts harder rather than all of them uniformly harder. A camera stands `standoff` cells OFF its site and looks AWAY from it, watching the approach \u2014 mounted ON the objective cell it covered that cell at distance 0 every tick, so surveillance could never complete and the mechanism was a wall rather than a puzzle. arc + spanMax MUST stay below 4 or the cone can swing back onto the objective; test/cameras.test.js asserts it. Placement draws from the site RNG stream AFTER every other placement, so adding cameras left sites, buildings and patrols byte-identical.",
+  "cameras": {
+    "sitePercent": 35,
+    "perSite": 2,
+    "arc": 1,
+    "spanMin": 0,
+    "spanMax": 2,
+    "rangeMin": 5,
+    "rangeMax": 8,
+    "dwellMin": 40,
+    "dwellMax": 90,
+    "standoff": 3
+  }
 }

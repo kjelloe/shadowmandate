@@ -142,13 +142,25 @@ export function stepAlarms(state, cfg) {
   // Raise first, so a site that gained a trigger this tick starts its clock now
   // rather than a tick late — the escalation windows are tuned in whole
   // seconds and an off-by-one-per-stage would drift them visibly.
+  const siteById = new Map(state.sites.map((s) => [s.id, s]));
   for (const site of state.sites) {
     if (triggersAt(state, site, cfg).length > 0) {
       raiseAlarm(state, site, cfg, ALARM_LOCAL, "burned");
     }
   }
 
-  const siteById = new Map(state.sites.map((s) => [s.id, s]));
+  // 8b: a camera that saw someone raises ITS OWN site's alarm, whatever the
+  // agent's detection state. This is the difference between a facility and a
+  // street — a patrol seeing you is a person noticing; a camera seeing you is
+  // the building noticing, and the building acts on it immediately. Read from
+  // the events detection just emitted rather than by importing the camera
+  // module, keeping the module graph acyclic.
+  for (const e of state.events) {
+    if (e.type !== "agentNoticed" || (e.cameraId ?? -1) < 0) continue;
+    const site = siteById.get(e.siteId);
+    if (site) raiseAlarm(state, site, cfg, ALARM_LOCAL, "camera");
+  }
+
   for (const alarm of state.alarms) {
     const site = siteById.get(alarm.siteId);
     if (!site) continue;

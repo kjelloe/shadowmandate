@@ -232,9 +232,12 @@ Ordered so each slice is playable and measurable on its own.
   view. Two findings: the alarm radius must stay under citygen's site spacing
   (at 6 vs 5 one burn woke every neighbour), and **stage 3 is unreachable until
   8f** — by design, so the numbers must NOT be tuned to force it.
-- **8b** **Camera cones.** Fixed arc, fixed sweep period derived from
-  `state.tick`, feeding the EXISTING detection currency rather than a second
-  one. Four places for the positional state; MIRROR AUDIT must stay green.
+- **8b** ✅ **DONE (2026-08-06)** — camera cones in `engine/cameras.js`, sweep
+  derived from `state.tick`, feeding the existing detection currency. Four
+  places done; cameras mirror in position AND facing. Cameras stand OFF their
+  site looking away: mounted on the objective cell they covered it every tick
+  and surveillance could never complete. Found and fixed a pre-existing AI bug
+  (three unguarded HQ moves) that cameras made loud.
 - **8c** **Sensor lines.** Beam between two emitters, integer cycle. The first
   mechanism whose counter-play is pure timing (D45).
 - **8d** **Junction boxes.** Zone blackout for N ticks, and it raises district

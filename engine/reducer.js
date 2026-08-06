@@ -65,6 +65,7 @@ export function copyState(state) {
 
     districts: state.districts.map((d) => ({ ...d })),
     sites: state.sites.map((s) => ({ ...s })),
+    cameras: (state.cameras ?? []).map((c) => ({ ...c })),
     buildings: state.buildings.map((b) => ({ ...b })),
     patrols: state.patrols.map((p) => ({ ...p, route: p.route.slice() })),
     holdingSites: state.holdingSites.map((h) => ({ ...h, heldAgentIds: h.heldAgentIds.slice() })),

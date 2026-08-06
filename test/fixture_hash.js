@@ -58,6 +58,17 @@ export function hashStateLocal(state) {
     w.writeI32LE(b.entranceX); w.writeI32LE(b.entranceY); w.writeI32LE(b.payloadIdx);
     w.writeI32LE(b.exitX ?? -1); w.writeI32LE(b.exitY ?? -1);
   }
+  // S16 cameras (8b). Static after generation except `disabledUntil`, which a
+  // junction box (8d) will move — so the whole definition is written, not just
+  // the mutable field: a camera whose arc silently differed between two hosts
+  // would desync what each of them thinks can be seen.
+  for (const c of (state.cameras ?? [])) {
+    w.writeI32LE(c.id); w.writeI32LE(c.siteId);
+    w.writeI32LE(c.cellX); w.writeI32LE(c.cellY);
+    w.writeI32LE(c.baseFacing); w.writeI32LE(c.span); w.writeI32LE(c.arc);
+    w.writeI32LE(c.range); w.writeI32LE(c.dwellTicks); w.writeI32LE(c.phase);
+    w.writeI32LE(c.disabledUntil);
+  }
   for (const p of state.patrols) {
     w.writeI32LE(p.id); w.writeI32LE(p.districtId);
     w.writeI32LE(p.x); w.writeI32LE(p.y);

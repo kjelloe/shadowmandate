@@ -34,6 +34,7 @@ export const POSITIONAL_FIELDS = Object.freeze({
   patrols: ["x", "targetX"],
   vehicles: ["x"],
   sites: ["cellX"],
+  cameras: ["cellX"],
   buildings: ["entranceX", "exitX"],
   holdingSites: ["cellX"],
   hqs: ["cellX"],
@@ -88,6 +89,16 @@ export function mirrorState(state) {
       ...v, x: mirrorWorldX(v.x, width), facing: mirrorFacing(v.facing),
     })),
     sites: state.sites.map((s) => ({ ...s, cellX: mirrorCellX(s.cellX, width) })),
+    // A camera mirrors in BOTH senses: its position and the direction it looks.
+    // Reflecting the cell but not the facing would build a mirror world whose
+    // cameras watch the wrong way — the world would look symmetric and play
+    // asymmetrically, which is the exact silent corruption a fairness battery
+    // is supposed to rule out and would instead be measuring.
+    cameras: (state.cameras ?? []).map((c) => ({
+      ...c,
+      cellX: mirrorCellX(c.cellX, width),
+      baseFacing: mirrorFacing(c.baseFacing),
+    })),
     buildings: state.buildings.map((b) => ({
       ...b,
       entranceX: mirrorCellX(b.entranceX, width),

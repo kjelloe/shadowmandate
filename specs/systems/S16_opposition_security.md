@@ -1,7 +1,7 @@
 # S16 — Opposition & Site Security
 
 *Feeds: M8 · Depends on: S03, S04, S07, S08, S09 ·
-Status: **8a AS BUILT** (staged alarms); 8b–8j specced, not started*
+Status: **8a/8b AS BUILT** (staged alarms, camera cones); 8c–8j specced*
 
 ## Purpose
 
@@ -238,3 +238,61 @@ tune the numbers to force it.** Stage 3 is designed for the scenario 8f builds:
 an acquisition `crackTicks` timer elapsing INSIDE a secured facility while the
 alarm climbs. Tuning it reachable now, against absent content, is the same
 error D42/D43 rule against for contract rewards.
+
+## AS BUILT — 8b, camera cones (2026-08-06)
+
+`engine/cameras.js` + `citygen.cameras` config. A camera feeds the **existing**
+detection currency: being caught on camera makes you noticed and then burned
+through the machine patrols already drive. A parallel "camera suspicion" track
+would have doubled every balance question for no design gain.
+
+The sweep is a **triangle wave over octant offsets**, derived from `state.tick`
+— pure, integer, and expressed as a learnable sequence ("left, centre, right,
+centre") rather than trigonometry, because timing a crossing is the mechanic.
+Facing is derived, never stored. Cameras are staggered by a `phase` so a
+facility's cameras do not sweep as one: synchronised cameras leave a single
+global safe moment, a much weaker puzzle than several overlapping ones.
+
+A camera that sees anyone raises **its own site's alarm immediately**, whatever
+the agent's detection state — that is the difference between a street and a
+facility. A patrol seeing you is a person noticing; a camera seeing you is the
+building noticing, and the building acts at once. The 8b→8a seam is read from
+the events detection emits, so the module graph stays acyclic
+(`detection → cameras → agents`; cameras imports no detection code).
+
+**Camera ids and patrol ids are different id spaces**, so `agentNoticed` now
+carries a tagged observer (`patrolId` / `cameraId` / `siteId`, unused ones -1)
+rather than cramming both into `patrolId`. A consumer that guessed would
+converge patrols on a camera's position.
+
+### The placement rule, learned by breaking it
+
+**A camera stands off its site and looks AWAY from it.** The first version
+mounted cameras on the objective cell, where coverage is unconditional at
+distance 0 — so the site was watched every tick, **surveillance could never
+complete anywhere in the world**, and the AI burned itself repeatedly trying. A
+camera with no gap in its cycle is a wall, not a puzzle.
+
+The geometry makes this provable rather than hopeful: facing directly away puts
+the site at facing+4 octants, and with `arc` 1 and `span` ≤ 2 the cone comes no
+closer than 3 octants. `test/cameras.test.js` walks a full sweep cycle for every
+camera in three cities and asserts the site is never covered, so widening the
+arc or span in data cannot silently make site work impossible again.
+
+Only `sitePercent` of sites are watched. A city where every site is watched
+removes the choice of which job to take, and D42 wants opposition to make *some*
+contracts harder rather than all of them uniformly harder.
+
+**The view never carries the schedule.** Span, dwell and phase never cross the
+wire — with them a client computes every future safe window and plays the
+stealth layer perfectly without looking. Only position, current facing, arc,
+range and a disabled flag are sent, and only for cameras the Firm can see.
+
+### It found a pre-existing AI bug
+
+Cameras made burns common, and 213 `move:no_route` rejections appeared. The
+cause predates cameras entirely: **three of the AI's five move commands targeted
+the HQ with no reachability guard**, and the "burned and the district is hot,
+break off" path had no in-progress check either, so a burned agent re-ordered
+the same move every cadence tick. All three now guard, and the AI is back to
+zero rejections. The rejection log found it, exactly as it did in M5.
