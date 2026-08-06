@@ -1,5 +1,5 @@
 {
-  "note": "Painted Low-Poly Hybrid style tokens (S15). SINGLE SOURCE OF TRUTH for materials, palette and Firm identity \u2014 every procedural model is generated from this file, and the renderer must not carry colours of its own. Forked from the sibling project's pattern (Q41a/D46).",
+  "note": "Painted Low-Poly Hybrid style tokens (S15). SINGLE SOURCE OF TRUTH for materials, palette and Firm identity — every procedural model is generated from this file, and the renderer must not carry colours of its own. Forked from the sibling project's pattern (Q41a/D46).",
   "materials": {
     "paintedMatte": {
       "roughness": 0.85,
@@ -38,9 +38,11 @@
     "rivalHq": "#B5613C",
     "agentUnseen": "#E8E6E0",
     "agentNoticed": "#D9A441",
-    "agentBurned": "#C2452F"
+    "agentBurned": "#C2452F",
+    "camera": "#C2452F",
+    "cameraDisabled": "#4A5058"
   },
-  "note_body": "Body colours are the PAINTED part \u2014 the part a tint never touches. Keeping them separate from marks is what lets detection state stay readable: the coat stays the coat while the state band changes colour.",
+  "note_body": "Body colours are the PAINTED part — the part a tint never touches. Keeping them separate from marks is what lets detection state stay readable: the coat stays the coat while the state band changes colour.",
   "body": {
     "coat": "#3C424A",
     "coatDark": "#2C3138",
@@ -54,7 +56,7 @@
     "bars": "#6E747C",
     "plinth": "#2A2E36"
   },
-  "note_firms": "S15 palettes. Firm identity is carried by COLOUR AND SYMBOL together \u2014 colour alone fails for a colourblind player, which is the same reason the 7a silhouette pass exists.",
+  "note_firms": "S15 palettes. Firm identity is carried by COLOUR AND SYMBOL together — colour alone fails for a colourblind player, which is the same reason the 7a silhouette pass exists.",
   "firms": [
     {
       "id": 0,

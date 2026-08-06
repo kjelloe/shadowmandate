@@ -1,8 +1,6 @@
 {
   "note": "Manifest-driven visuals (S15, D46). The renderer asks the resolver WHAT to show; this file and the factory decide HOW. No geometry decision lives in scene.js, so swapping a procedural stand-in for a painted model later is a manifest edit rather than a renderer edit.",
-
-  "note_tint": "`tint` names the mark token a visual takes at runtime. A visual with tint:null is fully painted and never recoloured. Meshes named \"tint\" inside a group are the only ones a tint touches — that is what keeps detection state readable without repainting the coat.",
-
+  "note_tint": "`tint` names the mark token a visual takes at runtime. A visual with tint:null is fully painted and never recoloured. Meshes named \"tint\" inside a group are the only ones a tint touches \u2014 that is what keeps detection state readable without repainting the coat.",
   "figures": {
     "agent": {
       "procedural": "agent",
@@ -26,19 +24,63 @@
       "tint": "patrolAlert"
     }
   },
-
   "markers": {
-    "siteScenery": { "procedural": "siteMarker", "class": "marker", "tint": "site" },
-    "siteOffered": { "procedural": "siteMarker", "class": "marker", "tint": "siteOffered" },
-    "siteActive":  { "procedural": "siteMarker", "class": "marker", "tint": "siteActive" }
+    "siteScenery": {
+      "procedural": "siteMarker",
+      "class": "marker",
+      "tint": "site"
+    },
+    "siteOffered": {
+      "procedural": "siteMarker",
+      "class": "marker",
+      "tint": "siteOffered"
+    },
+    "siteActive": {
+      "procedural": "siteMarker",
+      "class": "marker",
+      "tint": "siteActive"
+    },
+    "camera": {
+      "procedural": "camera",
+      "class": "marker",
+      "tint": "camera"
+    },
+    "cameraDisabled": {
+      "procedural": "camera",
+      "class": "marker",
+      "tint": "cameraDisabled"
+    }
   },
-
   "structures": {
-    "informant":  { "procedural": "kioskTall",  "class": "structure", "tint": "informant" },
-    "market":     { "procedural": "kioskWide",  "class": "structure", "tint": "market" },
-    "coverShop":  { "procedural": "kioskPeak",  "class": "structure", "tint": "coverShop" },
-    "holding":    { "procedural": "holdingPen", "class": "structure", "tint": "holding" },
-    "ownHq":      { "procedural": "fieldHq",    "class": "structure", "tint": "ownHq" },
-    "rivalHq":    { "procedural": "fieldHq",    "class": "structure", "tint": "rivalHq" }
+    "informant": {
+      "procedural": "kioskTall",
+      "class": "structure",
+      "tint": "informant"
+    },
+    "market": {
+      "procedural": "kioskWide",
+      "class": "structure",
+      "tint": "market"
+    },
+    "coverShop": {
+      "procedural": "kioskPeak",
+      "class": "structure",
+      "tint": "coverShop"
+    },
+    "holding": {
+      "procedural": "holdingPen",
+      "class": "structure",
+      "tint": "holding"
+    },
+    "ownHq": {
+      "procedural": "fieldHq",
+      "class": "structure",
+      "tint": "ownHq"
+    },
+    "rivalHq": {
+      "procedural": "fieldHq",
+      "class": "structure",
+      "tint": "rivalHq"
+    }
   }
 }

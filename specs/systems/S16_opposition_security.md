@@ -296,3 +296,30 @@ the HQ with no reachability guard**, and the "burned and the district is hot,
 break off" path had no in-progress check either, so a burned agent re-ordered
 the same move every cadence tick. All three now guard, and the AI is back to
 zero rejections. The rejection log found it, exactly as it did in M5.
+
+### The camera has to be VISIBLE (8b, client half)
+
+A stealth obstacle the player cannot see is not a puzzle, it is an ambush, so
+the camera ships with its visual in the same slice. Added through the pipeline
+(D46) rather than to the renderer: a `camera` builder in `asset_factory.js`, two
+manifest roles (`camera`, `cameraDisabled`) whose tint is the LENS, so a
+disabled camera goes dark without rebuilding the model. Drawn in the diorama
+with its facing, and dotted on the radar — knowing where the watched ground is
+is half of planning a route around it.
+
+**The rotation was off by PI and would have shipped.** `octantToRadians` first
+read `-PI/2 + octant * PI/4`, which points every camera at its own back. A
+camera facing exactly the wrong way renders perfectly and reads as plausible set
+dressing — nothing in the game complains, the player is simply caught by cameras
+that appear to be looking elsewhere. Caught by deriving it against the eight
+unit vectors instead of eyeballing it (barrel is +Z; `rotation.y = t` sends +Z
+to `(sin t, 0, cos t)`; engine +y is south and maps to scene +z), and all eight
+octants are now pinned in `test/cameras.test.js`.
+
+**The gallery earned its place again, twice.** `test/art_pipeline.test.js` fails
+if a manifest role is missing from the gallery, so the new visual could not ship
+unreviewed. And looking at the render showed the first model — a thin post with
+a 0.055 lens — was legible at 1200px and unreadable in the diorama, where the
+one thing a player must read is which way it looks. Wider housing, longer
+barrel, a brow over the lens, and a lens twice the size: 138 triangles against a
+260 budget.

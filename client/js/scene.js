@@ -18,6 +18,24 @@ import { art } from "./assets.js";
 
 export const CELL = 256;   // world units per cell, matching the engine
 
+// Engine octants are 0=E 1=NE 2=N 3=NW 4=W 5=SW 6=S 7=SE, on a grid where +x is
+// east and +y is SOUTH; the diorama maps engine y onto scene +z.
+//
+// DERIVED, NOT GUESSED. A model's barrel points along +Z, and `rotation.y = t`
+// sends +Z to (sin t, 0, cos t). Facing south (engine +y, scene +z) therefore
+// needs t = 0, and each octant anticlockwise adds an eighth turn:
+//
+//   t = octant * PI/4 + PI/2
+//
+// The first version of this line was `-PI/2 + octant * PI/4` — off by PI, which
+// points EVERY camera at its own back. It was checked against the eight unit
+// vectors rather than eyeballed, because a camera facing exactly the wrong way
+// renders perfectly and reads as a plausible piece of set dressing; the test
+// below pins all eight so it cannot drift back.
+export function octantToRadians(octant) {
+  return (octant & 7) * (Math.PI / 4) + Math.PI / 2;
+}
+
 // The palette used to live here as literal hex, duplicated into the minimap.
 // It now lives in client/assets/metadata/style_tokens.json, which is the single
 // source of truth for both surfaces (D46) — test/art_pipeline.test.js fails if
@@ -207,6 +225,16 @@ export function createScene(canvas) {
     for (const h of view.rivalHqs) at(takeVisual("rivalHq"), h.cellX + 0.5, h.cellY + 0.5);
     for (const p of view.patrols) {
       at(takeVisual(p.alerted ? "patrolAlert" : "patrol"), p.x + 0.5, p.y + 0.5);
+    }
+    // Cameras (S16 8b). The FACING is the whole point: a camera you can see but
+    // cannot read the direction of is still an ambush, and D45 requires the
+    // challenge to be legible in the world. The model's barrel points along +Z,
+    // so the group is turned to the octant the server reports.
+    for (const c of view.cameras ?? []) {
+      const obj = takeVisual(c.disabled ? "cameraDisabled" : "camera");
+      if (!obj) continue;
+      at(obj, c.cellX + 0.5, c.cellY + 0.5);
+      obj.rotation.y = octantToRadians(c.facing);
     }
     for (const r of view.rivals) at(takeVisual("rival"), r.x / CELL, r.y / CELL);
     for (const a of view.agents) {

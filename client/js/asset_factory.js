@@ -160,7 +160,31 @@ function buildFieldHq() {
   return g;
 }
 
+// A camera on a post (S16 8b). It must be findable at a glance and readable at
+// a glance in TWO ways: where it is, and which way it is pointing — a stealth
+// obstacle the player cannot see is not a puzzle, it is an ambush. The barrel
+// is the direction cue; scene.js rotates the whole group to the facing the
+// server reports. The lens is the tint slot, so a disabled camera (8d) can go
+// dark without rebuilding the model.
+function buildCamera() {
+  const g = new THREE.Group();
+  const C = body();
+  g.add(place(cyl(0.06, 0.08, 0.80, 5, C.post), 0, 0.40, 0));
+  // A wide housing and a LONG barrel. The first version was a thin post with a
+  // 0.055 lens: legible in a gallery at 1200px, unreadable in the diorama,
+  // where the one thing a player must read is which way it is looking. A camera
+  // whose direction cannot be seen is an ambush, not a puzzle (D45).
+  g.add(place(box(0.30, 0.24, 0.34, C.bars), 0, 0.92, 0));
+  // The barrel points along +Z; scene.js turns the group so +Z is the facing.
+  g.add(place(cyl(0.09, 0.11, 0.34, 6, C.kioskRoof), 0, 0.92, 0.30));
+  // A brow over the lens, so the "front" is obvious even from behind.
+  g.add(place(box(0.30, 0.05, 0.16, C.visor), 0, 1.06, 0.20));
+  g.add(place(tintable(sphere(0.10, 7, 6, "#ffffff", "glass")), 0, 0.92, 0.46));
+  return g;
+}
+
 const BUILDERS = {
+  camera: buildCamera,
   agent: buildAgent,
   rival: buildRival,
   patrol: buildPatrol,

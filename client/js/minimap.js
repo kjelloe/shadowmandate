@@ -67,6 +67,12 @@ export function createMinimap(canvas) {
         ctx.stroke();
       }
       for (const p of view.patrols) dot(p.x, p.y, mark(p.alerted ? "patrolAlert" : "patrol"));
+      // Cameras on the radar too: knowing WHERE the watched ground is, is half
+      // of planning a route around it. Small, because a camera is a fixture
+      // rather than a mover — the radar's job is to show what changed.
+      for (const c of view.cameras ?? []) {
+        dot(c.cellX, c.cellY, mark(c.disabled ? "cameraDisabled" : "camera"), 1.2);
+      }
       for (const r of view.rivals) dot(r.x / CELL, r.y / CELL, mark("rival"), 2);
       if (view.hq) dot(view.hq.cellX, view.hq.cellY, mark("ownHq"), 2.4);
       for (const a of view.agents) {

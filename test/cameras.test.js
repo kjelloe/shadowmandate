@@ -17,6 +17,7 @@ import { alarmStageOf, stepAlarms, ALARM_LOCAL } from "../engine/security.js";
 import {
   sweepSequence, cameraFacingAt, octantDistance, cameraCoversCell, camerasCovering,
 } from "../engine/cameras.js";
+import { octantToRadians } from "../client/js/scene.js";
 import { makeWorld, placeAgent, RULES } from "./helpers.js";
 
 const CAM_CFG = RULES.citygen.cameras;
@@ -304,4 +305,30 @@ test("mirroring does not share camera objects with the original", () => {
   m.cameras[0].disabledUntil = 999;
   assert.equal(s.cameras[0].disabledUntil, 0,
     "the mirror shares camera objects with its twin — one world can mutate the other");
+});
+
+// ── The client's facing maths ──────────────────────────────────────────────
+
+test("CLIENT: a drawn camera points where the engine says it looks", () => {
+  // The first version of octantToRadians was off by PI, pointing every camera
+  // at its own back — and a camera facing exactly the wrong way renders
+  // perfectly and reads as plausible set dressing. Nothing in the game would
+  // have complained; the player would simply have been caught by cameras that
+  // appeared to be looking elsewhere.
+  //
+  // Checked against the eight unit vectors: a model's barrel points along +Z,
+  // and rotation.y = t sends +Z to (sin t, 0, cos t). Engine +y is SOUTH and
+  // maps to scene +z.
+  const dirs = {
+    0: [1, 0], 1: [1, -1], 2: [0, -1], 3: [-1, -1],
+    4: [-1, 0], 5: [-1, 1], 6: [0, 1], 7: [1, 1],
+  };
+  for (const [octant, [dx, dz]] of Object.entries(dirs)) {
+    const t = octantToRadians(Number(octant));
+    const len = Math.hypot(dx, dz);
+    assert.ok(Math.abs(Math.sin(t) - dx / len) < 1e-9,
+      `octant ${octant}: barrel x is ${Math.sin(t).toFixed(3)}, expected ${(dx / len).toFixed(3)}`);
+    assert.ok(Math.abs(Math.cos(t) - dz / len) < 1e-9,
+      `octant ${octant}: barrel z is ${Math.cos(t).toFixed(3)}, expected ${(dz / len).toFixed(3)}`);
+  }
 });
