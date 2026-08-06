@@ -131,7 +131,11 @@ test("no world renderer carries colours of its own — tokens are the source of 
   // into minimap.js — was written as "#RRGGBB" strings and would have walked
   // straight past it. \b keeps the seeded-hash constants in terrain3d.js
   // (0x9e3779b1) from reading as a six-digit colour.
-  for (const file of ["scene.js", "minimap.js", "terrain3d.js"]) {
+  // WIDENED IN 8d. The first version scanned three files and missed a FOURTH
+  // copy of the tile palette, in main.js's drop-zone map preview — so the
+  // guard was green while the defect it exists to prevent was still present in
+  // a file it did not read. A guard only protects what it reads.
+  for (const file of ["scene.js", "minimap.js", "terrain3d.js", "main.js"]) {
     const hexes = code(file).match(/\b0x[0-9A-Fa-f]{6}\b|#[0-9A-Fa-f]{6}\b/g) ?? [];
     assert.deepEqual(hexes, [],
       `${file} still hardcodes colours (${hexes.join(", ")}) — they belong in style_tokens.json`);

@@ -49,6 +49,16 @@
       "procedural": "camera",
       "class": "marker",
       "tint": "cameraDisabled"
+    },
+    "junction": {
+      "procedural": "junction",
+      "class": "marker",
+      "tint": "junction"
+    },
+    "junctionCut": {
+      "procedural": "junction",
+      "class": "marker",
+      "tint": "junctionCut"
     }
   },
   "structures": {

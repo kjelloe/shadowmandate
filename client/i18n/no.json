@@ -128,5 +128,10 @@
   "splash.dayEndless": "{0} (UTEN SLUTT)",
   "splash.rivalTiers": "RIVALNIVÅ",
   "season.rotated": "SESONG {0} ER OVER. BYEN ER TEGNET PÅ NYTT.",
-  "season.carried": "Anerkjennelse beholdes. Bank og nivå nullstilles."
+  "season.carried": "Anerkjennelse beholdes. Bank og nivå nullstilles.",
+  "junction.cut": "KUTT STRØMMEN",
+  "toast.junctionCut": "Strømmen er kuttet — lysene er av",
+  "toast.beamTripped": "Sensor utløst",
+  "toast.alarmRaised": "Alarm — stedet har oppdaget noe",
+  "toast.alarmEscalated": "Alarmen stiger"
 }

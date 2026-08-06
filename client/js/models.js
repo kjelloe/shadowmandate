@@ -226,6 +226,13 @@ const TOASTS = {
   tierUnlocked: { key: "board.tier" },
   cacheLooted: { key: "alarm.perimeter", alarm: true },
   coverBought: { key: "shop.newFace" },
+  // S16 (M8). Every security event a player can be affected by must SAY so:
+  // a facility that quietly decides to escalate while you work is the
+  // invisible difficulty D45 forbids.
+  beamTripped: { key: "toast.beamTripped", alarm: true },
+  alarmRaised: { key: "toast.alarmRaised", alarm: true },
+  alarmEscalated: { key: "toast.alarmEscalated", alarm: true },
+  junctionCut: { key: "toast.junctionCut" },
 };
 
 export function toastsFor(events) {
@@ -303,4 +310,21 @@ export function standingRows(standing) {
         : `${standing.tierLow}–${standing.tierHigh}`]);
   }
   return rows;
+}
+
+// S16 8d: the junction the operative could cut right now, or null.
+//
+// A view-model decision so the RULE is unit-tested even though the button is
+// not, and so the client and the engine cannot disagree about what "at the box"
+// means — the engine refuses a cut beyond Manhattan distance 1, and a button
+// that offers what the server will refuse is worse than no button.
+export function cuttableJunction(view) {
+  const agent = ownAgent(view);
+  if (!agent) return null;
+  const cx = Math.floor(agent.x / 256), cy = Math.floor(agent.y / 256);
+  for (const j of view.junctions ?? []) {
+    if (j.cut) continue;
+    if (Math.abs(j.cellX - cx) + Math.abs(j.cellY - cy) <= 1) return j;
+  }
+  return null;
 }

@@ -380,3 +380,22 @@ like a mechanic.
 Every refusal carries a reason (`no_junction`, `not_active`, `not_adjacent`,
 `already_cut`) — a control that silently does nothing is the defect playtest 1
 shipped, and the AI rejection log is how this project finds AI bugs.
+
+### 8d client half — and a fourth palette copy
+
+The mechanism was fully tested and completely **unreachable**: no visual, no
+control. Both ship now — a `junction` builder through the manifest (amber live,
+dark cut), a CUT POWER button that appears only when the operative is adjacent,
+and the adjacency RULE in `models.js` so the client and engine cannot disagree
+about what "at the box" means. A button that offers what the server will refuse
+is worse than no button. Security events (`beamTripped`, `alarmRaised`,
+`alarmEscalated`, `junctionCut`) are toasts now too: a facility that quietly
+decides to escalate while you work is exactly the invisible difficulty D45
+forbids.
+
+**Found on the way: a FOURTH copy of the tile palette**, in `main.js`'s
+drop-zone map preview. The 7a-4 guard scanned `scene.js`, `minimap.js` and
+`terrain3d.js` and never looked at `main.js` — so it was green while the defect
+it exists to prevent was still present in a file it did not read. **A guard only
+protects what it reads.** The palette now comes from tokens there too, and the
+guard scans all four surfaces.

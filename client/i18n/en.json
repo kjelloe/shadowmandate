@@ -128,5 +128,10 @@
   "splash.dayEndless": "{0} (NO END)",
   "splash.rivalTiers": "RIVAL TIERS",
   "season.rotated": "SEASON {0} HAS ENDED. THE CITY HAS BEEN REDRAWN.",
-  "season.carried": "Recognition carries. Bank and tier reset."
+  "season.carried": "Recognition carries. Bank and tier reset.",
+  "junction.cut": "CUT POWER",
+  "toast.junctionCut": "Power cut — the lights are out",
+  "toast.beamTripped": "Sensor tripped",
+  "toast.alarmRaised": "Alarm — the site has noticed",
+  "toast.alarmEscalated": "Alarm rising"
 }

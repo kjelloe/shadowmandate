@@ -183,8 +183,22 @@ function buildCamera() {
   return g;
 }
 
+// A junction box (S16 8d): a wall cabinet on a short plinth with a handle. It
+// has to read as INTERACTIVE at a glance — it is the one fixture the player
+// walks up to and uses, rather than avoids.
+function buildJunction() {
+  const g = new THREE.Group();
+  const C = body();
+  g.add(place(box(0.44, 0.10, 0.34, C.plinth), 0, 0.05, 0));
+  g.add(place(box(0.38, 0.46, 0.26, C.kiosk), 0, 0.33, 0));
+  g.add(place(box(0.30, 0.06, 0.04, C.bars), 0, 0.45, 0.15));      // handle
+  g.add(place(tintable(box(0.30, 0.12, 0.04, "#ffffff", "signal")), 0, 0.24, 0.15));
+  return g;
+}
+
 const BUILDERS = {
   camera: buildCamera,
+  junction: buildJunction,
   agent: buildAgent,
   rival: buildRival,
   patrol: buildPatrol,

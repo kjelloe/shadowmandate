@@ -153,6 +153,12 @@ is undeclared. A missed mirror field silently invalidates every future battery.
   in a test. This has now bitten twice: the dependency guard matched the phrase
   `from "this seat is lucky"` in a comment, and the CSS guard matched the rule
   written inside the comment explaining the bug it was checking for.
+- **A guard only protects what it READS.** 7a-4 consolidated the tile palette
+  and added a guard over `scene.js`, `minimap.js` and `terrain3d.js` — and a
+  FOURTH copy sat in `main.js`'s drop-zone preview, in a file the guard never
+  opened. Green, while the defect it exists to prevent was still in the tree.
+  "I fixed all the copies" is a claim about a search, not about the code:
+  enumerate the surfaces, then scan all of them.
 - **A guard must match the form the bug actually took.** The colour guard
   scanned for `0x......` only — while the historical defect, the palette
   duplicated into `minimap.js`, was written as `"#RRGGBB"` strings and would

@@ -2,7 +2,7 @@
 // engine; this file only wires elements to a session (S12).
 
 import { loadLocale, t, applyStatic } from "./i18n.js";
-import { loadArt } from "./assets.js";
+import { loadArt, terrain, mark } from "./assets.js";
 import { drawPortrait, portraitLayers } from "./portraits.js";
 import { createRemoteSession } from "./session.js";
 import { createScene } from "./scene.js";
@@ -12,6 +12,7 @@ import {
   ownAgent, heatDisplay, districtUnder, boardRows, activeRows, objectiveFor,
   objectiveBearing, evacDisplay, toastsFor, debriefRows, reputationBar,
   payloadForBuilding, overlayRows, disguiseFor, districtChoices, standingRows,
+  cuttableJunction,
   HEAT_CLASS as HEAT_CLASSES,
 } from "./models.js";
 
@@ -158,6 +159,7 @@ function paint(s, events) {
   renderActive(view);
   renderObjectiveArrow(view);
   renderBuilding(view);
+  renderJunction(view);
   renderStandoff(view);
   renderEvac(view);
   for (const toast of toastsFor(events)) addToast(t(toast.key), toast.alarm);
@@ -347,6 +349,15 @@ function renderObjectiveArrow(view) {
 // disguise is worth more than a blank square.
 
 let buildingSignature = "";
+// S16 8d. The counter-play needs a control or it does not exist for a player:
+// the mechanism was fully testable and completely unreachable until this.
+function renderJunction(view) {
+  const btn = $("#cut-btn");
+  const j = cuttableJunction(view);
+  btn.hidden = !j;
+  btn.dataset.junctionId = j ? String(j.id) : "";
+}
+
 function renderBuilding(view) {
   // The "go inside" button appears only when standing on a door.
   const enter = $("#enter-btn");
@@ -475,24 +486,27 @@ function showZonePicker() {
   const ctx = canvas.getContext("2d");
   const size = session.view?.size ?? 64;
   const px = canvas.width / size;
-  ctx.fillStyle = "#0F1114";
+  // This is the THIRD surface that draws the world's tiles, and it kept its own
+  // copy of the palette until 8d — the 7a-4 guard scanned scene.js, minimap.js
+  // and terrain3d.js and never looked here. Same lesson, one file wider: a
+  // guard only protects what it reads.
+  const T = terrain();
+  ctx.fillStyle = T.backdrop;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   if (session.tiles) {
-    const TILE = { 0:"#2A2E26",1:"#3B3F46",2:"#24272C",3:"#454B54",4:"#171A1F",
-      5:"#6A5B3E",6:"#4A5566",7:"#7A4A3A",8:"#33352C",9:"#2E2A24",10:"#1B2A33" };
     for (let y = 0; y < size; y++) {
       for (let x = 0; x < size; x++) {
-        ctx.fillStyle = TILE[session.tiles[y * size + x]] ?? "#222";
+        ctx.fillStyle = T.tiles[session.tiles[y * size + x]] ?? T.unknown;
         ctx.fillRect(x * px, y * px, px + 0.5, px + 0.5);
       }
     }
   }
   for (const z of session.dropZones ?? []) {
-    ctx.fillStyle = "rgba(62,142,140,.75)";
+    ctx.fillStyle = mark("dropZone");
     ctx.fillRect(z.cellX * px - 1, z.cellY * px - 1, px + 2, px + 2);
   }
   if (session.autoZone) {
-    ctx.strokeStyle = "#D9A441"; ctx.lineWidth = 2;
+    ctx.strokeStyle = mark("dropZoneAuto"); ctx.lineWidth = 2;
     ctx.strokeRect(session.autoZone.cellX * px - 3, session.autoZone.cellY * px - 3, px + 6, px + 6);
   }
 
@@ -547,6 +561,12 @@ $("#zone-map").addEventListener("pointerdown", (ev) => {
   }
   if (best && bestD <= 6) deployAt(best);
 });
+$("#cut-btn").addEventListener("click", () => {
+  const a = ownAgent(session.view);
+  const id = Number($("#cut-btn").dataset.junctionId);
+  if (a && Number.isInteger(id)) session.send({ type: 43, agentId: a.id, junctionId: id });
+});
+
 $("#enter-btn").addEventListener("click", () => {
   const a = ownAgent(session.view);
   if (a) session.send({ type: 34, agentId: a.id });

@@ -263,6 +263,9 @@ export function createScene(canvas) {
       mesh.rotation.y = -Math.atan2(dz, dx);
       mesh.scale.set(len + 0.9, 0.06, 0.14);
     }
+    for (const j of view.junctions ?? []) {
+      at(takeVisual(j.cut ? "junctionCut" : "junction"), j.cellX + 0.5, j.cellY + 0.5);
+    }
     // Cameras (S16 8b). The FACING is the whole point: a camera you can see but
     // cannot read the direction of is still an ambush, and D45 requires the
     // challenge to be legible in the world. The model's barrel points along +Z,
