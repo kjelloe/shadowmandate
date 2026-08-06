@@ -15,6 +15,7 @@ import {
 import { setTile, tileAt } from "./state.js";
 import { placeCameras } from "./cameras.js";
 import { placeBeams } from "./sensors.js";
+import { placeJunctions } from "./security.js";
 
 export const TRAIT_INDUSTRIAL = 0;
 export const TRAIT_RESIDENTIAL = 1;
@@ -477,13 +478,21 @@ export function generateCity(seed, size, cfg) {
     }
   }
 
+  const cameras_ = placeCameras(sites, siteRng, cfg.cameras, roll, size);
+  const beams_ = placeBeams(sites, siteRng, cfg.beams, roll, size);
   return {
     map, districtOwner: owner, districts, sites, buildings, holdingSites, patrols,
     // S16 cameras (8b). Placed here because world LAYOUT belongs in one place;
     // how a camera SEES lives in engine/cameras.js. Uses the site RNG stream so
     // a seed always produces the same watched facilities.
-    cameras: placeCameras(sites, siteRng, cfg.cameras, roll, size),
-    beams: placeBeams(sites, siteRng, cfg.beams, roll, size),
+    cameras: cameras_,
+    beams: beams_,
+    // A junction only exists where there is something to switch off, so it is
+    // derived from what was actually placed rather than rolled independently.
+    junctions: placeJunctions(
+      sites,
+      new Set([...cameras_.map((c) => c.siteId), ...beams_.map((x) => x.siteId)]),
+      siteRng, cfg.junctions, roll, size),
     // The traversable component, carried with the world. Placement used it at
     // generation time; DROP-IN needs it at runtime (see findDropZones).
     reachable,

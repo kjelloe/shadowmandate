@@ -36,6 +36,7 @@ export const POSITIONAL_FIELDS = Object.freeze({
   sites: ["cellX"],
   cameras: ["cellX"],
   beams: ["cellX", "toX"],
+  junctions: ["cellX"],
   buildings: ["entranceX", "exitX"],
   holdingSites: ["cellX"],
   hqs: ["cellX"],
@@ -106,6 +107,9 @@ export function mirrorState(state) {
       ...x,
       cellX: mirrorCellX(x.cellX, width),
       toX: mirrorCellX(x.toX, width),
+    })),
+    junctions: (state.junctions ?? []).map((j) => ({
+      ...j, cellX: mirrorCellX(j.cellX, width),
     })),
     buildings: state.buildings.map((b) => ({
       ...b,

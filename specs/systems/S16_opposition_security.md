@@ -1,7 +1,7 @@
 # S16 — Opposition & Site Security
 
 *Feeds: M8 · Depends on: S03, S04, S07, S08, S09 ·
-Status: **8a/8b/8c AS BUILT** (staged alarms, camera cones, sensor beams); 8d–8j specced*
+Status: **8a–8d AS BUILT** (alarms, cameras, beams, junction boxes); 8e–8j specced*
 
 ## Purpose
 
@@ -354,3 +354,29 @@ cycle.** `onTicks`/`offTicks`/`phase` would let a client compute every future
 gap and cross perfectly without watching, deleting the only mechanic whose
 counter-play is timing. A dark beam is still DRAWN, at low opacity: you must be
 able to see where the line is in order to plan a crossing through it.
+
+## AS BUILT — 8d, junction boxes (2026-08-06)
+
+`cutJunction` in `engine/security.js`, command `CMD_CUT_JUNCTION` (43). **D45 in
+one mechanism**: the answer to a camera is not a lock-picking widget, it is
+walking to the box and cutting it, in the world, in time.
+
+**The trade is the whole design.** Cutting is FREE in stealth terms — no noise,
+no burn, the site alarm is not raised — but the blackout is noticed, so it costs
+district heat. A local problem swapped for a global one. Without that cost the
+correct play would always be "cut every box first" and the stealth layer would
+collapse into an errand; the test asserts the cost exists rather than trusting
+the number.
+
+You must be **adjacent** to the box: cutting from across the street would remove
+the reach-it-unseen half of the puzzle, which is the interesting half. The
+blackout **ends** — it is a window, not a solution — and a box cannot be re-cut
+while already down, or the heat is paid once and the blackout extends forever.
+
+Junctions are **derived from what was actually placed**, one per site that has
+cameras or beams. A switch with nothing behind it is set dressing that looks
+like a mechanic.
+
+Every refusal carries a reason (`no_junction`, `not_active`, `not_adjacent`,
+`already_cut`) — a control that silently does nothing is the defect playtest 1
+shipped, and the AI rejection log is how this project finds AI bugs.

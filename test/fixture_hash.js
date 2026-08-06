@@ -79,6 +79,10 @@ export function hashStateLocal(state) {
     w.writeI32LE(x.onTicks); w.writeI32LE(x.offTicks); w.writeI32LE(x.phase);
     w.writeI32LE(x.disabledUntil);
   }
+  for (const j of (state.junctions ?? [])) {
+    w.writeI32LE(j.id); w.writeI32LE(j.siteId);
+    w.writeI32LE(j.cellX); w.writeI32LE(j.cellY); w.writeI32LE(j.cutUntil);
+  }
   for (const p of state.patrols) {
     w.writeI32LE(p.id); w.writeI32LE(p.districtId);
     w.writeI32LE(p.x); w.writeI32LE(p.y);

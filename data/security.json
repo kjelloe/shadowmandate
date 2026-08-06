@@ -1,14 +1,20 @@
 {
-  "note": "S16 site security (M8). Every number here is in TICKS at 10Hz. The alarm is STAGED on purpose (D44): an instant-fail alarm makes the correct play 'reload', and there is no reload in a persistent shared world — so a mistake has to become a worsening situation the player is still inside.",
-
+  "note": "S16 site security (M8). Every number here is in TICKS at 10Hz. The alarm is STAGED on purpose (D44): an instant-fail alarm makes the correct play 'reload', and there is no reload in a persistent shared world \u2014 so a mistake has to become a worsening situation the player is still inside.",
   "note_alarm": "Stages: 0 clear, 1 local, 2 lockdown, 3 district. Deliberately slow: stage 1 -> 2 is 30s of continuing to be burned near the site, and stage 2 -> 3 another minute. The player must have time to read what is happening and choose, or the escalation is a tax rather than a puzzle (D45).",
-
-  "note_radius": "MUST stay below citygen.sites.minSpacing (5). At radius 6 a single burn woke every neighbouring facility at once, because sites are placed as close as 5 cells apart — so the player could not tell which building had reacted to them, and the alarm read as weather rather than as consequence. test/security.test.js asserts the relationship so a future citygen spacing change cannot silently reintroduce it.",
+  "note_radius": "MUST stay below citygen.sites.minSpacing (5). At radius 6 a single burn woke every neighbouring facility at once, because sites are placed as close as 5 cells apart \u2014 so the player could not tell which building had reacted to them, and the alarm read as weather rather than as consequence. test/security.test.js asserts the relationship so a future citygen spacing change cannot silently reintroduce it.",
   "alarm": {
     "radius": 4,
-    "stageTicks": [300, 600],
+    "stageTicks": [
+      300,
+      600
+    ],
     "calmTicks": 400,
     "districtHeat": 2,
     "maxStage": 3
+  },
+  "note_junction": "The TRADE is the design. Cutting power is free in stealth terms \u2014 no noise, no burn \u2014 but the blackout is noticed, so it costs district heat: a local problem swapped for a global one. Without that cost the correct play would always be 'cut everything first' and the stealth layer collapses into an errand. blackoutTicks is ~40s: long enough to do the job, short enough that you cannot cut once and stroll.",
+  "junction": {
+    "blackoutTicks": 400,
+    "districtHeat": 1
   }
 }

@@ -131,6 +131,15 @@ export function buildView(state, firmId, detCfg) {
         cellX: x.cellX, cellY: x.cellY, toX: x.toX, toY: x.toY,
         live: beamLiveAt(x, state.tick) ? 1 : 0,
       })),
+    // S16 8d. A junction is a thing you walk to, so it is shown when visible,
+    // with whether it is currently down. No timer: "when does it come back" is
+    // tension the player should feel rather than read off a counter.
+    junctions: (state.junctions ?? [])
+      .filter((j) => visible(j.cellX, j.cellY))
+      .map((j) => ({
+        id: j.id, siteId: j.siteId, cellX: j.cellX, cellY: j.cellY,
+        cut: (j.cutUntil | 0) > state.tick ? 1 : 0,
+      })),
     buildings: state.buildings.map((b) => ({
       id: b.id, kind: b.kind, cellX: b.entranceX, cellY: b.entranceY,
       exitX: b.exitX ?? -1, exitY: b.exitY ?? -1,

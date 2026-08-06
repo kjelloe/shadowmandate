@@ -14,6 +14,7 @@ import {
   CMD_ADVANCE_TICK, CMD_SET_STANCE, CMD_MOVE, CMD_USE_ITEM,
   CMD_RESCUE, CMD_CAPTURE, CMD_DROP_IN, CMD_ACTIVATE_EVAC, CMD_CANCEL_EVAC,
   CMD_EXTRACT, CMD_ACCEPT_CONTRACT, CMD_ABANDON_CONTRACT, CMD_SITE_ACTION,
+  CMD_CUT_JUNCTION,
   CMD_ENTER_BUILDING, CMD_EXIT_BUILDING, CMD_BUY_ITEM, CMD_STANDOFF_CHOICE,
   CMD_PAY_BAIL, CMD_DIALOGUE_CHOICE, CMD_DORMANCY_TICK,
   CMD_ENTER_VEHICLE, CMD_EXIT_VEHICLE,
@@ -33,7 +34,7 @@ import {
   enterBuilding, exitBuilding, buyCover, payloadFor, applyEffect,
 } from "./buildings.js";
 import { stepStandoffs, submitChoice } from "./standoff.js";
-import { stepAlarms } from "./security.js";
+import { stepAlarms, cutJunction } from "./security.js";
 import { applyDormancy } from "./dormancy.js";
 
 export function copyState(state) {
@@ -67,6 +68,7 @@ export function copyState(state) {
     sites: state.sites.map((s) => ({ ...s })),
     cameras: (state.cameras ?? []).map((c) => ({ ...c })),
     beams: (state.beams ?? []).map((x) => ({ ...x })),
+    junctions: (state.junctions ?? []).map((j) => ({ ...j })),
     buildings: state.buildings.map((b) => ({ ...b })),
     patrols: state.patrols.map((p) => ({ ...p, route: p.route.slice() })),
     holdingSites: state.holdingSites.map((h) => ({ ...h, heldAgentIds: h.heldAgentIds.slice() })),
@@ -376,6 +378,18 @@ function applyAdvanceTick(next) {
   return next;
 }
 
+// S16 8d. Rejections carry a REASON, because a control that silently does
+// nothing is the defect playtest 1 shipped and the AI rejection log is how this
+// project finds AI bugs.
+function applyCutJunction(next, command) {
+  const agent = next.agents[command.agentId];
+  if (!agent) return reject(next, command, "no_agent");
+  const r = cutJunction(next, agent, command.junctionId,
+    next.rules.security.junction, next.rules.detection);
+  if (!r.ok) return reject(next, command, r.reason);
+  return next;
+}
+
 export function apply(state, command) {
   const next = copyState(state);
   if (!validate(command)) return reject(next, command ?? { type: -1 }, "invalid_command");
@@ -405,6 +419,8 @@ export function apply(state, command) {
       return applyAcceptContract(next, command);
     case CMD_ABANDON_CONTRACT:
       return applyAbandonContract(next, command);
+    case CMD_CUT_JUNCTION:
+      return applyCutJunction(next, command);
     case CMD_SITE_ACTION:
       return applySiteAction(next, command);
     case CMD_ENTER_BUILDING:

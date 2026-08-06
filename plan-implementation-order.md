@@ -243,8 +243,10 @@ Ordered so each slice is playable and measurable on its own.
   NOT touch detection: you can trip one and still be unseen. First tuning had a
   25-tick dark window against a 56-tick crossing — uncrossable, and now checked
   against `agents.baseSpeed`.
-- **8d** **Junction boxes.** Zone blackout for N ticks, and it raises district
-  heat — a local problem traded for a global one.
+- **8d** ✅ **DONE (2026-08-06)** — junction boxes and `CMD_CUT_JUNCTION`.
+  Blacks out every camera and beam at a site for a window, costs district heat,
+  must be reached and touched. Derived from what was actually placed, so no
+  switch exists with nothing behind it.
 - **8e** **Access control.** Credential tiers on doors and interior rooms;
   sources are informant, vendor (S09) and a disabled guard.
 - **8f** **Secured facilities.** Wire 8a–8e into acquisition and extraction:

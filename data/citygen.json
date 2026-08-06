@@ -60,5 +60,9 @@
     "onMax": 110,
     "offMin": 70,
     "offMax": 100
+  },
+  "note_junctions": "S16 8d. One box per site that actually HAS fixtures \u2014 derived from what was placed, not rolled independently, so there is never a switch with nothing to switch off. `offset` sets it apart from the site so reaching it is its own small problem.",
+  "junctions": {
+    "offset": 4
   }
 }

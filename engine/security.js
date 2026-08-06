@@ -218,3 +218,81 @@ export function stepAlarms(state, cfg) {
     if (state.alarms[i].stage <= ALARM_CLEAR) state.alarms.splice(i, 1);
   }
 }
+
+// ── Junction boxes (8d) — the counter-play ─────────────────────────────────
+//
+// D45 in one mechanism: the answer to a camera is not a lock-picking widget, it
+// is walking to the junction box and cutting it, in the world, in time.
+//
+// THE TRADE is the whole design. Cutting power is FREE in stealth terms — it
+// makes no noise, it does not burn you — but the blackout itself is noticed, so
+// it raises district heat. You swap a local problem for a global one, which is
+// a real decision rather than a free win. Without that cost the correct play
+// would always be "cut everything first", and the stealth layer would collapse
+// into an errand.
+
+export function junctionAt(state, junctionId) {
+  return (state.junctions ?? []).find((j) => j.id === junctionId) ?? null;
+}
+
+// Cut a junction: blacks out every camera and beam belonging to the same site.
+// Returns a reason string on refusal so the client can say WHY — a control that
+// silently does nothing is the defect playtest 1 shipped.
+export function cutJunction(state, agent, junctionId, cfg, detCfg) {
+  const junction = junctionAt(state, junctionId);
+  if (!junction) return { ok: false, reason: "no_junction" };
+  if (!agent || agent.state !== AGENT_ACTIVE) return { ok: false, reason: "not_active" };
+  const cell = agentCell(agent);
+  // You must be AT it. Cutting power from across the street would remove the
+  // "reach it unseen" half of the puzzle, which is the half that is interesting.
+  if (Math.abs(cell.x - junction.cellX) + Math.abs(cell.y - junction.cellY) > 1) {
+    return { ok: false, reason: "not_adjacent" };
+  }
+  if ((junction.cutUntil | 0) > state.tick) return { ok: false, reason: "already_cut" };
+
+  const until = (state.tick + (cfg.blackoutTicks | 0)) | 0;
+  junction.cutUntil = until;
+  let blacked = 0;
+  for (const cam of state.cameras ?? []) {
+    if (cam.siteId !== junction.siteId) continue;
+    cam.disabledUntil = Math.max(cam.disabledUntil | 0, until);
+    blacked++;
+  }
+  for (const beam of state.beams ?? []) {
+    if (beam.siteId !== junction.siteId) continue;
+    beam.disabledUntil = Math.max(beam.disabledUntil | 0, until);
+    blacked++;
+  }
+  // The cost: somebody notices the lights go out.
+  const districtId = junction.districtId >= 0
+    ? junction.districtId : districtAt(state, junction.cellX, junction.cellY);
+  if (districtId >= 0 && detCfg) {
+    raiseHeat(state, districtId, cfg.districtHeat | 0, detCfg);
+  }
+  state.events.push({
+    type: "junctionCut", junctionId, siteId: junction.siteId,
+    agentId: agent.id, until, blacked,
+  });
+  return { ok: true, until, blacked };
+}
+
+// Placement: one box per guarded site, set apart from both the site and its
+// fixtures so reaching it is its own small problem.
+export function placeJunctions(sites, guardedSiteIds, rng, cfg, roll, size = 0) {
+  const junctions = [];
+  if (!cfg || (cfg.offset | 0) <= 0) return junctions;
+  const offset = cfg.offset | 0;
+  for (const site of sites) {
+    if (!guardedSiteIds.has(site.id)) continue;   // nothing to switch off
+    const dir = roll(rng, 0, 3);
+    const dx = dir === 0 ? offset : dir === 1 ? -offset : 0;
+    const dy = dir === 2 ? offset : dir === 3 ? -offset : 0;
+    const cellX = site.cellX + dx, cellY = site.cellY + dy;
+    if (size > 0 && (cellX < 0 || cellY < 0 || cellX >= size || cellY >= size)) continue;
+    junctions.push({
+      id: junctions.length, siteId: site.id, districtId: site.districtId,
+      cellX, cellY, cutUntil: 0,
+    });
+  }
+  return junctions;
+}

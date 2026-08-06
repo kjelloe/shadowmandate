@@ -32,6 +32,9 @@ export const CMD_BUY_ITEM = 37;
 export const CMD_ACCEPT_CONTRACT = 40;
 export const CMD_ABANDON_CONTRACT = 41;
 export const CMD_SITE_ACTION = 42;   // plant / crack / hold — type-specific
+// S16 8d. The counter-play to cameras and beams, and DIEGETIC per D45: you walk
+// to the junction box and cut it, in the world, in time — no modal panel.
+export const CMD_CUT_JUNCTION = 43;
 
 // Encounters (S08)
 export const CMD_STANDOFF_CHOICE = 50;
@@ -67,6 +70,8 @@ export function validate(command) {
     case CMD_USE_ITEM:
       return INT(command.agentId) && INT(command.slot)
         && INT(command.cellX) && INT(command.cellY);
+    case CMD_CUT_JUNCTION:
+      return INT(command.agentId) && INT(command.junctionId);
     case CMD_RESCUE:
     case CMD_CAPTURE:
       return INT(command.agentId) && INT(command.targetAgentId);
