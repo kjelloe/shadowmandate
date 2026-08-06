@@ -173,12 +173,21 @@ export function burnAgent(state, agent, cfg, districtId) {
   if (districtId >= 0) raiseHeat(state, districtId, cfg.heat.sources.burn, cfg);
   // Patrols converge on the last known position.
   const cell = agentCell(agent);
+  convergePatrols(state, cell.x, cell.y, cfg);
+}
+
+// Draw the authorities toward a cell. Extracted from burnAgent so a defence in
+// progress (S16 8j) can use the SAME converge behaviour a burn does, rather
+// than a second one that could drift away from it.
+export function convergePatrols(state, cellX, cellY, cfg) {
+  let drawn = 0;
   for (const p of state.patrols) {
-    if (manhattan(p.x, p.y, cell.x, cell.y) <= cfg.convergeRadius) {
-      p.targetX = cell.x; p.targetY = cell.y;
-      p.alertTicks = cfg.burnCooldownTicks;
-    }
+    if (manhattan(p.x, p.y, cellX, cellY) > cfg.convergeRadius) continue;
+    p.targetX = cellX; p.targetY = cellY;
+    p.alertTicks = cfg.burnCooldownTicks;
+    drawn++;
   }
+  return drawn;
 }
 
 // Heat decays with live world time. The dormancy transition (S10/D16) applies

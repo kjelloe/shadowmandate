@@ -68,11 +68,12 @@
     },
     "defend": {
       "tier": 2,
-      "reward": 240,
+      "reward": 207,
       "holdTicks": 1800,
       "expiryTicks": 0,
       "passes": 1,
-      "breachRadius": 3
+      "breachRadius": 3,
+      "patrolDrawTicks": 300
     }
   },
   "captureGraceTicks": 1800,
@@ -94,5 +95,5 @@
     "maxFirms": 2,
     "rewardPct": 150
   },
-  "note_defend": "S16 8j / D49a. The one INBOUND contract: you are stationary and something comes to you. Being SEEN is not failure here \u2014 you are meant to be there \u2014 which is why it has no stealth clause at all. It is tier 2 rather than 1 because it needs rivals who actually arrive (8g/8i), and it pays well because 1800 stationary ticks is a long time to be somewhere a rival wants to be."
+  "note_defend": "S16 8j / D49a. The one INBOUND contract: you are stationary and something comes to you. Being SEEN is not failure here \u2014 you are meant to be there \u2014 which is why it has no stealth clause at all. Tier 2 because it needs rivals who actually arrive (8g/8i).\nREWARD IS DERIVED, NOT FELT. It was 240 by guesswork when the type was added, while every other type had been effort-priced \u2014 0.133 reward per work-tick against a family median of 0.0767, and the battery duly read it 4.85x over-chosen. It is now the family rate (0.0767 x 1800 = 138) times the project's existing contested premium (contested.rewardPct 150), because a Defend is contested by definition: 207. This is NOT the reward cut D42 forbids \u2014 D42 protects types that were already effort-priced. This one never was; this is that pass, applied late."
 }

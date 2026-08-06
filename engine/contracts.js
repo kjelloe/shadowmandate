@@ -7,7 +7,7 @@
 // the neighbour's leftovers.
 
 import { AGENT_ACTIVE, AGENT_HELD } from "./state.js";
-import { agentCell } from "./detection.js";
+import { agentCell, convergePatrols } from "./detection.js";
 import { hasCredential } from "./access.js";
 import { hqOf } from "./hq.js";
 import { sfc32Next } from "../shared/prng.js";
@@ -511,6 +511,26 @@ export function stepContracts(state, cfg, detCfg) {
             }
           } else {
             contract.breachNoted = 0;
+            // A DEFENCE DRAWS THE AUTHORITIES. Sitting on a site for 1800 ticks
+            // is conspicuous, and this is what makes the contract a contract
+            // rather than a paid wait: the rival-assault path (8l) needs a
+            // spare Firm and almost never gets one, so a defence was contested
+            // 2 times in 6 world-days and completed nearly always. Patrols are
+            // always available and converging on a held position is exactly
+            // what they already do for a burn — same helper, not a second one.
+            const every = spec.patrolDrawTicks ?? 300;
+            if (every > 0 && contract.stageTicks > 0 && contract.stageTicks % every === 0) {
+              const site2 = state.sites.find((x) => x.id === contract.siteId);
+              if (site2) {
+                const drawn = convergePatrols(state, site2.cellX, site2.cellY, detCfg);
+                if (drawn > 0) {
+                  state.events.push({
+                    type: "defenceNoticed", contractId: contract.id,
+                    siteId: contract.siteId, patrols: drawn,
+                  });
+                }
+              }
+            }
             if (contract.stageTicks >= (spec.holdTicks ?? 1800)) {
               completeContract(state, contract, agent, cfg);
             }

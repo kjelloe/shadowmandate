@@ -147,6 +147,7 @@ export function hashState(state) {
   for (const r of (state.raids ?? [])) {
     w.writeI32LE(r.id); w.writeI32LE(r.targetFirmId); w.writeI32LE(r.byFirmId);
     w.writeI32LE(r.state); w.writeI32LE(r.dispatchTick); w.writeI32LE(r.expiresTick);
+    w.writeI32LE(r.targetKind ?? 0); w.writeI32LE(r.targetSiteId ?? -1);
   }
   for (const v of state.vehicles) {
     w.writeI32LE(v.id); w.writeI32LE(v.kind); w.writeI32LE(v.firmId);

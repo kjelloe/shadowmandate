@@ -393,7 +393,11 @@ export function aiDecide(state, firmId, rules) {
   // there; if it does not, the raid expires, which is a fine outcome.
   const freeToRaid = (agent.contractIds ?? []).length === 0;
   if (order && order.state === RAID_INBOUND && freeToRaid) {
-    const targetHq = state.hqs.find((h) => h.firmId === order.targetFirmId);
+    // An HQ raid loots the tent; a SITE assault just has to stand on the
+    // objective, which is what pauses the defender's hold (8j).
+    const site = order.targetSiteId >= 0
+      ? state.sites.find((x) => x.id === order.targetSiteId) : null;
+    const targetHq = site ?? state.hqs.find((h) => h.firmId === order.targetFirmId);
     if (targetHq) {
       const goal = { x: targetHq.cellX, y: targetHq.cellY };
       // EXACT cell, not `arrivedAt`. `arrivedAt` tolerates a cell of slop —
@@ -413,6 +417,11 @@ export function aiDecide(state, firmId, rules) {
           return { command: { type: 20, agentId: agent.id, cellX: goal.x, cellY: goal.y }, telemetry };
         }
         debug("raid_unreachable", { targetFirmId: order.targetFirmId });
+      } else if (site) {
+        // Standing on a contested objective: HOLD. Every tick here is a tick
+        // the defender's clock is not running.
+        debug("assault_holding", { siteId: site.id });
+        return { command: null, telemetry };
       } else if ((targetHq.cacheResources | 0) > 0) {
         // Standing on it with something to take: hold, and hq.js does the
         // looting from here.
@@ -505,7 +514,21 @@ export function aiDecide(state, firmId, rules) {
   // ── Idle: take the best thing on the board ──
   if (view.offered.length && view.myContracts.length < rules.contracts.maxActivePerAgent) {
     let best = null, bestScore = -1;
+    const from = agentCell(agent);
     for (const contract of view.offered) {
+      // DO NOT TAKE WHAT YOU CANNOT REACH. The working branch abandons a
+      // contract whose objective is unreachable — and `rebuildOffers` then put
+      // it straight back on the board, where it scored well and was taken
+      // again. Two contracts on seed 1411 were accepted 133 times each, with
+      // 268 abandons in one world-day: a live-lock that burned the whole
+      // sortie and, worse, inflated the ACCEPTED share that D19's preference
+      // ratio is computed from. The balance table was reading a loop.
+      //
+      // Checking reachability here rather than remembering past abandons keeps
+      // it stateless and symmetric with the abandon rule: the same question,
+      // asked before committing instead of after walking.
+      const target = targetCellFor(state, contract, view, rules);
+      if (target && !reachable(state, from, target)) continue;
       const score = scoreContract(state, view, contract, personality, rules, agent);
       if (score > bestScore) { bestScore = score; best = contract; }
     }

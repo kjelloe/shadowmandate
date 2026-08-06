@@ -65,10 +65,22 @@ export function availableRaiders(state, targetFirmId) {
     && !raidBy(state, f.id));
 }
 
-export function scheduleRaid(state, targetFirmId, byFirmId, cfg) {
+// S16 8l. A raid can target an HQ (D49b) or a DEFENDED SITE (D49a). The second
+// is what makes the Defend contract a contract rather than a paid wait: it is
+// "hold this while somebody tries to take it", and until now nobody tried. A
+// defence was breached only when a rival happened to wander past — three
+// defences across six world-days, almost never contested — so the job was 1800
+// stationary ticks of free money, and the battery duly read it at 4.85x
+// over-chosen.
+export const TARGET_HQ = 0;
+export const TARGET_SITE = 1;
+
+export function scheduleRaid(state, targetFirmId, byFirmId, cfg, opts = {}) {
   const raid = {
     id: state.nextRaidId | 0,
     targetFirmId, byFirmId,
+    targetKind: opts.targetKind | 0,
+    targetSiteId: opts.targetSiteId ?? -1,
     state: RAID_WARNING,
     // The warning window: how long the target has between being told and the
     // raider being sent. This is the whole fairness of the mechanism.
@@ -80,6 +92,7 @@ export function scheduleRaid(state, targetFirmId, byFirmId, cfg) {
   state.events.push({
     type: "raidIncoming", raidId: raid.id,
     firmId: targetFirmId, byFirmId,
+    targetKind: raid.targetKind, targetSiteId: raid.targetSiteId,
     dispatchTick: raid.dispatchTick,
   });
   return raid;
@@ -131,6 +144,23 @@ export function stepRaids(state, cfg, rollFn) {
     }
   }
   state.raids = state.raids.filter((r) => r.state !== RAID_DONE);
+
+  // A DEFENCE THAT NOBODY ATTACKS IS NOT A CONTRACT. When a Firm settles in to
+  // hold a site, somebody is dispatched to take it — that is the entire premise
+  // of the type (D49a), and it is D42's lever rather than a reward cut: the job
+  // becomes less attractive because it is genuinely harder, not because it pays
+  // less. Read from the event detection just emitted, so raids.js never has to
+  // import the contract machine.
+  for (const e of state.events) {
+    if (e.type !== "defenceBegan") continue;
+    const contract = state.contractPool.find((c) => c.id === e.contractId);
+    if (!contract || contract.acceptedBy < 0) continue;
+    if (raidAgainst(state, contract.acceptedBy)) continue;
+    const attackers = availableRaiders(state, contract.acceptedBy);
+    if (!attackers.length) continue;
+    scheduleRaid(state, contract.acceptedBy, attackers[0].id, cfg,
+      { targetKind: TARGET_SITE, targetSiteId: contract.siteId });
+  }
 
   // Schedule at most one new raid per tick, on a cadence rather than every
   // tick: `everyTicks` is the heartbeat, `chancePct` the roll on it.

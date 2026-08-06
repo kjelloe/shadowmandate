@@ -738,3 +738,65 @@ and is the obvious next balance question.
   emitted inside `stepAiFirms` and overwritten by the following tick — the
   instrument, not the world. **Flagged rather than explained.** It should be the
   first thing looked at before any further balance tuning.
+
+## AS BUILT — 8l, making Defend cost something (2026-08-06)
+
+Defend read **4.85x over-chosen and 31.1% of completions**. Three things were
+wrong, in descending order of importance.
+
+### 1. The instrument was reading a live-lock (the real find)
+
+The AI abandons a contract whose objective it cannot path to — and
+`rebuildOffers` then put that contract straight back on its board, where it
+scored well and was taken again. **Two contracts on seed 1411 were accepted 133
+times each, with 268 abandons in one world-day.** Every D19 reading was computed
+over that loop.
+
+Fixed at the source: the AI no longer *takes* what it cannot reach, which is
+simply the abandon rule asked before committing instead of after walking.
+Stateless, and symmetric with the rule it mirrors. Accepts on that seed fell
+from 273 to 5, and with the loop gone acquisition moved 0.40x → 1.35x and
+courier 1.16x → 1.03x. **A balance table computed over a live-lock is not a
+balance table.**
+
+### 2. Defend was never effort-priced
+
+Every other type went through the effort pass; Defend's 240 was set by feel when
+the type was added. It paid **0.133 per work-tick against a family median of
+0.0767**. It is now the family rate (0.0767 x 1800 = 138) times the project's
+own existing contested premium (`contested.rewardPct` 150) = **207**.
+
+**This is not the reward cut D42 forbids.** D42 protects types that were already
+effort-priced from being re-cut to chase a dominance number. Defend had never
+had that pass at all; this is that pass, applied late, and it is derived rather
+than felt.
+
+### 3. Nothing attacked a defence
+
+The type is "hold this while somebody tries to take it", and nobody tried — a
+defence was contested twice in six world-days, by rivals wandering past, and
+completed nearly always. Two mechanisms now:
+
+- **Rival assault** — the raid scheduler (8i) gained a SITE target, so a Firm
+  settling in to hold draws a dispatched attacker. Honest limitation: it needs a
+  spare Firm and almost never gets one, so it rarely fires yet.
+- **The authorities notice** — a defence draws patrols to the site every
+  `patrolDrawTicks`, reusing the exact converge helper a burn already uses
+  rather than a second one that could drift from it. Patrols are always
+  available, which is why this is the one that actually bites.
+
+### Result, and what I am NOT claiming
+
+| | before | after |
+|---|---:|---:|
+| defend completion share | 31.1% | **27.2%** |
+| defend preference | 4.85x | 4.62x |
+| other five types | 0.60–1.35x | **0.68–1.21x** |
+
+Completion share is now **comfortably under D19's 35% ceiling**, and that is the
+sounder reading. The preference ratio stays high because Defend is offered only
+5.3% of the time and taken whenever it appears — which is precisely the artifact
+`analyze_pacing.py` warns about in its own NOTE 2: a popular contract leaves the
+board sooner, depressing its offered share and overstating its ratio. **I have
+not chased that number further**, because chasing a figure the instrument says
+is inflated is how a balance pass ends up tuning the tool instead of the game.
