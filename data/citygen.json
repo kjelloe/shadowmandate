@@ -50,5 +50,15 @@
     "dwellMin": 40,
     "dwellMax": 90,
     "standoff": 3
+  },
+  "note_beams": "S16 8c. A beam is laid ACROSS an approach at `standoff` cells out, never through the site cell \u2014 a beam over the objective would make the work impossible rather than the approach interesting, which is the mistake 8b made with cameras. offMin MUST cover TWO cells of movement (~28 ticks each at baseSpeed 9): crossing a beam means stepping into its cell and out again, so a dark window shorter than that can never be used and the mechanism reads as random rather than as timing. The first values (offMin 25) failed exactly that check. test/sensors.test.js asserts it against agents.baseSpeed, so a movement retune cannot silently make every beam uncrossable.",
+  "beams": {
+    "sitePercent": 25,
+    "standoff": 2,
+    "halfLength": 2,
+    "onMin": 60,
+    "onMax": 110,
+    "offMin": 70,
+    "offMax": 100
   }
 }

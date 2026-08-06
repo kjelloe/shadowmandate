@@ -40,7 +40,9 @@
     "agentNoticed": "#D9A441",
     "agentBurned": "#C2452F",
     "camera": "#C2452F",
-    "cameraDisabled": "#4A5058"
+    "cameraDisabled": "#4A5058",
+    "beamLive": "#C2452F",
+    "beamDark": "#3E4650"
   },
   "note_body": "Body colours are the PAINTED part — the part a tint never touches. Keeping them separate from marks is what lets detection state stay readable: the coat stays the coat while the state band changes colour.",
   "body": {

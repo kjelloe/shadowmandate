@@ -238,8 +238,11 @@ Ordered so each slice is playable and measurable on its own.
   site looking away: mounted on the objective cell they covered it every tick
   and surveillance could never complete. Found and fixed a pre-existing AI bug
   (three unguarded HQ moves) that cameras made loud.
-- **8c** **Sensor lines.** Beam between two emitters, integer cycle. The first
-  mechanism whose counter-play is pure timing (D45).
+- **8c** ✅ **DONE (2026-08-06)** — sensor beams in `engine/sensors.js`, integer
+  square-wave cycle, laid across the approach. A beam raises the alarm but does
+  NOT touch detection: you can trip one and still be unseen. First tuning had a
+  25-tick dark window against a 56-tick crossing — uncrossable, and now checked
+  against `agents.baseSpeed`.
 - **8d** **Junction boxes.** Zone blackout for N ticks, and it raises district
   heat — a local problem traded for a global one.
 - **8e** **Access control.** Credential tiers on doors and interior rooms;

@@ -14,6 +14,7 @@ import {
 } from "./terrain.js";
 import { setTile, tileAt } from "./state.js";
 import { placeCameras } from "./cameras.js";
+import { placeBeams } from "./sensors.js";
 
 export const TRAIT_INDUSTRIAL = 0;
 export const TRAIT_RESIDENTIAL = 1;
@@ -482,6 +483,7 @@ export function generateCity(seed, size, cfg) {
     // how a camera SEES lives in engine/cameras.js. Uses the site RNG stream so
     // a seed always produces the same watched facilities.
     cameras: placeCameras(sites, siteRng, cfg.cameras, roll, size),
+    beams: placeBeams(sites, siteRng, cfg.beams, roll, size),
     // The traversable component, carried with the world. Placement used it at
     // generation time; DROP-IN needs it at runtime (see findDropZones).
     reachable,

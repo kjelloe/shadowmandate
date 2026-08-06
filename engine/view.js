@@ -16,6 +16,7 @@ import { hasHeatIntel } from "./buildings.js";
 import { stageTargetTicks } from "./contracts.js";
 import { alarmStageOf } from "./security.js";
 import { cameraFacingAt, isDisabled } from "./cameras.js";
+import { beamLiveAt } from "./sensors.js";
 import { worldToCellFloor } from "../shared/fixedmath.js";
 
 const SIGHT = 10;          // what your own agent can make out, in cells
@@ -118,6 +119,17 @@ export function buildView(state, firmId, detCfg) {
         facing: cameraFacingAt(c, state.tick),
         arc: c.arc, range: c.range,
         disabled: isDisabled(c, state.tick) ? 1 : 0,
+      })),
+    // S16 8c. A beam is sent with its endpoints and whether it is LIVE RIGHT
+    // NOW — never its cycle. onTicks/offTicks/phase would let a client compute
+    // every future gap and cross perfectly without watching, which deletes the
+    // one mechanic whose counter-play is pure timing.
+    beams: (state.beams ?? [])
+      .filter((x) => visible(x.cellX, x.cellY) || visible(x.toX, x.toY))
+      .map((x) => ({
+        id: x.id, siteId: x.siteId,
+        cellX: x.cellX, cellY: x.cellY, toX: x.toX, toY: x.toY,
+        live: beamLiveAt(x, state.tick) ? 1 : 0,
       })),
     buildings: state.buildings.map((b) => ({
       id: b.id, kind: b.kind, cellX: b.entranceX, cellY: b.entranceY,

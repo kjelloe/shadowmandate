@@ -70,6 +70,14 @@ export function createMinimap(canvas) {
       // Cameras on the radar too: knowing WHERE the watched ground is, is half
       // of planning a route around it. Small, because a camera is a fixture
       // rather than a mover — the radar's job is to show what changed.
+      for (const x of view.beams ?? []) {
+        ctx.strokeStyle = mark(x.live ? "beamLive" : "beamDark");
+        ctx.lineWidth = x.live ? 1.5 : 1;
+        ctx.beginPath();
+        ctx.moveTo(x.cellX * s, x.cellY * s);
+        ctx.lineTo(x.toX * s, x.toY * s);
+        ctx.stroke();
+      }
       for (const c of view.cameras ?? []) {
         dot(c.cellX, c.cellY, mark(c.disabled ? "cameraDisabled" : "camera"), 1.2);
       }

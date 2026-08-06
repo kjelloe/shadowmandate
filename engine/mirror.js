@@ -35,6 +35,7 @@ export const POSITIONAL_FIELDS = Object.freeze({
   vehicles: ["x"],
   sites: ["cellX"],
   cameras: ["cellX"],
+  beams: ["cellX", "toX"],
   buildings: ["entranceX", "exitX"],
   holdingSites: ["cellX"],
   hqs: ["cellX"],
@@ -98,6 +99,13 @@ export function mirrorState(state) {
       ...c,
       cellX: mirrorCellX(c.cellX, width),
       baseFacing: mirrorFacing(c.baseFacing),
+    })),
+    // A beam has TWO x coordinates and both must reflect, or the mirrored world
+    // gets a beam running somewhere its original had none.
+    beams: (state.beams ?? []).map((x) => ({
+      ...x,
+      cellX: mirrorCellX(x.cellX, width),
+      toX: mirrorCellX(x.toX, width),
     })),
     buildings: state.buildings.map((b) => ({
       ...b,

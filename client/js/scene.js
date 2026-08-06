@@ -126,6 +126,31 @@ export function createScene(canvas) {
     return m.group;
   }
 
+  // A beam is a variable-length line rather than a fixed model, so it is drawn
+  // from a shared unit box rather than through the manifest — but its COLOURS
+  // still come from tokens, like everything else (D46). Live and dark are
+  // wildly different on purpose: this is the one mechanic whose whole
+  // counter-play is reading the state at a glance and moving.
+  const beamGeoUnit = new THREE.BoxGeometry(1, 1, 1);
+  function takeBeam(colour, live) {
+    let m = pool.find((x) => !x.inUse && x.role === "__beam");
+    if (!m) {
+      const mesh = new THREE.Mesh(beamGeoUnit, new THREE.MeshBasicMaterial({
+        color: colour, transparent: true, opacity: 0.85,
+      }));
+      m = { role: "__beam", group: mesh, inUse: false };
+      pool.push(m);
+      markers.add(mesh);
+    }
+    m.inUse = true;
+    m.group.visible = true;
+    m.group.material.color.set(colour);
+    // A dark beam stays visible but recedes: you must still be able to SEE
+    // where the line is in order to plan a crossing through its gap.
+    m.group.material.opacity = live ? 0.85 : 0.25;
+    return m.group;
+  }
+
   function takeRing(colour) {
     let m = pool.find((x) => !x.inUse && x.role === "__ring");
     if (!m) {
@@ -225,6 +250,18 @@ export function createScene(canvas) {
     for (const h of view.rivalHqs) at(takeVisual("rivalHq"), h.cellX + 0.5, h.cellY + 0.5);
     for (const p of view.patrols) {
       at(takeVisual(p.alerted ? "patrolAlert" : "patrol"), p.x + 0.5, p.y + 0.5);
+    }
+    // Sensor beams (S16 8c). Drawn low and thin, spanning both endpoints, so
+    // the line you must not be standing in is unambiguous.
+    for (const x of view.beams ?? []) {
+      const mesh = takeBeam(tokens.marks[x.live ? "beamLive" : "beamDark"], x.live);
+      const ax = x.cellX + 0.5, az = x.cellY + 0.5;
+      const bx = x.toX + 0.5, bz = x.toY + 0.5;
+      const dx = bx - ax, dz = bz - az;
+      const len = Math.hypot(dx, dz) || 1;
+      mesh.position.set((ax + bx) / 2, 0.16, (az + bz) / 2);
+      mesh.rotation.y = -Math.atan2(dz, dx);
+      mesh.scale.set(len + 0.9, 0.06, 0.14);
     }
     // Cameras (S16 8b). The FACING is the whole point: a camera you can see but
     // cannot read the direction of is still an ambush, and D45 requires the

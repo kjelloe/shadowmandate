@@ -69,6 +69,16 @@ export function hashStateLocal(state) {
     w.writeI32LE(c.range); w.writeI32LE(c.dwellTicks); w.writeI32LE(c.phase);
     w.writeI32LE(c.disabledUntil);
   }
+  // S16 sensor beams (8c). Whole definition written for the same reason as a
+  // camera's: two hosts that disagreed about a beam's cycle would disagree about
+  // when it is safe to cross.
+  for (const x of (state.beams ?? [])) {
+    w.writeI32LE(x.id); w.writeI32LE(x.siteId);
+    w.writeI32LE(x.cellX); w.writeI32LE(x.cellY);
+    w.writeI32LE(x.toX); w.writeI32LE(x.toY);
+    w.writeI32LE(x.onTicks); w.writeI32LE(x.offTicks); w.writeI32LE(x.phase);
+    w.writeI32LE(x.disabledUntil);
+  }
   for (const p of state.patrols) {
     w.writeI32LE(p.id); w.writeI32LE(p.districtId);
     w.writeI32LE(p.x); w.writeI32LE(p.y);

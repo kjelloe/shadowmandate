@@ -60,6 +60,8 @@ test("the populated world actually populates — otherwise this file proves noth
   assert.ok(s.buildings.length > 0, "no buildings");
   assert.ok(s.districts.length > 0, "no districts");
   assert.ok(s.agents.length > 0, "no agents");
+  assert.ok(s.cameras.length > 0, "no cameras — the twins' camera writers go uncompared");
+  assert.ok(s.beams.length > 0, "no beams — the twins' beam writers go uncompared");
   assert.ok(s.alarms.length > 0,
     "no alarms — the twins' alarm writers would never be compared, which is "
     + "exactly the hole this file exists to close");

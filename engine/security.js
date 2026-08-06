@@ -28,6 +28,7 @@
 // attribution in the reducer (specs/02).
 
 import { agentCell, districtAt, raiseHeat } from "./detection.js";
+import { beamLiveAt, beamCoversCell } from "./sensors.js";
 
 export const ALARM_CLEAR = 0;
 export const ALARM_LOCAL = 1;      // nearby guards would converge (8b+)
@@ -159,6 +160,30 @@ export function stepAlarms(state, cfg) {
     if (e.type !== "agentNoticed" || (e.cameraId ?? -1) < 0) continue;
     const site = siteById.get(e.siteId);
     if (site) raiseAlarm(state, site, cfg, ALARM_LOCAL, "camera");
+  }
+
+  // 8c: a LIVE beam that an active agent is standing in trips the facility.
+  //
+  // A beam knows only that something crossed it, so it raises the alarm and
+  // deliberately does NOT touch the agent's detection state: you can trip a
+  // beam and still be unseen. That is the decision the mechanism exists to
+  // create — trip it and hurry, or wait for the gap.
+  for (const beam of state.beams ?? []) {
+    if (!beamLiveAt(beam, state.tick)) continue;
+    const site = siteById.get(beam.siteId);
+    if (!site) continue;
+    for (const agent of state.agents) {
+      if (agent.state !== AGENT_ACTIVE || agent.insideBuildingId >= 0) continue;
+      const cell = agentCell(agent);
+      if (!beamCoversCell(beam, cell.x, cell.y)) continue;
+      raiseAlarm(state, site, cfg, ALARM_LOCAL, "beam");
+      // Announced, because a tripped beam the player cannot perceive is an
+      // unfair mechanism: the client needs something to show and to sound.
+      state.events.push({
+        type: "beamTripped", beamId: beam.id, siteId: site.id, agentId: agent.id,
+      });
+      break;     // one trip per beam per tick; the alarm is already raised
+    }
   }
 
   for (const alarm of state.alarms) {

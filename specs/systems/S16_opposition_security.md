@@ -1,7 +1,7 @@
 # S16 — Opposition & Site Security
 
 *Feeds: M8 · Depends on: S03, S04, S07, S08, S09 ·
-Status: **8a/8b AS BUILT** (staged alarms, camera cones); 8c–8j specced*
+Status: **8a/8b/8c AS BUILT** (staged alarms, camera cones, sensor beams); 8d–8j specced*
 
 ## Purpose
 
@@ -323,3 +323,34 @@ a 0.055 lens — was legible at 1200px and unreadable in the diorama, where the
 one thing a player must read is which way it looks. Wider housing, longer
 barrel, a brow over the lens, and a lens twice the size: 138 triangles against a
 260 budget.
+
+## AS BUILT — 8c, sensor beams (2026-08-06)
+
+`engine/sensors.js`. The first mechanism whose counter-play is **pure timing**: a
+camera can be walked behind, a beam has no behind. It is on or off on a fixed
+integer cycle, and the whole puzzle is the gap.
+
+**What a beam knows, and what it does not.** A camera SEES you and feeds the
+detection currency. A beam only knows that *something* crossed it — so it raises
+the facility's alarm and deliberately leaves your detection state alone. You can
+trip a beam and still be unseen, which is a genuinely different texture and
+creates the real decision: trip it and hurry, or wait for the gap.
+
+Beams are laid ACROSS an approach at `standoff` cells out, never through the
+objective — the lesson 8b paid for, and asserted for every beam in three cities.
+
+### The gap has to be crossable, and the first tuning wasn't
+
+`offMin` started at 25 ticks. Crossing a beam means stepping INTO its cell and
+out again — two cell-moves at ~28 ticks each — so **no one could ever have
+crossed one**, and the mechanism would have read as a random punishment rather
+than as something to time. That is the precise failure a timing mechanism cannot
+survive. The dark window is now 70–100 ticks, and the test checks it against
+`agents.baseSpeed` rather than a literal, so a movement retune cannot silently
+make every beam uncrossable.
+
+**The view carries the endpoints and whether it is live right now — never the
+cycle.** `onTicks`/`offTicks`/`phase` would let a client compute every future
+gap and cross perfectly without watching, deleting the only mechanic whose
+counter-play is timing. A dark beam is still DRAWN, at low opacity: you must be
+able to see where the line is in order to plan a crossing through it.
