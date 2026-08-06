@@ -1,7 +1,7 @@
 # S16 — Opposition & Site Security
 
 *Feeds: M8 · Depends on: S03, S04, S07, S08, S09 ·
-Status: **8a–8j AS BUILT**; only 8h (the battery re-read) remains*
+Status: **8a–8j AS BUILT**; 8h RUN and its verdict is BLOCKED — see below*
 
 ## Purpose
 
@@ -597,3 +597,57 @@ game rather than as a contract in progress.
 `KIND_COUNT` is the single place that decides whether a type is ever generated,
 so a test asserts the pool actually rolls Defend (~22% of tier-2 work) — a type
 the generator never produces is dead content whatever the constants say.
+
+## 8h — the battery re-read, and why D19 still cannot be verdicted (2026-08-06)
+
+24 world-days at 60k ticks, `reports/sweeps/pacing_m8.csv`.
+
+### The instrument was wrong first
+
+8j added a sixth contract type and BOTH instruments hardcoded five. `KIND[5]`
+was `undefined`, so every Defend contract landed in a column that did not exist
+and the battery measured **five sixths of the game while printing a D19
+verdict**. Defend turned out to be **30.5% of all completions** — the single
+largest share — and it was invisible.
+
+Both now derive their type list from the engine and from the CSV header
+respectively, so adding a seventh type cannot silently repeat it. *Check the
+instrument before the finding* — this is the fourth time in this project.
+
+### What the corrected battery says
+
+| type | offered | accepted | completed | preference |
+|---|---:|---:|---:|---:|
+| courier | 20.3% | 42.7% | 18.3% | **2.10x** |
+| surveillance | 35.1% | 22.9% | 24.4% | 0.65x |
+| extraction | 32.9% | 12.3% | 19.7% | **0.38x** |
+| sabotage | 3.0% | 9.3% | 3.3% | **3.11x** |
+| acquisition | 3.7% | 0.3% | 3.8% | **0.08x** |
+| defend | 5.1% | 12.5% | 30.5% | **2.45x** |
+
+**Extraction is no longer dominant.** It read 1.43x over-chosen before M8 and
+now reads 0.38x — ignored. That is D42's prediction, and it arrived without a
+single reward change, exactly as ruled.
+
+### But the verdict is BLOCKED, and saying otherwise would be dishonest
+
+**The AI is structurally barred from two of the six types.** It cannot obtain a
+credential (8e/8f follow-up), so it declines every secured extraction and
+acquisition. Acquisition's 0.08x is not a preference reading — it is a Firm that
+*cannot take the job*. Extraction's collapse is at least partly the same effect
+rather than opposition making it unattractive.
+
+**Pacing also went the wrong way**: sortie 4.8 min against D11's 15–20, worse
+than M7's 8.7–17.4. The mechanism is the same — an AI barred from the long
+secured jobs fills its time with couriers, which are short.
+
+So D19 stays deferred, now for a *different* reason than D43 gave. D43 deferred
+it because opposition did not exist. Opposition exists; what is missing is an AI
+that can engage with it.
+
+### The one thing that must happen before 8h can be re-read
+
+**Teach the AI to obtain a credential** — buy one at a vendor (needs the ledger
+plumbed into the AI seam, since D30 makes purchases bank-only) or lift one from
+a guard it disabled. Until then every battery measures a world where a third of
+the contract space is closed to the only actor being measured.

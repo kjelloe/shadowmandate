@@ -280,9 +280,18 @@ Ordered so each slice is playable and measurable on its own.
   It is also the only contract type where being seen is not automatically
   failure, and the only one that is naturally co-operative for a second player
   who drops in mid-session.
-- **8h** **Re-run the pacing battery and re-read D19** on the preference ratio.
-  Only now is a dominance number a verdict (D43). Expect extraction's ratio to
-  fall without a single reward change; if it does not, THEN the price is wrong.
+- **8h** 🟡 **RUN, VERDICT BLOCKED (2026-08-06)** — 24 world-days re-measured.
+  Extraction fell from 1.43x over-chosen to 0.38x ignored with no reward change,
+  exactly as D42 predicted. **But D19 still cannot be verdicted**: the AI cannot
+  obtain a credential, so it declines every secured extraction and acquisition,
+  and acquisition's 0.08x means "cannot take the job" rather than "does not want
+  it". Pacing also worsened (sortie 4.8 min vs D11's 15–20) for the same reason.
+  The instrument was wrong first — both battery tools hardcoded five contract
+  types while the game had six, hiding Defend, which is 30.5% of completions.
+- **8k** **NEXT: teach the AI to obtain a credential** — vendor purchase (needs
+  the ledger in the AI seam, D30) or lifting one off a disabled guard. Until
+  this lands every battery measures a world where a third of the contract space
+  is closed to the only actor being measured.
 
 ---
 

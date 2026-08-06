@@ -21,7 +21,8 @@ import { CMD_ADVANCE_TICK } from "../engine/commands.js";
 import { createInitialState } from "../engine/state.js";
 import { generateCity } from "../engine/citygen.js";
 import { mirrorState } from "../engine/mirror.js";
-import { refillPool, rebuildOffers } from "../engine/contracts.js";
+
+import { refillPool, rebuildOffers, KIND_NAMES } from "../engine/contracts.js";
 import { loadRuleset } from "../server/ruleset.js";
 import { spawnAiFirms, stepAiFirms } from "../engine/ai_firms.js";
 
@@ -42,12 +43,19 @@ function commitName() {
   } catch { return "nogit"; }
 }
 
+// DERIVED FROM THE ENGINE, never restated. When 8j added a sixth contract type
+// this list was hardcoded to five, so `KIND[5]` was `undefined`, every Defend
+// contract landed in a column that did not exist, and the battery silently
+// measured 5/6 of the game while reporting a D19 verdict. An instrument that
+// cannot see what it prices is worse than no instrument.
+export const KIND = KIND_NAMES;
+
 export const COLUMNS = [
   "seed", "size", "mirror", "firmswap", "ticks",
   "offered", "accepted", "completed", "failed", "expired",
-  "acc_courier", "acc_surveillance", "acc_extraction", "acc_sabotage", "acc_acquisition",
-  "off_courier", "off_surveillance", "off_extraction", "off_sabotage", "off_acquisition",
-  "courier", "surveillance", "extraction", "sabotage", "acquisition",
+  ...KIND.map((k) => `acc_${k}`),
+  ...KIND.map((k) => `off_${k}`),
+  ...KIND,
   "burns", "downs", "captures", "arrests", "rescues",
   "banked", "cacheLost", "raids", "raidsSucceeded",
   "deployments", "cleanExtracts", "emergencyExtracts",
@@ -72,7 +80,6 @@ export function runWorldDay(seed, { size = SIZE, ticks = TICKS, mirror = MIRROR,
   m.mirror = mirror ? 1 : 0; m.firmswap = firmSwap ? 1 : 0; m.ticks = ticks;
   m.offered = s.contractPool.length;
 
-  const KIND = ["courier", "surveillance", "extraction", "sabotage", "acquisition"];
   // Pacing bookkeeping (D11/D19).
   const acceptedAt = new Map();     // contractId -> tick
   const deployedAt = new Map();     // firmId -> tick

@@ -42,7 +42,11 @@ print(f"\ncontracts: completed median {med(num('completed'))}, "
       f"failed {med(num('failed'))}, expired {med(num('expired'))}")
 print(f"burns median {med(num('burns'))}, captures {med(num('captures'))}, "
       f"clean extracts {med(num('cleanExtracts'))}")
-kinds = ["courier", "surveillance", "extraction", "sabotage", "acquisition"]
+# DERIVED FROM THE CSV, never restated. This list was hardcoded to five types
+# while the game had six, so the D19 mix table silently omitted Defend entirely
+# and still printed a verdict. The header is the authority: every `acc_<kind>`
+# column is a type the battery actually measured.
+kinds = [c[4:] for c in data[0].keys() if c.startswith("acc_")]
 
 # D19 asks whether a TYPE dominates. Completion-share alone cannot answer that:
 # a short contract finishes more often per unit time than a long one no matter
