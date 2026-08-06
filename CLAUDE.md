@@ -7,8 +7,9 @@ Drop-in/drop-out covert-ops game. Sibling of Fireline Command
 browser. `npm test` = 240 green**, plus four browser gates (`smoke`, `ui`,
 `mobile`, `gallery`). Batch lane verified (`BATCH_PC.md`). **Remaining in M7**:
 the VM deploy (7e) and native GPU perf (7f) — both need the owner's hardware.
-**M8 — opposition and site security — is specced and is what the contract
-balance is waiting on** (D42/D43). All owner questions are answered (D1–D50).
+**M8 — opposition and site security — IS IN PROGRESS** (8a alarms, 8b cameras,
+8c sensor beams done; 8d–8j remain). It is what the contract balance is waiting
+on (D42/D43). All owner questions are answered (D1–D50).
 
 ## Read first
 
@@ -46,7 +47,7 @@ node tools/repin_fixture.mjs "<reason>"     # deliberate fixture re-pin
 | Path | Contents |
 |---|---|
 | `shared/` | prng, canonical byte writer + FNV-1a 64, fixedmath — **verbatim from firepower**, do not edit |
-| `engine/` | pure reducer and subsystems: state, commands, reducer, snapshot, terrain, citygen, worldprobes, pathfind, agents, detection, combat, hq, contracts, buildings, standoff, ai_firms, security, season, mirror |
+| `engine/` | pure reducer and subsystems: state, commands, reducer, snapshot, terrain, citygen, worldprobes, pathfind, agents, detection, combat, hq, contracts, buildings, standoff, ai_firms, security, cameras, sensors, season, mirror |
 | `server/` | all I/O: `ruleset.js` (loads `data/`), `ledger.js` (world ledger, identity) |
 | `data/` | every tuned number, 13 files + `ruleset.json` manifest with an era version |
 | `client/js/` | the browser client: `main.js`, `scene.js` (diorama), `minimap.js`, `terrain3d.js`, `models.js` (view-model decisions, unit-tested) |
@@ -112,6 +113,29 @@ is undeclared. A missed mirror field silently invalidates every future battery.
   real lighting. The first render found figures reading as dark blobs with a
   detection band too thin to see — invisible to the code, the tests and a green
   suite. **A green suite cannot tell you the game looks wrong.**
+
+## Opposition doctrine (M8/S16 — learned in 8a–8c)
+
+- **A security fixture must never cover the objective it guards.** Cameras were
+  first mounted on the site cell, where a cone covers at distance 0
+  unconditionally — so surveillance, which needs an unseen hold, could not
+  complete anywhere in the world. Fixtures go on the APPROACH: the stealth
+  problem is getting there, and the work itself stays possible. Asserted across
+  a full sweep cycle for every camera and beam in three cities.
+- **Every mechanism must have a usable gap.** A camera with no gap in its cycle
+  is a wall; a beam whose dark window is shorter than the two cell-moves a
+  crossing takes is a random punishment. Both are now asserted, and the beam
+  check reads `agents.baseSpeed` so a movement retune cannot silently break it.
+- **Never send the schedule.** Cameras and beams cross the wire as "where, and
+  what it is doing right now" — never span/dwell/phase/onTicks. With the cycle a
+  client plays the stealth layer perfectly without looking, which deletes the
+  mechanic. Learning the pattern by watching IS the mechanic (D45).
+- **A mechanic the player cannot see is an ambush.** The visual ships in the
+  same slice as the mechanism, through the manifest (D46), and a dark beam is
+  still drawn — you must see the line to plan a crossing through it.
+- **Distinguish what each thing knows.** A camera SEES you (feeds detection); a
+  beam only knows *something* crossed (raises the alarm, leaves detection
+  alone). That asymmetry is what makes "trip it and hurry" a real choice.
 
 ## Test conventions (earned, not stylistic)
 
