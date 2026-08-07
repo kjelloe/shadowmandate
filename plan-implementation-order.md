@@ -216,6 +216,33 @@ census complete; battery within provisional bands.
 
 ---
 
+## NEXT — agreed plan (2026-08-07)
+
+Owner is **playtesting** the post-M8 game (option D) while option **A** is built.
+V1 acceptance stands at **11 PASS / 3 PARTIAL / 0 FAIL**; all owner questions are
+answered.
+
+- **A (IN PROGRESS) — the survivability pass.** Deployment length and
+  `deploysToTier3` are the last two failing pacing numbers, and neither is an
+  economy problem: raising `cacheEvacTarget` 550 → 700 moved deployment
+  9.3 → 9.4 min. Deployments end on **capture**, not on banking out. The root
+  cause is that the AI scorer prices `reward / (distance + work + heat)` with
+  **no term for stationary exposure** — it cannot see that standing still near a
+  secured site is dangerous since M8, so it piles into extraction (62–74% of
+  accepts) and gets burned. Burns are 21.5 per world-day against 13 before M8.
+  One focused change, measured against burns, deployment length and tier-3 pace
+  together.
+- **B — close the two cosmetic PARTIALs.** Dropship choreography (specced in S05
+  since M3, never built) and portrait colours into style tokens. Would take
+  acceptance to 13 PASS / 1 PARTIAL. Low risk, no measurement uncertainty.
+- **C — V2 M8 "Humans Online."** Held until V1's pacing thread closes: human
+  multiplayer on an unstable survivability baseline makes both harder to
+  diagnose.
+- **D (owner, now) — playtest.** M8 landed in full without the owner touching
+  the game. Five playtests previously found five defects a green suite could not
+  see, and an hour of play answers whether the burn rate reads as *tense* or
+  *unfair* — which decides whether A is a bug fix or a difficulty preference.
+
 ## MX — Opposition & Site Security ✅ DONE (8a–8l)
 
 **NAMING COLLISION, flagged for the owner.** This milestone was added mid-V1 as
