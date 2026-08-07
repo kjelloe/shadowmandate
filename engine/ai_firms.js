@@ -356,7 +356,25 @@ export function aiDecide(state, firmId, rules) {
   // credential would actually unlock. That makes it rare and targeted instead
   // of frequent and speculative, which is the same shape as every other piece
   // of AI doctrine here.
-  const wantsPass = !hasCredential(state, agent.id, 1)
+  //
+  // OFF BY DEFAULT, AND MEASURED OFF (2026-08-07). Over 24 world-days the errand
+  // cost burns 13.0 -> 21.5, captures 3 -> 6, failures 2 -> 4 and deployment
+  // length 12.5 -> 8.1 min — which was the ENTIRE survivability regression and
+  // the reason acceptance criterion 10's deployment number failed. Over 8
+  // world-days it returned **zero** credentials and **zero** secured-site
+  // contracts. Pure cost.
+  //
+  // Sneaking the approach was tried and did not help (burns 23.0, no better):
+  // walking up to a patrol is dangerous at any stance, and sneaking just makes
+  // you slow near them for longer.
+  //
+  // The mechanism stays — it is fully reachable for a PLAYER, which is where
+  // mugging a guard for their badge was always the interesting move — but the
+  // AI does not spend its sorties on it. The honest consequence is recorded in
+  // S16: an AI Firm declines secured extraction and acquisition, so a battery
+  // measures a world where a third of the contract space is player-only.
+  const wantsPass = (rules?.security?.access?.aiSeeksCredentials | 0) === 1
+    && !hasCredential(state, agent.id, 1)
     && (view.offered ?? []).some((c) => {
       if (!requiresCredential(c.kind)) return false;
       const site = state.sites.find((x) => x.id === c.siteId);

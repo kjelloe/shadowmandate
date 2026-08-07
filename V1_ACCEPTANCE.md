@@ -18,7 +18,7 @@ than what was measured is worth nothing.
 | 7 | Standoff offers Engage/Withdraw/Negotiate and honours the outcome | **PASS** |
 | 8 | Every present player's board shows 5 offers, disjoint (headless multi-seat test) | **PASS** (test written in this slice) |
 | 9 | Returning after a day: changed world, intact ledger, fog reset, persistent building changes | **PASS** |
-| 10 | A sortie fits 15–20 min; a 2–3 contract deployment fits 40–60 (battery-verified) | **PARTIAL** — sortie passes on D52 overlap; deployment and tier-3 pace do not |
+| 10 | A sortie fits 15–20 min; a 2–3 contract deployment fits 40–60 (battery-verified) | **PARTIAL** — sortie and deployment both pass on D52 overlap; tier-3 pace does not |
 | 11 | Vendor sells ≥3 meaningful upgrades; the bank has a purpose | **PASS** |
 | 12 | Cleared browser + recovery code restores the Firm ledger | **PASS** |
 | 13 | Replays exact; pinned fixture stable; sim gate + battery pass on shipping ruleset | **PASS** |
@@ -175,3 +175,21 @@ Deployments end on CAPTURE (D51 folds the HQ and goes home) far more often than
 on banking out, so deployment length is now a survivability question rather than
 an economy one. That is the next thread to pull, and it is the same thread as
 `deploysToTier3`: a Firm that keeps losing its operative never gets far.
+
+### 10 — after the survivability pass (2026-08-07)
+
+```
+sortie (AI)          5.6 m  ->  human 11.2 - 22.4   OVERLAPS 15-20   PASS
+deployment (AI)     12.9 m  ->  human 25.8 - 51.5   OVERLAPS 40-60   PASS
+deploys to tier 3    6.0                            target 3-4       FAIL
+```
+
+**Both timing halves now pass.** The fix was not tuning: the AI's
+credential errand (8k) walked operatives up to patrols, which cost burns
+13.0 → 21.5, captures 3 → 6 and deployment length 12.5 → 8.1 min, and returned
+**zero credentials and zero secured contracts** across eight world-days. Turned
+off for the AI; the player route is untouched.
+
+`deploysToTier3` remains out of band at 6.0 against 3–4. It is a progression
+question rather than a survivability one — Q42(b) deliberately left tier supply
+alone pending more play data, and this is the number that will answer it.
