@@ -18,7 +18,7 @@ than what was measured is worth nothing.
 | 7 | Standoff offers Engage/Withdraw/Negotiate and honours the outcome | **PASS** |
 | 8 | Every present player's board shows 5 offers, disjoint (headless multi-seat test) | **PASS** (test written in this slice) |
 | 9 | Returning after a day: changed world, intact ledger, fog reset, persistent building changes | **PASS** |
-| 10 | A sortie fits 15–20 min; a 2–3 contract deployment fits 40–60 (battery-verified) | **FAIL** |
+| 10 | A sortie fits 15–20 min; a 2–3 contract deployment fits 40–60 (battery-verified) | **PARTIAL** — sortie passes on D52 overlap; deployment and tier-3 pace do not |
 | 11 | Vendor sells ≥3 meaningful upgrades; the bank has a purpose | **PASS** |
 | 12 | Cleared browser + recovery code restores the Firm ledger | **PASS** |
 | 13 | Replays exact; pinned fixture stable; sim gate + battery pass on shipping ruleset | **PASS** |
@@ -146,3 +146,24 @@ asset pipeline and no painted art.
 - Added the criterion-8 multi-seat disjointness test, which the plan had asked
   for explicitly and which did not exist. It passes, and was mutation-verified.
 - Nothing else. The remaining gaps are content and art, not defects.
+
+### 10 — pacing, re-scored under D52 (2026-08-07)
+
+D52 rules the criterion is judged on **overlap** rather than containment, since
+containment was arithmetically impossible. Under that rule the admissible AI
+windows are **3.75–10 min** per sortie and **10–30 min** per deployment.
+
+Measured on the D53 ruleset (24 world-days, `reports/sweeps/pacing_final.csv`):
+
+```
+sortie (AI)          5.8 m  ->  human 11.5 - 23.0   OVERLAPS 15-20   PASS
+deployment (AI)      9.4 m  ->  human 18.9 - 37.8   misses 40-60     FAIL
+deploys to tier 3    6.5                            target 3-4       FAIL
+```
+
+**Sortie now passes.** Deployment misses by a hair, and the binding constraint is
+NOT the evac target — raising it from 550 to 700 moved deployment 9.3 → 9.4 min.
+Deployments end on CAPTURE (D51 folds the HQ and goes home) far more often than
+on banking out, so deployment length is now a survivability question rather than
+an economy one. That is the next thread to pull, and it is the same thread as
+`deploysToTier3`: a Firm that keeps losing its operative never gets far.
