@@ -12,7 +12,7 @@ import {
   ownAgent, heatDisplay, districtUnder, boardRows, activeRows, objectiveFor,
   objectiveBearing, evacDisplay, toastsFor, debriefRows, reputationBar,
   payloadForBuilding, overlayRows, disguiseFor, districtChoices, standingRows,
-  cuttableJunction, liftableGuard,
+  cuttableJunction, liftableGuard, dropshipFlight, DROPSHIP_MS,
   HEAT_CLASS as HEAT_CLASSES,
 } from "./models.js";
 
@@ -90,7 +90,13 @@ session.onChange((s, events) => {
     }
   }
   const deployed = s.view.agents.some((a) => a.state !== 0);
-  if (deployed && $("#world").hidden) { show("world"); renderer?.resize(); }
+  if (deployed && $("#world").hidden) {
+    show("world");
+    renderer?.resize();
+    // First sight of the world this session: fly the ship in.
+    if (!flightSeen) { flightSeen = true; startDropship(1); }
+  }
+  if (!deployed) flightSeen = false;
   paint(s, events ?? []);
   // Test-only observation surface. The browser gates (tools/client_smoke.mjs,
   // tools/ui_acceptance.mjs) need to assert on what the client actually
@@ -107,8 +113,23 @@ session.onChange((s, events) => {
     boardCount: (s.view.board?.contracts ?? []).length,
     activeCount: (s.view.active ?? []).length,
     lastEvents: (events ?? []).map((e) => e.type),
+    // S05 choreography, exposed for the same reason as everything else here:
+    // "the maths is right" and "a ship crossed the screen" are different
+    // claims, and only the browser can answer the second.
+    dropship: flightStartedAt === null ? null
+      : (dropshipFlight(Date.now() - flightStartedAt, flightDir) ?? null),
   };
 });
+
+// S05: the dropship sequence, owned by the client and driven by a wall clock.
+// `startedAt` is null when nothing is playing. Presentation only — the HQ is
+// already placed server-side before this begins, which is exactly why the
+// choreography can be skipped or interrupted without desyncing anything.
+let flightStartedAt = null, flightDir = 1, flightSeen = false;
+function startDropship(dir) {
+  flightStartedAt = Date.now();
+  flightDir = dir;
+}
 
 function paint(s, events) {
   const view = s.view;
@@ -129,6 +150,12 @@ function paint(s, events) {
     // seconds, which is why it went unnoticed.
     if (!$("#world").hidden) {
       renderer.draw(view);
+      // The dropship rides on top of the drawn frame. A null flight hides it,
+      // so an interrupted or finished sequence needs no extra bookkeeping.
+      const flight = flightStartedAt === null
+        ? null : dropshipFlight(Date.now() - flightStartedAt, flightDir);
+      if (flightStartedAt !== null && !flight) flightStartedAt = null;
+      renderer.drawDropship(flight, view.hq ? { x: view.hq.cellX, y: view.hq.cellY } : null);
       minimap.draw(view);
     }
   } catch (err) {

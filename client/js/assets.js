@@ -9,6 +9,7 @@
 // Now both read these tokens.
 
 import { setStyleTokens } from "./asset_factory.js";
+import { setPortraitTokens } from "./portraits.js";
 
 let tokens = null;
 let manifest = null;
@@ -21,6 +22,9 @@ export async function loadArt() {
   ]);
   tokens = t; manifest = m;
   setStyleTokens(tokens);
+  // Portraits read the same file (D46). One entry point, so a surface can never
+  // be drawing from tokens the others have not seen.
+  setPortraitTokens(tokens.portrait);
   return { tokens, manifest };
 }
 

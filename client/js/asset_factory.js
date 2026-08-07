@@ -196,8 +196,33 @@ function buildJunction() {
   return g;
 }
 
+// The dropship (S05). Presentation only — it never exists in engine state — but
+// it is the first thing a player sees every session, so it gets a silhouette
+// rather than a box: a swept wing, a nose, and a lit underside so it reads
+// against the night ground while it is still high up.
+function buildDropship() {
+  const g = new THREE.Group();
+  const C = body();
+  // SIZED AND LIT TO READ FROM ABOVE. The first version was a 1.7-cell dark
+  // grey wing with its identity strip on the UNDERSIDE — which the diorama's
+  // top-down camera never sees — and against the night ground it was a smudge
+  // the size of a marker. This is the first thing a player sees each session;
+  // if it does not read, the whole five seconds are wasted.
+  g.add(place(box(0.80, 0.38, 2.30, C.kioskRoof), 0, 0, 0));           // fuselage
+  g.add(place(box(2.80, 0.12, 0.70, C.post), 0, 0.10, -0.15));         // wing
+  g.add(place(box(0.90, 0.10, 0.50, C.post), 0, 0.10, -1.05));         // tailplane
+  g.add(place(box(0.50, 0.28, 0.50, C.visor), 0, 0.22, 1.10));         // canopy
+  g.add(place(box(0.26, 0.40, 0.46, C.bars), -1.15, 0.14, -0.15));     // engine pods
+  g.add(place(box(0.26, 0.40, 0.46, C.bars), 1.15, 0.14, -0.15));
+  // Identity on the SPINE, where the camera actually looks, and bright enough
+  // to separate the silhouette from the ground it flies over.
+  g.add(place(tintable(box(0.42, 0.10, 1.80, "#ffffff", "signal")), 0, 0.26, -0.10));
+  return g;
+}
+
 const BUILDERS = {
   camera: buildCamera,
+  dropship: buildDropship,
   junction: buildJunction,
   agent: buildAgent,
   rival: buildRival,

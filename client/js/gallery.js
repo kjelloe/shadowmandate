@@ -13,7 +13,9 @@
 import * as THREE from "three";
 import { buildProcedural, applyTint, countTriangles, setStyleTokens } from "./asset_factory.js";
 import { manifestEntry, resolveVisual, tintFor, detectionMark } from "./asset_resolver.js";
-import { portraitLayers, layerDiff, disguiseCount, drawPortrait } from "./portraits.js";
+import {
+  portraitLayers, layerDiff, disguiseCount, drawPortrait, setPortraitTokens,
+} from "./portraits.js";
 
 const fail = (where, err) => {
   document.getElementById("err").textContent += `${where}: ${err?.message ?? err}\n`;
@@ -25,7 +27,7 @@ const fail = (where, err) => {
 const ROLES = [
   "agent", "rival", "patrol", "patrolAlert",
   "siteScenery", "siteOffered", "siteActive", "camera", "cameraDisabled", "junction", "junctionCut",
-  "informant", "market", "coverShop", "holding", "ownHq", "rivalHq",
+  "informant", "market", "coverShop", "holding", "ownHq", "rivalHq", "dropship",
 ];
 
 async function main() {
@@ -34,6 +36,10 @@ async function main() {
     fetch("assets/metadata/asset_manifest.json").then((r) => r.json()),
   ]);
   setStyleTokens(tokens);
+  // The gallery loads tokens itself rather than through loadArt(), so it must
+  // hand them to every consumer. Missing this drew nothing and said so, loudly,
+  // which is exactly what this page is for.
+  setPortraitTokens(tokens.portrait);
 
   // ── The 3D stage ─────────────────────────────────────────────────────────
   const canvas = document.getElementById("stage");

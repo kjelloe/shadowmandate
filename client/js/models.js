@@ -352,3 +352,59 @@ export function cuttableJunction(view) {
   }
   return null;
 }
+
+// ── Dropship choreography (S05) ────────────────────────────────────────────
+//
+// Presentation only: the dropship never exists in engine state, and the server
+// has already placed the HQ by the time this plays. It is pure theatre — but it
+// is the first thing a player sees every session, and the design doc pins it at
+// ~5 seconds with a scripted path, a door, and the HQ crate deploying.
+//
+// The MATHS lives here rather than in the renderer for the usual reason: the
+// decision (where is it, what phase, has the HQ appeared yet) is testable
+// without a WebGL context, and the renderer is not.
+export const DROPSHIP_MS = 5000;
+
+// Where the ship is, and what the scene should show, `elapsed` ms into the
+// sequence. Returns null when there is nothing to draw, so the caller has one
+// thing to check rather than a phase enum plus a validity flag.
+//
+// `dir` is +1 inbound (arrive, drop, leave) and -1 outbound (arrive, collect,
+// leave) — the same path, with the HQ appearing at the midpoint on the way in
+// and disappearing on the way out.
+export function dropshipFlight(elapsed, dir = 1, cfg = {}) {
+  const total = cfg.durationMs ?? DROPSHIP_MS;
+  if (!(elapsed >= 0) || elapsed >= total) return null;
+  const t = elapsed / total;                      // 0..1
+  const approach = cfg.approachCells ?? 26;       // how far out it starts
+  const cruise = cfg.cruiseHeight ?? 14;          // and how high
+
+  // Three beats: run in (0-0.4), hold and drop (0.4-0.6), climb out (0.6-1).
+  // Held at the HQ for a fifth of the sequence so the crate has a moment that
+  // reads as an event rather than a frame.
+  const phase = t < 0.4 ? "inbound" : t < 0.6 ? "hover" : "outbound";
+  let along;                                      // -1 = far out, 0 = overhead
+  let height;
+  if (phase === "inbound") {
+    const k = t / 0.4;
+    along = -(1 - k);
+    height = cruise * (1 - 0.75 * k);
+  } else if (phase === "hover") {
+    along = 0;
+    height = cruise * 0.25;
+  } else {
+    const k = (t - 0.6) / 0.4;
+    along = k;
+    height = cruise * (0.25 + 0.75 * k);
+  }
+
+  return {
+    phase,
+    // Offset from the HQ, in cells, along the approach axis.
+    offsetCells: along * approach * (dir >= 0 ? 1 : -1),
+    height,
+    // The HQ is revealed at the hover on the way in, and hidden at it on the
+    // way out. This is the one thing the choreography actually gates.
+    hqVisible: dir >= 0 ? t >= 0.5 : t < 0.5,
+  };
+}

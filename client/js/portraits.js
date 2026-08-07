@@ -72,13 +72,18 @@ export function layerDiff(a, b) {
 // Everything below needs a 2D context. Deliberately dumb shapes: this is a
 // chat portrait at ~96px, not a character sheet.
 
-const PALETTE = {
-  backdrop: "#22262B", skin: "#C9A98B", skinShade: "#A8886B",
-  hair: "#2A2622", collar: "#2E3238", suit: "#1C1F24",
-  frameLean: "#141619", hotPink: "#E45FA0", lens: "#8FA7C4",
-  hiVis: "#D9E04A", loud: "#4AB3A0", shirtTie: "#E8E6E0",
-  prop: "#8A867E", mouth: "#7A4A3A",
-};
+// The palette lives in style_tokens.json like every other colour in the game
+// (D46). It was the LAST literal palette in the client, and while it stayed
+// here a look candidate (Q41c/D48) reached the world but not the faces — which
+// is what kept acceptance criterion 14 at PARTIAL.
+//
+// Set once at load, like the factory's tokens. Falls back to nothing rather
+// than to invented colours: a portrait drawn before the tokens arrive should be
+// obviously wrong, not plausibly wrong.
+let PALETTE = null;
+export function setPortraitTokens(portrait) {
+  PALETTE = portrait ?? null;
+}
 
 function ellipse(ctx, x, y, rx, ry, fill) {
   ctx.beginPath();
@@ -123,8 +128,8 @@ const DRAW = {
       }
       rect(ctx, S * 0.47, S * 0.49, S * 0.06, S * 0.02, frame);
     } else {
-      ellipse(ctx, S * 0.40, S * 0.50, S * 0.028, S * 0.030, "#1B1E22");
-      ellipse(ctx, S * 0.60, S * 0.50, S * 0.028, S * 0.030, "#1B1E22");
+      ellipse(ctx, S * 0.40, S * 0.50, S * 0.028, S * 0.030, PALETTE.pupil);
+      ellipse(ctx, S * 0.60, S * 0.50, S * 0.028, S * 0.030, PALETTE.pupil);
       if (v === "glassesLean") {
         ctx.lineWidth = S * 0.016; ctx.strokeStyle = frame;
         for (const cx of [0.40, 0.60]) {
@@ -153,7 +158,7 @@ const DRAW = {
     v === "shirtTie" ? PALETTE.shirtTie : PALETTE.loud),
   vest: (ctx, S) => {
     rect(ctx, S * 0.18, S * 0.80, S * 0.64, S * 0.20, PALETTE.hiVis);
-    rect(ctx, S * 0.44, S * 0.80, S * 0.12, S * 0.20, "#2E3238");
+    rect(ctx, S * 0.44, S * 0.80, S * 0.12, S * 0.20, PALETTE.collar);
   },
   prop: (ctx, S, v) => {
     if (v === "clipboard") rect(ctx, S * 0.70, S * 0.72, S * 0.18, S * 0.24, PALETTE.prop);
@@ -162,6 +167,7 @@ const DRAW = {
 };
 
 export function drawPortrait(ctx, disguiseId, size) {
+  if (!PALETTE) throw new Error("portraits: setPortraitTokens() was never called");
   const { layers } = portraitLayers(disguiseId);
   const opts = Object.fromEntries(
     Object.entries({ ...(DISGUISE_DIFF[0].set), ...(DISGUISE_DIFF[disguiseId]?.set ?? {}) }));

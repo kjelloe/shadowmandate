@@ -9,7 +9,7 @@ than what was measured is worth nothing.
 
 | # | Criterion | Verdict |
 |---|---|---|
-| 1 | Join without lobby; dropship plays; HQ at chosen zone | **PARTIAL** |
+| 1 | Join without lobby; dropship plays; HQ at chosen zone | **PASS** (2026-08-07) |
 | 2 | Tier 1 contracts complete; tier 2 unlocks and persists in the ledger | **PASS** |
 | 3 | Detection and heat observably change a sortie; heat fuzzy, informant exact | **PASS** |
 | 4 | Downed → capture; bail and re-drop work; an Extraction recovers a captured agent | **PASS** (D51, 2026-08-07) |
@@ -22,7 +22,7 @@ than what was measured is worth nothing.
 | 11 | Vendor sells ≥3 meaningful upgrades; the bank has a purpose | **PASS** |
 | 12 | Cleared browser + recovery code restores the Firm ledger | **PASS** |
 | 13 | Replays exact; pinned fixture stable; sim gate + battery pass on shipping ruleset | **PASS** |
-| 14 | Desktop + mobile browser; en/no; painted low-poly; zero "Syndicate" strings | **PARTIAL** |
+| 14 | Desktop + mobile browser; en/no; painted low-poly; zero "Syndicate" strings | **PASS** (2026-08-07) |
 
 **10 pass, 3 partial, 1 fail.**
 
@@ -193,3 +193,29 @@ off for the AI; the player route is untouched.
 `deploysToTier3` remains out of band at 6.0 against 3–4. It is a progression
 question rather than a survivability one — Q42(b) deliberately left tier supply
 alone pending more play data, and this is the number that will answer it.
+
+### 1 and 14 — closed by slice B (2026-08-07)
+
+**Criterion 1 — the dropship plays.** Specced in S05 since M3 and never built.
+It is presentation only, driven by a wall clock the client owns rather than by
+the tick — tying it to the simulation would make it speed up or stall with the
+world's pacing, and the browser gates deliberately run at `TICK_MS=250`. The
+flight maths is a pure function in `models.js` (`dropshipFlight`), so the
+DECISION is unit-tested even though the renderer is not: it is finite, survives
+nonsense input from a slept tab, runs its three beats in order, and reveals the
+HQ at the hover rather than at either end.
+
+Verified in a real browser, and it needed the check: the first model was a
+1.7-cell dark grey wing with its identity strip on the UNDERSIDE, which the
+diorama's top-down camera never sees. It rendered, and read as a smudge. Rebuilt
+larger with the Firm colour on the spine — the same lesson as the 7a dark-blob
+figures, one slice later.
+
+**Criterion 14 — painted low-poly.** The last literal palette in the client was
+`portraits.js`. While it sat outside `style_tokens.json`, a look candidate
+(Q41c/D48) reached the world but not the faces. It is a token now, the colour
+guard covers `portraits.js`, and a look is genuinely one file.
+
+The gallery caught the wiring gap immediately — it loads tokens itself rather
+than through `loadArt()`, so it drew nothing and said so on the page. Which is
+what it is for.

@@ -91,6 +91,11 @@
       "procedural": "fieldHq",
       "class": "structure",
       "tint": "rivalHq"
+    },
+    "dropship": {
+      "procedural": "dropship",
+      "class": "structure",
+      "tint": "dropship"
     }
   }
 }

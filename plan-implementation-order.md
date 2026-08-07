@@ -222,7 +222,7 @@ Owner is **playtesting** the post-M8 game (option D) while option **A** is built
 V1 acceptance stands at **11 PASS / 3 PARTIAL / 0 FAIL**; all owner questions are
 answered.
 
-- **A (IN PROGRESS) — the survivability pass.** Deployment length and
+- **A ✅ DONE (2026-08-07) — the survivability pass.** Deployment length and
   `deploysToTier3` are the last two failing pacing numbers, and neither is an
   economy problem: raising `cacheEvacTarget` 550 → 700 moved deployment
   9.3 → 9.4 min. Deployments end on **capture**, not on banking out. The root
@@ -230,11 +230,15 @@ answered.
   **no term for stationary exposure** — it cannot see that standing still near a
   secured site is dangerous since M8, so it piles into extraction (62–74% of
   accepts) and gets burned. Burns are 21.5 per world-day against 13 before M8.
-  One focused change, measured against burns, deployment length and tier-3 pace
-  together.
-- **B — close the two cosmetic PARTIALs.** Dropship choreography (specced in S05
-  since M3, never built) and portrait colours into style tokens. Would take
-  acceptance to 13 PASS / 1 PARTIAL. Low risk, no measurement uncertainty.
+  **The hypothesis was wrong** — burns are 66% travel, 14% work — and measuring
+  first is the only reason the slice was not spent building the wrong thing. The
+  real cause was 8k's credential errand walking operatives up to patrols: pure
+  cost, returning zero credentials over eight world-days. Turned off for the AI.
+  **Criterion 10's sortie AND deployment now both pass.** Only `deploysToTier3`
+  remains, and that is the progression question Q42(b) parked.
+- **B (IN PROGRESS) — close the two cosmetic PARTIALs.**
+  Dropship choreography (specced in S05 since M3, never built) and portrait
+  colours into style tokens. Would take acceptance to 13 PASS / 1 PARTIAL.
 - **C — V2 M8 "Humans Online."** Held until V1's pacing thread closes: human
   multiplayer on an unstable survivability baseline makes both harder to
   diagnose.

@@ -178,6 +178,31 @@ export function createScene(canvas) {
     scene.add(beacon); scene.add(halo);
   }
 
+  // S05 dropship choreography. Presentation only: it is driven by a wall clock
+  // the caller owns, never by the tick, because it is not simulation and must
+  // not depend on the world's pacing.
+  let dropship = null;
+  function drawDropship(flight, hqCell) {
+    if (!flight || !hqCell) {
+      if (dropship) dropship.visible = false;
+      return;
+    }
+    if (!dropship) {
+      const resolved = resolveVisual(manifest, "dropship");
+      if (resolved.kind !== "procedural") return;
+      dropship = buildProcedural(resolved.key);
+      if (!dropship) return;
+      const tint = tintFor(tokens, resolved.entry);
+      if (tint) applyTint(dropship, tint);
+      scene.add(dropship);
+    }
+    dropship.visible = true;
+    // Comes in along +x so the wing reads broadside to a camera that never
+    // rotates; the model's nose is +z, hence the quarter turn.
+    dropship.position.set(hqCell.x + 0.5 + flight.offsetCells, flight.height, hqCell.y + 0.5);
+    dropship.rotation.y = flight.offsetCells <= 0 ? Math.PI / 2 : -Math.PI / 2;
+  }
+
   function setTerrain(tiles, size, seed) {
     if (terrain) { scene.remove(terrain); terrain = null; }
     mapSize = size;
@@ -319,7 +344,7 @@ export function createScene(canvas) {
   }
 
   return {
-    draw, resize, setTerrain, screenToCell,
+    draw, resize, setTerrain, screenToCell, drawDropship,
     cameraDistance: () => CAMERA_DISTANCE,
     hasTerrain: () => terrain !== null,
     zoomBy(f) { zoomCells = Math.max(14, Math.min(70, zoomCells * f)); resize(); },

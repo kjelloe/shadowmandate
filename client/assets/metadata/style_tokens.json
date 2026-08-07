@@ -46,7 +46,8 @@
     "dropZone": "#3E8E8C",
     "dropZoneAuto": "#D9A441",
     "junction": "#D9A441",
-    "junctionCut": "#3E4650"
+    "junctionCut": "#3E4650",
+    "dropship": "#53D6C6"
   },
   "note_body": "Body colours are the PAINTED part — the part a tint never touches. Keeping them separate from marks is what lets detection state stay readable: the coat stays the coat while the state band changes colour.",
   "body": {
@@ -141,5 +142,23 @@
         40
       ]
     }
+  },
+  "note_portrait": "D47 portrait palette. Lived as a literal PALETTE object inside portraits.js until 2026-08-07 — the last colours outside this file, and the reason V1 acceptance criterion 14 stayed PARTIAL: a look candidate (Q41c/D48) reached the world but not the faces. Now a look is genuinely one file.",
+  "portrait": {
+    "backdrop": "#22262B",
+    "skin": "#C9A98B",
+    "skinShade": "#A8886B",
+    "hair": "#2A2622",
+    "collar": "#2E3238",
+    "suit": "#1C1F24",
+    "frameLean": "#141619",
+    "hotPink": "#E45FA0",
+    "lens": "#8FA7C4",
+    "hiVis": "#D9E04A",
+    "loud": "#4AB3A0",
+    "shirtTie": "#E8E6E0",
+    "prop": "#8A867E",
+    "mouth": "#7A4A3A",
+    "pupil": "#1B1E22"
   }
 }

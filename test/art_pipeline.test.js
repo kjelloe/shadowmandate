@@ -121,10 +121,10 @@ function code(file) {
 }
 
 test("no world renderer carries colours of its own — tokens are the source of truth", () => {
-  // Scope: the three surfaces that draw the WORLD. portraits.js is deliberately
-  // out of scope — its palette is part of the layer definitions rather than the
-  // world's look, and is noted in S15 as a follow-up if a look candidate should
-  // reach the faces too.
+  // Scope: every surface that draws. portraits.js JOINED this list on
+  // 2026-08-07 — it was the last literal palette in the client, and while it
+  // sat outside the token file a look candidate (Q41c/D48) reached the world
+  // but not the faces, which is what kept acceptance criterion 14 at PARTIAL.
   //
   // BOTH literal forms, and this matters: the first version of this guard
   // matched only `0x......`, while the historical bug — the palette duplicated
@@ -135,7 +135,7 @@ test("no world renderer carries colours of its own — tokens are the source of 
   // copy of the tile palette, in main.js's drop-zone map preview — so the
   // guard was green while the defect it exists to prevent was still present in
   // a file it did not read. A guard only protects what it reads.
-  for (const file of ["scene.js", "minimap.js", "terrain3d.js", "main.js"]) {
+  for (const file of ["scene.js", "minimap.js", "terrain3d.js", "main.js", "portraits.js"]) {
     const hexes = code(file).match(/\b0x[0-9A-Fa-f]{6}\b|#[0-9A-Fa-f]{6}\b/g) ?? [];
     assert.deepEqual(hexes, [],
       `${file} still hardcodes colours (${hexes.join(", ")}) — they belong in style_tokens.json`);
