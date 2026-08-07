@@ -133,6 +133,13 @@ These seven rulings resolve the open forks in the starter document and in `batch
 |---:|---|
 | **D51** | **An operative left in custody is ABANDONED, and recovering them is a job.** This is D17's unimplemented other half, and it resolves a real dead end: a Firm whose agent was captured could neither work nor leave, because the agent cannot act and the evac beacon cancels when the lead is held — 3 of 8 battery seeds ended with a Firm sitting in a permanent dead loop. So: **the Firm may fold and extract, leaving the operative in the Holding Site.** They are not lost — on a later deployment a **recovery contract** is offered to go and get them back. Two consequences that matter. (a) Capture stops being a death sentence for a Firm and becomes a *debt*: you leave, you redeploy, and the person you left is now a job with your name on it. (b) `leadAgent` must never select a held operative, or the Firm redeploys onto its own prisoner and churns — that was measured at 18 extractions in a single world-day before the rule was written down. Bail (D40) remains the fast, expensive way out; recovery is the slow, cheap one. |
 
+### Tenth decision batch (2026-08-07, Q43 + Q42a)
+
+| # | Ruling |
+|---:|---|
+| **D52** | **Pacing is judged on OVERLAP now, and on measured humans later** (Q43, a then c). Criterion 10 applied a 2–4x human deliberation factor and demanded the result sit *inside* the target band — arithmetically impossible, because the factor spans a ratio of 2.0 while the bands span 1.33x and 1.5x. No AI number could ever land inside either, and three measurement rounds were spent chasing it. **(a) now:** the criterion passes when the projected human range OVERLAPS the band, which puts the admissible AI window at 3.75–10 min per sortie and 10–30 min per deployment. **(c) later:** instrument real playtests and drop the factor entirely — a measured human number needs no multiplier, and the 2–4x guess is the only reason this was ever ambiguous. |
+| **D53** | **Pay-per-effort is levelled across contract types, by RAISING only** (Q42a). Work-priced types ranged from 0.053 to 0.116 reward per work-tick: surveillance asked for 3600 stationary ticks and paid a third of acquisition's rate per minute, while being the most-offered type — taken because it was there, not because it was worth it. All work-priced types are brought to a common rate; nothing is cut, so D42's protection of extraction and acquisition is untouched. **`cacheEvacTarget` moves in the same edit**: rewards and progression are one system (S06), and levelling without it made one contract exceed the evac target so a Firm banked once and left — deployments collapsed to 0.7 min and surveillance took 60% of accepts. |
+
 ---
 
 ## Terminology Contract (D8)

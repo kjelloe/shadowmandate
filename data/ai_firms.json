@@ -36,8 +36,9 @@
       "motorbike"
     ]
   },
-  "cacheEvacTarget": 260,
+  "cacheEvacTarget": 700,
   "decisionCadence": 10,
-  "recoveryPriority": 4,
-  "note_recovery": "D51. A recovery contract is scored x4 so an operative left in custody outranks ordinary work. Expressed as a priority rather than as money: inflating the reward would distort the economy to say something that is really a value judgement \u2014 you do not go back for your own people because it pays well."
+  "recoveryPriority": 2,
+  "note_recovery": "D51, RETUNED 2026-08-07. A recovery is scored x2 so an operative in custody outranks ordinary work without dominating it. It shipped at x4 and that was a FEEDBACK LOOP: the AI chased recoveries into guarded Holding Sites, got captured there, and each capture generated another high-priority dangerous job. Measured at x4 vs x1 over 24 world-days: burns 28.5 vs 13.5, captures 19.5 vs 4.5, failures 18.0 vs 2.0, completions 8.5 vs 11.5. At x2 recoveries still happen (2 completed of 6 offered across 8 world-days) and the world stays healthy. A priority multiplier on a job that CREATES more of itself needs measuring, not choosing.",
+  "note_evac_target": "D53. Scales WITH contract rewards, never independently: a deployment should cover 2-3 contracts (D11), so this is roughly 2.5x the average completed reward. Left at 260 after the pay levelling, a single surveillance contract exceeded it and the Firm banked once and went home -- 0.7 minute deployments. Whenever a reward moves, re-measure deployment length and deploysToTier3 together."
 }

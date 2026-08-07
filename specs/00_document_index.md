@@ -126,6 +126,13 @@ M7 in progress and playable in a browser (updated 2026-08-06)
 |---:|---|---|
 | D51 | Custody | **An abandoned operative is a debt, not a loss.** A Firm may fold and extract leaving a captured agent in the Holding Site; a **recovery contract** is offered on a later deployment to get them back. `leadAgent` must never select a held operative |
 
+## Eleventh decision batch (2026-08-07, Q43 + Q42a)
+
+| # | Decision | Ruling |
+|---:|---|---|
+| D52 | Pacing scoring | **Overlap now, measured humans later.** The 2–4x factor spans a wider ratio than the target bands, so "inside the band" was unsatisfiable at any tuning |
+| D53 | Contract pricing | **Level pay-per-effort by raising only**, and move `cacheEvacTarget` in the same edit — rewards and progression are one system |
+
 **All owner questions are answered.** The live queue in `../dev-questions.md`
 holds only tracked gaps.
 
