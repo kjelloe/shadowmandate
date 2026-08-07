@@ -12,7 +12,7 @@ than what was measured is worth nothing.
 | 1 | Join without lobby; dropship plays; HQ at chosen zone | **PARTIAL** |
 | 2 | Tier 1 contracts complete; tier 2 unlocks and persists in the ledger | **PASS** |
 | 3 | Detection and heat observably change a sortie; heat fuzzy, informant exact | **PASS** |
-| 4 | Downed → capture; bail and re-drop work; an Extraction recovers a captured agent | **PARTIAL** |
+| 4 | Downed → capture; bail and re-drop work; an Extraction recovers a captured agent | **PASS** (D51, 2026-08-07) |
 | 5 | Evac: 30s hold, interruption rules, cache banks only on clean extraction | **PASS** |
 | 6 | AI rivals visibly operate; HQ raid triggers the alarm with a winnable race home | **PASS** |
 | 7 | Standoff offers Engage/Withdraw/Negotiate and honours the outcome | **PASS** |
@@ -39,12 +39,14 @@ not exist in the client** — S05 pins 5-second inbound/outbound timelines and
 `grep -rn dropship client/` returns nothing. Presentation only; no simulation
 depends on it.
 
-### 4 — Extraction recovers a captured agent (PARTIAL)
+### 4 — Extraction recovers a captured agent (PASS, 2026-08-07)
 
-`payBail` and re-drop both work and are tested. The **other half of D17 — the
-auto-generated Extraction contract for an agent left in custody — is not
-implemented**, and has been a tracked gap since M5. So a captured colleague can
-be bought back but cannot yet be *rescued as a job*.
+`payBail` and re-drop work and are tested. **D17's other half shipped as D51**:
+an operative left in custody is abandoned rather than lost, and a recovery
+contract on a later deployment goes and gets them — reusing the extraction
+machine, reserved permanently to the Firm that owes the debt, and verified
+completing in live worlds. A captured colleague can now be bought back OR
+rescued as a job, which is what the criterion asked for.
 
 ### 10 — pacing (FAIL)
 
@@ -118,11 +120,17 @@ Two things worth saying plainly:
 
 Desktop and mobile both pass (`npm run mobile`, two viewports, measured).
 `en`/`no` key parity is enforced by test. Zero "Syndicate" strings is
-guard-enforced across every shipped directory. **"Painted low-poly consistent
-with Fireline" does not hold** — everything is still an untextured primitive.
-The 7a pass took silhouettes as far as primitives allow (distinct shapes per
-role, per-instance building tint and footprint variation), but there is no
-asset pipeline and no painted art.
+guard-enforced across every shipped directory.
+
+**Updated 2026-08-07.** The asset pipeline now exists (D46 — style tokens, a
+role→builder manifest, procedural models built at runtime), portraits are
+feature-layer stacks (D47), and the owner has **pinned the current gallery look
+as the V1 look (D48)**. "Painted low-poly" is therefore met in the sense this
+project ships it: art as code, reviewed through `npm run gallery`.
+
+Still PARTIAL for one honest reason: **portrait colours are not style tokens**,
+so a future look revision reaches the world but not the faces. Everything else
+in this criterion passes.
 
 ---
 
