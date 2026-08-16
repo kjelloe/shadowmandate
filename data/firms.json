@@ -1,0 +1,29 @@
+{
+  "note": "Curated Firm names and palettes (design of record). Doctrines are V3 (D14-era); listed here so the data shape is stable.",
+  "firms": [
+    { "id": 0, "name": "The Directorate", "class": "corporate", "shared_lore": true },
+    { "id": 1, "name": "Iron Veil", "class": "corporate" },
+    { "id": 2, "name": "The Consensus Bureau", "class": "corporate" },
+    { "id": 3, "name": "Apex Standard", "class": "corporate" },
+    { "id": 4, "name": "The Mandate Group", "class": "corporate" },
+    { "id": 5, "name": "The Outliers", "class": "insurgent", "shared_lore": true },
+    { "id": 6, "name": "Freehold Collective", "class": "insurgent" },
+    { "id": 7, "name": "The Current", "class": "insurgent" },
+    { "id": 8, "name": "Wayfarers Inc.", "class": "insurgent" },
+    { "id": 9, "name": "The Breakers", "class": "insurgent" },
+    { "id": 10, "name": "Greyline Solutions", "class": "mercenary" },
+    { "id": 11, "name": "The Compact", "class": "mercenary" },
+    { "id": 12, "name": "Dusk Operators", "class": "mercenary" },
+    { "id": 13, "name": "Frontier Associates", "class": "mercenary" },
+    { "id": 14, "name": "The Arrangement", "class": "mercenary" }
+  ],
+  "palettes": {
+    "corporate": { "primary": "#5A6472", "secondary": "#2E5C8A", "accent": "#F2F2F0" },
+    "insurgent": { "primary": "#B5613C", "secondary": "#D6C09A", "accent": "#3E8E8C" },
+    "mercenary": { "primary": "#3A3A3C", "secondary": "#8A867E", "accent": "#D9A441" }
+  },
+  "doctrines": {
+    "note": "V3 (M14). Listed for data-shape stability; no effect in V1.",
+    "ghost": {}, "iron": {}, "blade": {}, "coin": {}, "veil": {}
+  }
+}

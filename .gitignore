@@ -5,3 +5,11 @@ node_modules/
 .claude
 dev-log.md
 dev-questions.md
+
+# Batch lane results (mail is the only channel — S14/D25)
+reports/
+.agent-mail/
+
+# Private ops: deploy runbooks + batch-lane infra, lives in the shared
+# private ops repo for this game and its siblings — never on public GitHub
+ops/

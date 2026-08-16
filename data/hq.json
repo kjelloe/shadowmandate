@@ -1,0 +1,18 @@
+{
+  "note": "S05. Timers in ticks (10/second). Evac hold is 30s = 300 ticks (design doc).",
+  "perimeterRadius": 4,
+  "evacHoldTicks": 300,
+  "emergencyEvacTicks": 100,
+  "emergencyReachTicks": 600,
+  "beaconSignalRadius": 20,
+  "lootTicks": 120,
+  "alarmGraceTicks": 60,
+  "dropZoneMinClearRadius": 8,
+  "cacheStartResources": 0,
+  "reputation": {
+    "cleanExtract": 4,
+    "emergencyEvac": -3,
+    "hqLost": -6
+  },
+  "dropZoneEdgeMargin": 6
+}

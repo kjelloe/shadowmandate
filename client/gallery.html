@@ -1,0 +1,51 @@
+<h1>Shadow Mandate — asset gallery</h1>
+<p class="sub">
+  Every procedural visual and every portrait, rendered through the real
+  renderer and the real draw routines. This page exists so art can be reviewed
+  without playing, and screenshot-diffed headlessly (S15).
+</p>
+
+<h2>Figures, markers and structures</h2>
+<p class="sub">Lit and posed exactly as the diorama lights them — the key light is a style token, so a look candidate changes this page too.</p>
+<canvas id="stage" width="1200" height="420"></canvas>
+<ul id="stage-labels" class="labels"></ul>
+
+<h2>Portraits (D47) — a disguise is a diff, not a different picture</h2>
+<p class="sub">
+  The same agent, one absurd change each. If any of these look like a different
+  person, the layer stack is wrong.
+</p>
+<ul id="portraits" class="portraits"></ul>
+
+<h2>Firm palettes</h2>
+<p class="sub">Identity is colour <em>and</em> symbol — colour alone fails for a colourblind player.</p>
+<ul id="firms" class="firms"></ul>
+
+<style>
+  body { margin: 0 auto; padding: 1.5rem; max-width: 1240px;
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    background: #14171B; color: #E8E6E0; }
+  h1 { font-size: 1.1rem; letter-spacing: .08em; text-transform: uppercase; }
+  h2 { font-size: .85rem; letter-spacing: .06em; text-transform: uppercase;
+    color: #8FA7C4; margin-top: 2rem; }
+  .sub { color: #8A867E; font-size: .78rem; line-height: 1.5; max-width: 70ch; }
+  canvas#stage { width: 100%; max-width: 1200px; border: 1px solid #2A2E36; border-radius: 6px; }
+  ul { list-style: none; padding: 0; }
+  .labels { display: flex; flex-wrap: wrap; gap: .4rem; font-size: .7rem; color: #8A867E; }
+  .labels li { border: 1px solid #2A2E36; border-radius: 4px; padding: .15rem .45rem; }
+  .portraits { display: flex; flex-wrap: wrap; gap: 1rem; }
+  .portraits li { text-align: center; font-size: .7rem; color: #8A867E; }
+  .portraits canvas { width: 96px; height: 96px; display: block;
+    border: 1px solid #2A2E36; border-radius: 5px; image-rendering: pixelated; }
+  .portraits .diff { color: #D9A441; }
+  .firms { display: flex; gap: 1rem; flex-wrap: wrap; font-size: .72rem; }
+  .firms li { border: 1px solid #2A2E36; border-radius: 6px; padding: .6rem; min-width: 150px; }
+  .swatch { display: inline-block; width: 14px; height: 14px; border-radius: 3px;
+    vertical-align: -2px; margin-right: .3rem; }
+  #err { color: #C2452F; white-space: pre-wrap; font-size: .75rem; }
+</style>
+<pre id="err"></pre>
+<script type="importmap">
+{ "imports": { "three": "/vendor/three/build/three.module.js" } }
+</script>
+<script type="module" src="js/gallery.js"></script>

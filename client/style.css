@@ -1,0 +1,125 @@
+/* Painted low-poly palette, read in a dark room. Mobile-first: every control
+   is at least 44px on a coarse pointer (S12). */
+:root {
+  --ink: #E8E6E0; --dim: #8A867E; --bg: #14161A; --panel: #1D2026;
+  --line: #2C3038; --slate: #5A6472; --amber: #D9A441; --teal: #3E8E8C;
+  --alarm: #B5613C; --burn: #C2452F;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; overflow: hidden; }
+/* MUST come before .screen/.overlay: a class rule with `display` beats the
+   user-agent's [hidden] { display: none }, which silently disabled every
+   screen transition in the first playtest. */
+[hidden] { display: none !important; }
+.screen { position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 1rem; padding: 1rem; }
+#splash-terminal { font-size: clamp(11px, 2.6vw, 15px); line-height: 1.6;
+  color: var(--ink); background: var(--panel); border: 1px solid var(--line);
+  padding: 1.2rem 1.6rem; border-radius: 6px; white-space: pre; }
+button { font: inherit; min-height: 44px; padding: 0 1.1rem; cursor: pointer;
+  background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+  border-radius: 5px; }
+button:hover { border-color: var(--slate); }
+button.primary { background: var(--slate); border-color: var(--slate); }
+button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal); color: #10131A; }
+#recovery { color: var(--amber); background: var(--panel); border: 1px dashed var(--amber);
+  padding: .8rem 1rem; border-radius: 5px; max-width: 34rem; text-align: center; }
+
+#world { padding: 0; }
+#view { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+#hud { position: absolute; inset: 0; pointer-events: none; padding: .6rem;
+  display: flex; justify-content: space-between; align-items: flex-start; }
+#hud button { pointer-events: auto; }
+#hud-left, #hud-right { display: flex; flex-direction: column; gap: .45rem; align-items: flex-start; }
+#hud-right { align-items: flex-end; }
+.pill { background: rgba(29,32,38,.9); border: 1px solid var(--line);
+  border-radius: 20px; padding: .3rem .8rem; font-size: .82rem; }
+.chips { display: flex; gap: .3rem; pointer-events: auto; }
+.chips button { min-width: 64px; font-size: .78rem; }
+.pill.unseen { color: var(--teal); } .pill.noticed { color: var(--amber); }
+.pill.burned { color: var(--burn); border-color: var(--burn); }
+.pill.calm { color: var(--teal); } .pill.tense { color: var(--amber); }
+.pill.lockdown { color: var(--alarm); border-color: var(--alarm); }
+
+.overlay { position: absolute; inset: auto 0 0 0; margin: auto; max-width: 34rem;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px 8px 0 0;
+  padding: 1rem; pointer-events: auto; max-height: 70%; overflow-y: auto; }
+@media (min-width: 700px) { .overlay { inset: 50% 0 auto 0; transform: translateY(-50%);
+  border-radius: 8px; } }
+.overlay h2 { margin: 0 0 .6rem; font-size: 1rem; letter-spacing: .08em; }
+.row { display: flex; gap: .5rem; flex-wrap: wrap; }
+#board-list { list-style: none; margin: 0 0 .8rem; padding: 0; }
+#board-list li { display: flex; justify-content: space-between; gap: .6rem;
+  align-items: center; padding: .5rem 0; border-bottom: 1px solid var(--line); }
+#board-list li.locked { opacity: .45; }
+#standoff-timer { height: 6px; background: var(--line); border-radius: 3px; margin: .6rem 0; }
+#standoff-timer span { display: block; height: 100%; background: var(--amber); border-radius: 3px; }
+#toasts { position: absolute; left: 50%; bottom: 1rem; transform: translateX(-50%);
+  display: flex; flex-direction: column; gap: .35rem; align-items: center; }
+.toast { background: rgba(29,32,38,.95); border: 1px solid var(--line);
+  border-left: 3px solid var(--amber); padding: .45rem .8rem; border-radius: 4px; font-size: .82rem; }
+.toast.alarm { border-left-color: var(--alarm); }
+
+/* The minimap: the old full-screen 2D view, doing the job it was always
+   better at. Bottom-left so it never fights the HUD's right column. */
+#minimap { position: absolute; left: .6rem; bottom: .6rem; width: 180px; height: 180px;
+  border: 1px solid var(--line); border-radius: 4px; background: #0F1114;
+  opacity: .9; pointer-events: none; }
+@media (max-width: 600px) { #minimap { width: 116px; height: 116px; } }
+
+#errbar { position: absolute; left: 0; right: 0; top: 0; z-index: 99;
+  background: #4A1410; color: #FFD9D2; border-bottom: 2px solid var(--burn);
+  font-size: .8rem; padding: .5rem .8rem; white-space: pre-wrap; }
+
+#active-list { list-style: none; margin: 0 0 .8rem; padding: 0; }
+#active-list li { display: flex; justify-content: space-between; gap: .6rem;
+  padding: .4rem 0; border-bottom: 1px solid var(--line); color: var(--teal); }
+#active-list li.at-risk { color: var(--alarm); }
+.overlay h3 { margin: 0 0 .4rem; font-size: .82rem; letter-spacing: .08em; color: var(--dim); }
+
+/* Off-screen objective pointer: sits at the screen edge in the direction of
+   the job, so the player is never left hunting for where to go. */
+#objective-arrow { position: absolute; left: 50%; top: 50%; width: 0; height: 0;
+  pointer-events: none; }
+#objective-arrow span { position: absolute; display: block; width: 0; height: 0;
+  border-left: 11px solid var(--teal); border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent; transform-origin: 0 50%;
+  filter: drop-shadow(0 0 3px rgba(83,214,198,.7)); }
+#objective-distance { position: absolute; color: var(--teal); font-size: .72rem;
+  transform: translate(-50%, -50%); text-shadow: 0 0 4px #0F1114; }
+
+/* The building overlay. The portrait is the D38 joke made visible — you should
+   be able to see the moustache you paid for. */
+/* A canvas since D47: the portrait is drawn from feature layers, so a disguise
+   is a diff on the stack rather than a different picture. image-rendering keeps
+   the chunky look intact when the 96px buffer scales to 84 CSS px. */
+#portrait { width: 84px; height: 84px; float: right; margin: 0 0 .6rem .8rem;
+  border: 1px solid var(--line); border-radius: 5px; background: var(--bg);
+  display: block; image-rendering: pixelated; }
+#building-greet { color: var(--dim); font-style: italic; margin: .2rem 0 .8rem; }
+#building-options { list-style: none; margin: 0 0 .8rem; padding: 0; clear: both; }
+#building-options li { display: flex; justify-content: space-between; gap: .6rem;
+  align-items: center; padding: .45rem 0; border-bottom: 1px solid var(--line); }
+#building-options .cost { color: var(--amber); font-size: .82rem; }
+
+#zone-layout { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap;
+  justify-content: center; }
+#zone-map { max-width: min(62vw, 512px); height: auto; border: 1px solid var(--line);
+  border-radius: 5px; cursor: crosshair; }
+#zone-districts { list-style: none; margin: 0; padding: 0; min-width: 15rem; }
+#zone-districts li { display: flex; justify-content: space-between; gap: .8rem;
+  padding: .5rem .6rem; border: 1px solid var(--line); border-radius: 5px;
+  margin-bottom: .4rem; cursor: pointer; min-height: 44px; align-items: center; }
+#zone-districts li:hover { border-color: var(--slate); }
+#zone-districts li.recommended { border-color: var(--amber); }
+#zone-districts .meta { color: var(--dim); font-size: .78rem; }
+#zone-districts .lockdown { color: var(--alarm); }
+#zone-districts .tense { color: var(--amber); }
+
+/* Work-stage progress. Built once per contract row and only its width changes,
+   so the list is never rebuilt mid-click. */
+.prog { display: block; width: 100%; height: 4px; margin-top: .35rem;
+  background: #2A2E36; border-radius: 2px; overflow: hidden; }
+.prog i { display: block; height: 100%; width: 0; background: #53D6C6;
+  transition: width .1s linear; }

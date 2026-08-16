@@ -1,0 +1,106 @@
+{
+  "note": "S09 building contents. ALL text is i18n keys, never literals (S13). Effects are declarative — the engine applies them; content authors never write code.",
+  "dialogues": [
+    {
+      "id": "informant",
+      "kind": "dialogue",
+      "portrait": "informant_a",
+      "greetKey": "dialog.informant.greet",
+      "quietAtHeat": 4,
+      "quietKey": "dialog.informant.tooHot",
+      "options": [
+        {
+          "key": "dialog.informant.askRival",
+          "cost": 50,
+          "effect": {
+            "type": "revealRivalHq"
+          }
+        },
+        {
+          "key": "dialog.informant.askHeat",
+          "cost": 30,
+          "effect": {
+            "type": "heatIntel",
+            "ticks": 6000
+          }
+        },
+        {
+          "key": "dialog.informant.askCredential",
+          "cost": 120,
+          "effect": {
+            "type": "credential",
+            "tier": 1
+          }
+        },
+        {
+          "key": "dialog.common.leave",
+          "exit": true
+        }
+      ]
+    }
+  ],
+  "shops": [
+    {
+      "id": "vendor",
+      "kind": "shop",
+      "portrait": "vendor_a",
+      "greetKey": "dialog.vendor.greet",
+      "catalog": [
+        {
+          "key": "shop.softSoles",
+          "cost": 120,
+          "effect": {
+            "type": "upgrade",
+            "slot": "sneak"
+          }
+        },
+        {
+          "key": "shop.cargoHarness",
+          "cost": 90,
+          "effect": {
+            "type": "upgrade",
+            "slot": "carry"
+          }
+        },
+        {
+          "key": "shop.jammerII",
+          "cost": 180,
+          "effect": {
+            "type": "upgrade",
+            "slot": "jammer"
+          }
+        },
+        {
+          "key": "shop.medkit",
+          "cost": 60,
+          "effect": {
+            "type": "heal"
+          }
+        },
+        {
+          "key": "shop.credential",
+          "cost": 200,
+          "effect": {
+            "type": "credential",
+            "tier": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "covershop",
+      "kind": "shop",
+      "portrait": "covershop_a",
+      "greetKey": "dialog.coverShop.greet",
+      "catalog": [
+        {
+          "key": "shop.newFace",
+          "cost": 150,
+          "effect": {
+            "type": "cover"
+          }
+        }
+      ]
+    }
+  ]
+}

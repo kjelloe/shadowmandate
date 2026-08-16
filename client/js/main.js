@@ -1,0 +1,632 @@
+// client/js/main.js — the thin DOM layer. All logic lives in models.js and the
+// engine; this file only wires elements to a session (S12).
+
+import { loadLocale, t, applyStatic } from "./i18n.js";
+import { loadArt, terrain, mark } from "./assets.js";
+import { drawPortrait, portraitLayers } from "./portraits.js";
+import { createRemoteSession } from "./session.js";
+import { createScene } from "./scene.js";
+import { createMinimap } from "./minimap.js";
+import {
+  STANCES, DETECTION_KEYS, DETECTION_CLASS, HEAT_KEYS, HEAT_CLASS,
+  ownAgent, heatDisplay, districtUnder, boardRows, activeRows, objectiveFor,
+  objectiveBearing, evacDisplay, toastsFor, debriefRows, reputationBar,
+  payloadForBuilding, overlayRows, disguiseFor, districtChoices, standingRows,
+  cuttableJunction, liftableGuard, dropshipFlight, DROPSHIP_MS,
+  HEAT_CLASS as HEAT_CLASSES,
+} from "./models.js";
+
+const $ = (sel) => document.querySelector(sel);
+
+// Surface failures ON THE PAGE. A silent client cost three playtest rounds of
+// guesswork — an empty canvas looks identical whether the renderer crashed,
+// the data never arrived, or everything drew in the fog colour.
+function fatal(where, err) {
+  const msg = `${where}: ${err?.message ?? err}`;
+  console.error(msg, err);
+  let bar = document.getElementById("errbar");
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.id = "errbar";
+    document.body.appendChild(bar);
+  }
+  bar.textContent = msg;
+  bar.hidden = false;
+}
+window.addEventListener("error", (e) => fatal("uncaught", e.error ?? e.message));
+window.addEventListener("unhandledrejection", (e) => fatal("promise", e.reason));
+const show = (id) => {
+  for (const s of document.querySelectorAll(".screen")) s.hidden = s.id !== id;
+};
+
+await loadLocale();
+// Art metadata before any renderer exists: createScene() reads style tokens,
+// and a scene built without them would fall back to grey and look "fine",
+// which is the kind of silent wrongness this project has paid for before.
+await loadArt();
+applyStatic();
+$("#drop-in").textContent = t("splash.dropIn");
+
+const session = createRemoteSession({
+  url: `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`,
+});
+
+let renderer = null;
+let minimap = null;
+let lastStance = 1;
+
+function splashText(b) {
+  const pad = (label, value) => `${label.padEnd(24, ".")} ${value}`;
+  return [
+    t("splash.title"), t("splash.terminal"), "",
+    pad(t("splash.world"), b?.worldId ?? "—"),
+    ...standingRows(b?.standing).map(([k, v, ...a]) => pad(t(k), t(v, ...a))),
+    pad(t("splash.activeFirms"), b?.activeFirms ?? 0),
+    pad(t("splash.contracts"), b?.contracts ?? 0),
+    pad(t("splash.yourFirm"), session.firmId ?? "—"),
+    pad(t("splash.fieldStatus"), t("splash.undeployed")),
+  ].join("\n");
+}
+
+session.onChange((s, events) => {
+  // BEFORE the no-view guard, and that ordering is the whole point: a rotation
+  // deliberately clears the view, so handling it after `if (!s.view) return`
+  // would drop the one message that explains why everything vanished.
+  const rotated = (events ?? []).find((e) => e.type === "seasonRotated");
+  if (rotated) { showSeasonRotated(rotated); return; }
+  if (!s.view) return;
+  if ((events ?? []).some((e) => e.type === "dropZonesReady")) showZonePicker();
+  if ((events ?? []).some((e) => e.type === "debriefReady")) { showDebrief(s); return; }
+  for (const e of events ?? []) {
+    if (e.type === "rejected") addToast(`${e.command}: ${e.reason}`, true);
+    if (e.type === "serverError") addToast(e.reason, true);
+  }
+  if ($("#splash").hidden === false) {
+    $("#splash-terminal").textContent = splashText(s.briefing);
+    if (s.recoveryCode) {
+      const el = $("#recovery");
+      el.hidden = false;
+      el.textContent = `${t("recovery.title")}: ${s.recoveryCode} — ${t("recovery.note")}`;
+    }
+  }
+  const deployed = s.view.agents.some((a) => a.state !== 0);
+  if (deployed && $("#world").hidden) {
+    show("world");
+    renderer?.resize();
+    // First sight of the world this session: fly the ship in.
+    if (!flightSeen) { flightSeen = true; startDropship(1); }
+  }
+  if (!deployed) flightSeen = false;
+  paint(s, events ?? []);
+  // Test-only observation surface. The browser gates (tools/client_smoke.mjs,
+  // tools/ui_acceptance.mjs) need to assert on what the client actually
+  // received, not merely on what it painted — "the tick advanced" and "the
+  // stance the SERVER agrees I have" are not readable from the DOM. Read-only
+  // and derived; nothing here is an input path, so it cannot become a cheat
+  // surface. The sibling project carries the same hook for the same reason.
+  window.__smDebug = {
+    tick: s.view.tick,
+    firmId: session.firmId ?? null,
+    agent: ownAgent(s.view) ?? null,
+    screen: ["splash", "dropzone", "debrief", "world"].find((id) => !$(`#${id}`).hidden) ?? null,
+    openOverlays: ["board", "standoff", "building", "evac"].filter((id) => !$(`#${id}`).hidden),
+    boardCount: (s.view.board?.contracts ?? []).length,
+    activeCount: (s.view.active ?? []).length,
+    lastEvents: (events ?? []).map((e) => e.type),
+    // S05 choreography, exposed for the same reason as everything else here:
+    // "the maths is right" and "a ship crossed the screen" are different
+    // claims, and only the browser can answer the second.
+    dropship: flightStartedAt === null ? null
+      : (dropshipFlight(Date.now() - flightStartedAt, flightDir) ?? null),
+  };
+});
+
+// S05: the dropship sequence, owned by the client and driven by a wall clock.
+// `startedAt` is null when nothing is playing. Presentation only — the HQ is
+// already placed server-side before this begins, which is exactly why the
+// choreography can be skipped or interrupted without desyncing anything.
+let flightStartedAt = null, flightDir = 1, flightSeen = false;
+function startDropship(dir) {
+  flightStartedAt = Date.now();
+  flightDir = dir;
+}
+
+function paint(s, events) {
+  const view = s.view;
+  if (!renderer) renderer = createScene($("#view"));
+  if (!minimap) minimap = createMinimap($("#minimap"));
+  // Terrain arrives once, with the welcome (and again with the drop-zone
+  // reply). Build the mesh the first time it turns up.
+  try {
+    if (session.tiles && !renderer.hasTerrain()) {
+      renderer.setTerrain(session.tiles, view.size, view.worldSeed ?? 1);
+      minimap.setTiles(session.tiles, view.size);
+    }
+    // Only draw the diorama when it is on screen. Until now it rendered at
+    // 10Hz behind the splash and drop-zone screens, where it is completely
+    // invisible — a full 3D frame, ten times a second, for nobody. Found by
+    // tools/ui_acceptance.mjs, where every page interaction was taking seconds
+    // under software rendering; it costs real devices battery rather than
+    // seconds, which is why it went unnoticed.
+    if (!$("#world").hidden) {
+      renderer.draw(view);
+      // The dropship rides on top of the drawn frame. A null flight hides it,
+      // so an interrupted or finished sequence needs no extra bookkeeping.
+      const flight = flightStartedAt === null
+        ? null : dropshipFlight(Date.now() - flightStartedAt, flightDir);
+      if (flightStartedAt !== null && !flight) flightStartedAt = null;
+      renderer.drawDropship(flight, view.hq ? { x: view.hq.cellX, y: view.hq.cellY } : null);
+      minimap.draw(view);
+    }
+  } catch (err) {
+    fatal("render", err);
+  }
+
+  const agent = ownAgent(view);
+  if (agent) {
+    lastStance = agent.stance;
+    const d = agent.detection ?? 0;
+    const det = $("#detection");
+    det.textContent = t(DETECTION_KEYS[d]);
+    det.className = `pill ${DETECTION_CLASS[d]}`;
+
+    const cell = { x: Math.floor(agent.x / 256), y: Math.floor(agent.y / 256) };
+    const district = districtUnder(view, cell.x, cell.y);
+    if (district) {
+      const { band, exact } = heatDisplay(view, district.id);
+      const el = $("#heat");
+      el.textContent = exact === null ? t(HEAT_KEYS[band]) : `${t(HEAT_KEYS[band])} ${exact}`;
+      el.className = `pill ${HEAT_CLASS[band]}`;
+    }
+  }
+  $("#cache").textContent = `${t("hud.cache")} ${view.hq?.cacheResources ?? 0}`;
+
+  renderStances();
+  renderBoard(view);
+  renderActive(view);
+  renderObjectiveArrow(view);
+  renderBuilding(view);
+  renderJunction(view);
+  renderLift(view);
+  renderStandoff(view);
+  renderEvac(view);
+  for (const toast of toastsFor(events)) addToast(t(toast.key), toast.alarm);
+}
+
+function renderStances() {
+  const host = $("#stance");
+  if (!host.children.length) {
+    for (const st of STANCES) {
+      const b = document.createElement("button");
+      b.textContent = t(st.key);
+      b.addEventListener("click", () => {
+        const a = ownAgent(session.view);
+        if (a) session.send({ type: 21, agentId: a.id, stance: st.id });
+      });
+      host.appendChild(b);
+    }
+  }
+  [...host.children].forEach((b, i) => b.setAttribute("aria-pressed", String(i === lastStance)));
+}
+
+// THE 10Hz REBUILD BUG (playtest 5): this used to wipe and rebuild the list on
+// every tick. A click needs mousedown AND mouseup on the SAME element, and the
+// button was being destroyed and replaced between them — so pressing "accept"
+// did nothing, forever, with no error. Anything the player clicks must survive
+// long enough to be clicked: re-render ONLY when the content actually changes.
+let boardSignature = "";
+
+function renderBoard(view) {
+  const rows = boardRows(view);
+  const signature = rows.map((r) => `${r.id}:${r.tier}:${r.reward}:${r.accepted}:${r.locked}`).join("|");
+  if (signature === boardSignature) return;
+  boardSignature = signature;
+
+  const list = $("#board-list");
+  list.textContent = "";
+  for (const row of rows) {
+    const li = document.createElement("li");
+    if (row.locked) li.className = "locked";
+    const label = document.createElement("span");
+    label.textContent = `${t("board.tier")} ${row.tier}  ${t(row.kindKey)}`;
+    const right = document.createElement("span");
+    right.textContent = `+${row.reward}`;
+    li.append(label, right);
+    if (row.accepted) {
+      const mark = document.createElement("span");
+      mark.textContent = t("board.accepted");
+      li.appendChild(mark);
+    } else if (!row.locked) {
+      const take = document.createElement("button");
+      take.textContent = t("board.accept");
+      take.addEventListener("click", () => {
+        const a = ownAgent(session.view);
+        if (a) session.send({ type: 40, agentId: a.id, contractId: row.id });
+      });
+      li.appendChild(take);
+    }
+    list.appendChild(li);
+  }
+}
+
+let activeSignature = "";
+const progressBars = new Map();   // contractId -> the fill element
+function renderActive(view) {
+  const rows = activeRows(view);
+  const signature = rows.map((r) => `${r.id}:${r.stageKey}:${r.atRisk}`).join("|");
+  if (signature !== activeSignature) {
+    activeSignature = signature;
+    const list = $("#active-list");
+    list.textContent = "";
+    if (!rows.length) {
+      const li = document.createElement("li");
+      li.textContent = t("board.none");
+      list.appendChild(li);
+    }
+    progressBars.clear();
+    for (const row of rows) {
+      const li = document.createElement("li");
+      if (row.atRisk) li.className = "at-risk";
+      const label = document.createElement("span");
+      label.textContent = `${t(row.kindKey)} — ${t(row.stageKey)}`;
+      const right = document.createElement("span");
+      right.textContent = `+${row.reward}`;
+      li.append(label, right);
+      if (row.working) {
+        // Built ONCE here and only its width mutated below. Putting progress in
+        // the signature above would rebuild this list ten times a second, which
+        // is the defect that made the contract button unclickable in playtest 5.
+        const track = document.createElement("span");
+        track.className = "prog";
+        const fill = document.createElement("i");
+        track.appendChild(fill);
+        li.appendChild(track);
+        progressBars.set(row.id, fill);
+      }
+      list.appendChild(li);
+    }
+  }
+
+  // Per-tick, structure untouched.
+  for (const row of rows) {
+    const fill = progressBars.get(row.id);
+    if (fill) fill.style.width = `${Math.round(row.progress * 100)}%`;
+  }
+
+  // Point at the current objective, so an accepted contract is not a mystery.
+  const el = $("#objective");
+  const first = (view.active ?? [])[0];
+  const target = objectiveFor(view, first);
+  if (!first || !target) { el.hidden = true; return; }
+  el.hidden = false;
+  el.textContent = `${t("hud.objective")} ${target.cellX},${target.cellY}`;
+}
+
+// The edge pointer. The beacon handles "where is it" when the objective is on
+// screen; this handles the much more common case where it is not.
+// The payoff. Without this an extraction — the thing the whole deployment is
+// aimed at — looked exactly like the game freezing.
+// A season ended while this player was in the world (D33). Reuses the debrief
+// terminal deliberately: it is already the screen that means "your sortie is
+// over, here is what it came to", and a season ending is the largest version of
+// that. Sending them back to the splash silently would be indistinguishable
+// from a crash.
+function showSeasonRotated(e) {
+  const lines = [
+    t("season.rotated", e.closed.season), "",
+    t("season.carried"), "",
+    ...standingRows(e.opened).map(([k, v, ...a]) => `${t(k).padEnd(26, ".")} ${t(v, ...a)}`),
+  ];
+  $("#debrief-terminal").textContent = lines.join("\n");
+  // The renderer is holding geometry for a city that no longer exists.
+  boardSignature = ""; activeSignature = "";
+  show("debrief");
+}
+
+function showDebrief(s) {
+  const d = s.debrief;
+  const ledger = s.briefing?.ledger ?? null;
+  const pad = (label, value) => `${t(label).padEnd(26, ".")} ${value}`;
+  const lines = [
+    t(d.emergency ? "evac.emergency" : "debrief.title"), "",
+    ...debriefRows(d, ledger).map(([k, v]) =>
+      pad(k, v.startsWith("common.") ? t(v) : v)),
+    "",
+    `${t("debrief.reputation")}  ${reputationBar(ledger?.reputation ?? 0)}  ` +
+      `${d.reputationDelta >= 0 ? "+" : ""}${d.reputationDelta}`,
+  ];
+  $("#debrief-terminal").textContent = lines.join("\n");
+  show("debrief");
+}
+
+$("#debrief-return").addEventListener("click", () => {
+  session.debrief = null;
+  boardSignature = ""; activeSignature = "";
+  $("#splash-terminal").textContent = splashText(session.briefing);
+  show("splash");
+});
+
+function renderObjectiveArrow(view) {
+  const el = $("#objective-arrow");
+  const agent = ownAgent(view);
+  if (!agent) { el.hidden = true; return; }
+  const here = { x: Math.floor(agent.x / 256), y: Math.floor(agent.y / 256) };
+  const bearing = objectiveBearing(view, here.x, here.y);
+  if (!bearing || bearing.distance <= 6) { el.hidden = true; return; }
+
+  el.hidden = false;
+  const w = window.innerWidth, h = window.innerHeight;
+  const radius = Math.min(w, h) * 0.34;
+  const arrow = el.querySelector("span");
+  arrow.style.transform = `translate(${Math.cos(bearing.angle) * radius}px, ` +
+    `${Math.sin(bearing.angle) * radius}px) rotate(${bearing.angle}rad)`;
+
+  let label = document.getElementById("objective-distance");
+  if (!label) {
+    label = document.createElement("div");
+    label.id = "objective-distance";
+    el.appendChild(label);
+  }
+  label.textContent = String(bearing.distance);
+  label.style.left = `${Math.cos(bearing.angle) * (radius - 26)}px`;
+  label.style.top = `${Math.sin(bearing.angle) * (radius - 26)}px`;
+}
+
+// Portrait glyphs stand in until there is art. The point of the cover shop is
+// that you can SEE what you paid for, so a placeholder that changes with the
+// disguise is worth more than a blank square.
+
+let buildingSignature = "";
+// S16 8d. The counter-play needs a control or it does not exist for a player:
+// the mechanism was fully testable and completely unreachable until this.
+function renderJunction(view) {
+  const btn = $("#cut-btn");
+  const j = cuttableJunction(view);
+  btn.hidden = !j;
+  btn.dataset.junctionId = j ? String(j.id) : "";
+}
+
+// S16 8k. The third credential source was written, tested, and unreachable —
+// no command and no control. Both halves exist now.
+function renderLift(view) {
+  const btn = $("#lift-btn");
+  const g = liftableGuard(view);
+  btn.hidden = !g;
+  btn.dataset.patrolId = g ? String(g.id) : "";
+}
+
+function renderBuilding(view) {
+  // The "go inside" button appears only when standing on a door.
+  const enter = $("#enter-btn");
+  enter.hidden = !view.atDoor || !!view.inside;
+
+  const panel = $("#building");
+  if (!view.inside) {
+    panel.hidden = true;
+    buildingSignature = "";
+    return;
+  }
+  const agent = ownAgent(view);
+  const district = view.districts.find((d) => d.id === view.inside.districtId);
+  const payload = payloadForBuilding(session.content, view.inside, district?.heatBand ?? 0);
+  const rows = overlayRows(payload);
+  const signature = `${view.inside.id}:${payload?.quiet ? 1 : 0}:${rows.length}:${agent?.disguiseId ?? 0}`;
+  panel.hidden = false;
+  if (signature === buildingSignature) return;    // do not rebuild under the cursor
+  buildingSignature = signature;
+
+  // D47: the portrait is composed from feature layers, so a disguise is a DIFF
+  // on the stack rather than a different picture. That is what makes the Cover
+  // Shop legible — the moustache changes and the person does not.
+  const disguiseId = agent?.disguiseId ?? 0;
+  const disguise = disguiseFor(session.content, disguiseId);
+  const canvas = $("#portrait");
+  try {
+    drawPortrait(canvas.getContext("2d"), disguiseId, canvas.width);
+  } catch (err) {
+    fatal("portrait", err);
+  }
+  canvas.title = disguise ? t(disguise.key) : "";
+  $("#building-title").textContent = t(
+    view.inside.kind === 0 ? "building.informant"
+      : view.inside.kind === 1 ? "building.market" : "building.coverShop");
+  $("#building-greet").textContent = payload
+    ? t(payload.quiet ? payload.quietKey : payload.greetKey) : "";
+
+  const list = $("#building-options");
+  list.textContent = "";
+  for (const row of rows) {
+    const li = document.createElement("li");
+    const label = document.createElement("span");
+    label.textContent = t(row.key);
+    li.appendChild(label);
+    if (row.cost > 0) {
+      const cost = document.createElement("span");
+      cost.className = "cost";
+      cost.textContent = `${row.cost}`;
+      li.appendChild(cost);
+    }
+    const go = document.createElement("button");
+    go.textContent = t(row.kind === "buy" ? "board.accept" : "common.confirm");
+    go.addEventListener("click", () => {
+      const a = ownAgent(session.view);
+      if (!a) return;
+      if (row.kind === "leave") session.send({ type: 35, agentId: a.id });
+      else if (row.kind === "buy") session.send({ type: 37, agentId: a.id, itemIdx: row.idx });
+      else session.send({ type: 36, agentId: a.id, optionIdx: row.idx });
+    });
+    li.appendChild(go);
+    list.appendChild(li);
+  }
+}
+
+function renderStandoff(view) {
+  const panel = $("#standoff");
+  if (!view.standoff) { panel.hidden = true; return; }
+  panel.hidden = false;
+  $("#standoff-who").textContent =
+    `FIRM ${view.standoff.rivalFirmId} — ${t("debrief.reputation")} ${view.standoff.rivalReputation}`;
+  const pct = Math.max(0, Math.min(100, (view.standoff.ticksLeft / 100) * 100));
+  $("#standoff-timer span").style.width = `${pct}%`;
+}
+
+function renderEvac(view) {
+  const panel = $("#evac");
+  const evac = evacDisplay(view);
+  if (!evac) { panel.hidden = true; return; }
+  panel.hidden = false;
+  $("#evac-eta").textContent = t("evac.eta", evac.seconds);
+  $("#evac-note").textContent = evac.emergency ? t("evac.emergency")
+    : evac.paused ? t("evac.paused") : t("evac.hold");
+}
+
+function addToast(text, alarm) {
+  const el = document.createElement("div");
+  el.className = `toast${alarm ? " alarm" : ""}`;
+  el.textContent = text;
+  $("#toasts").appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+// ── Input: tap to move, double-tap to hurry (S12 touch model) ─────────────
+let lastTap = 0;
+$("#view").addEventListener("pointerdown", (ev) => {
+  const agent = ownAgent(session.view);
+  if (!agent || !renderer) return;
+  const rect = ev.target.getBoundingClientRect();
+  const cell = renderer.screenToCell(ev.clientX - rect.left, ev.clientY - rect.top);
+  const now = Date.now();
+  const isDouble = now - lastTap < 300;
+  lastTap = now;
+  if (isDouble) session.send({ type: 21, agentId: agent.id, stance: 2 });
+  session.send({ type: 20, agentId: agent.id, cellX: cell.x, cellY: cell.y });
+});
+
+// The drop-in flow. The first build sent cellX:-1 straight to the engine,
+// which is always "unlandable" — the button did nothing and said nothing
+// (playtest 1). Now: ask for zones, let the player choose, auto-pick on the
+// 15-second timeout exactly as the design describes.
+let zoneTimer = null;
+$("#drop-in").addEventListener("click", () => {
+  session.requestDropZones();
+  show("dropzone");
+});
+
+function deployAt(zone) {
+  if (!zone) return;
+  clearInterval(zoneTimer);
+  session.send({ type: 10, firmId: session.firmId, cellX: zone.cellX, cellY: zone.cellY });
+}
+
+function showZonePicker() {
+  const canvas = $("#zone-map");
+  const ctx = canvas.getContext("2d");
+  const size = session.view?.size ?? 64;
+  const px = canvas.width / size;
+  // This is the THIRD surface that draws the world's tiles, and it kept its own
+  // copy of the palette until 8d — the 7a-4 guard scanned scene.js, minimap.js
+  // and terrain3d.js and never looked here. Same lesson, one file wider: a
+  // guard only protects what it reads.
+  const T = terrain();
+  ctx.fillStyle = T.backdrop;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  if (session.tiles) {
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        ctx.fillStyle = T.tiles[session.tiles[y * size + x]] ?? T.unknown;
+        ctx.fillRect(x * px, y * px, px + 0.5, px + 0.5);
+      }
+    }
+  }
+  for (const z of session.dropZones ?? []) {
+    ctx.fillStyle = mark("dropZone");
+    ctx.fillRect(z.cellX * px - 1, z.cellY * px - 1, px + 2, px + 2);
+  }
+  if (session.autoZone) {
+    ctx.strokeStyle = mark("dropZoneAuto"); ctx.lineWidth = 2;
+    ctx.strokeRect(session.autoZone.cellX * px - 3, session.autoZone.cellY * px - 3, px + 6, px + 6);
+  }
+
+  // The district list: choosing between 240 identical squares is not a choice.
+  const list = $("#zone-districts");
+  list.textContent = "";
+  for (const d of districtChoices(session.zoneDistricts)) {
+    const li = document.createElement("li");
+    if (session.autoZone && d.id === session.autoZone.districtId) li.className = "recommended";
+    const left = document.createElement("div");
+    const name = document.createElement("div");
+    name.textContent = t(d.traitKey);
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent = `${d.contracts} ${t("dropzone.contracts")}`;
+    left.append(name, meta);
+    const right = document.createElement("span");
+    right.className = HEAT_CLASSES[d.heatBand ?? 0];
+    right.textContent = t(d.heatKey);
+    li.append(left, right);
+    li.addEventListener("click", () => {
+      // Drop into the best zone inside the district they picked.
+      const inDistrict = (session.dropZones ?? []).filter((z) => z.districtId === d.id);
+      deployAt(inDistrict[Math.floor(inDistrict.length / 2)] ?? session.autoZone);
+    });
+    list.appendChild(li);
+  }
+
+  let left = 15;
+  const hint = $("#zone-hint");
+  hint.textContent = `${t("dropzone.auto")} (${left})`;
+  clearInterval(zoneTimer);
+  zoneTimer = setInterval(() => {
+    left -= 1;
+    hint.textContent = `${t("dropzone.auto")} (${left})`;
+    if (left <= 0) deployAt(session.autoZone ?? (session.dropZones ?? [])[0]);
+  }, 1000);
+}
+
+$("#zone-map").addEventListener("pointerdown", (ev) => {
+  const canvas = $("#zone-map");
+  const rect = canvas.getBoundingClientRect();
+  const size = session.view?.size ?? 64;
+  const cx = Math.floor((ev.clientX - rect.left) / rect.width * size);
+  const cy = Math.floor((ev.clientY - rect.top) / rect.height * size);
+  // Snap to the nearest offered zone: a pixel-perfect tap on a 64-grid scaled
+  // into a phone screen is not a reasonable thing to ask of anyone.
+  let best = null, bestD = Infinity;
+  for (const z of session.dropZones ?? []) {
+    const d = Math.abs(z.cellX - cx) + Math.abs(z.cellY - cy);
+    if (d < bestD) { bestD = d; best = z; }
+  }
+  if (best && bestD <= 6) deployAt(best);
+});
+$("#lift-btn").addEventListener("click", () => {
+  const a = ownAgent(session.view);
+  const id = Number($("#lift-btn").dataset.patrolId);
+  if (a && Number.isInteger(id)) session.send({ type: 44, agentId: a.id, patrolId: id });
+});
+
+$("#cut-btn").addEventListener("click", () => {
+  const a = ownAgent(session.view);
+  const id = Number($("#cut-btn").dataset.junctionId);
+  if (a && Number.isInteger(id)) session.send({ type: 43, agentId: a.id, junctionId: id });
+});
+
+$("#enter-btn").addEventListener("click", () => {
+  const a = ownAgent(session.view);
+  if (a) session.send({ type: 34, agentId: a.id });
+});
+$("#board-btn").addEventListener("click", () => { $("#board").hidden = !$("#board").hidden; });
+$("#evac-btn").addEventListener("click", () => session.send({ type: 11, firmId: session.firmId }));
+for (const b of document.querySelectorAll("#standoff [data-choice]")) {
+  b.addEventListener("click", () => {
+    const a = ownAgent(session.view);
+    if (a && session.view.standoff) {
+      session.send({ type: 50, agentId: a.id, standoffId: session.view.standoff.id,
+        choice: Number(b.dataset.choice) });
+    }
+  });
+}
+for (const b of document.querySelectorAll(".overlay .close")) {
+  b.addEventListener("click", () => { b.closest(".overlay").hidden = true; });
+}
+show("splash");
+$("#splash-terminal").textContent = splashText(null);

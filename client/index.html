@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Shadow Mandate</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <section id="splash" class="screen">
+    <pre id="splash-terminal"></pre>
+    <button id="drop-in" class="primary"></button>
+    <p id="recovery" hidden></p>
+  </section>
+
+  <section id="dropzone" class="screen" hidden>
+    <h2 data-i18n="dropzone.title"></h2>
+    <div id="zone-layout">
+      <canvas id="zone-map" width="512" height="512"></canvas>
+      <ul id="zone-districts"></ul>
+    </div>
+    <p id="zone-hint" data-i18n="dropzone.auto"></p>
+  </section>
+
+  <section id="debrief" class="screen" hidden>
+    <pre id="debrief-terminal"></pre>
+    <div class="row">
+      <button id="debrief-return" class="primary" data-i18n="debrief.returnToWorld"></button>
+    </div>
+  </section>
+
+  <section id="world" class="screen" hidden>
+    <canvas id="view"></canvas>
+    <canvas id="minimap" width="180" height="180"></canvas>
+    <div id="hud">
+      <div id="hud-left">
+        <div id="stance" class="chips"></div>
+        <div id="detection" class="pill"></div>
+        <div id="heat" class="pill"></div>
+      </div>
+      <div id="hud-right">
+        <div id="cache" class="pill"></div>
+        <div id="objective" class="pill" hidden></div>
+        <button id="board-btn" class="primary" data-i18n="board.title"></button>
+        <button id="enter-btn" data-i18n="building.enter" hidden></button>
+      <button id="cut-btn" data-i18n="junction.cut" hidden></button>
+      <button id="lift-btn" data-i18n="access.lift" hidden></button>
+        <button id="evac-btn" data-i18n="evac.beaconActive"></button>
+      </div>
+      <div id="objective-arrow" hidden><span></span></div>
+      <div id="toasts"></div>
+    </div>
+
+    <div id="board" class="overlay" hidden>
+      <h3 data-i18n="board.active"></h3>
+      <ul id="active-list"></ul>
+      <h2 data-i18n="board.title"></h2>
+      <ul id="board-list"></ul>
+      <button class="close" data-i18n="board.back"></button>
+    </div>
+
+    <div id="standoff" class="overlay" hidden>
+      <h2 data-i18n="standoff.title"></h2>
+      <p id="standoff-who"></p>
+      <div id="standoff-timer"><span></span></div>
+      <div class="row">
+        <button data-choice="0" data-i18n="standoff.engage"></button>
+        <button data-choice="1" data-i18n="standoff.withdraw"></button>
+        <button data-choice="2" data-i18n="standoff.negotiate"></button>
+      </div>
+    </div>
+
+    <div id="building" class="overlay" hidden>
+      <canvas id="portrait" width="96" height="96"></canvas>
+      <h2 id="building-title"></h2>
+      <p id="building-greet"></p>
+      <ul id="building-options"></ul>
+      <button class="close" data-i18n="dialog.common.leave"></button>
+    </div>
+
+    <div id="evac" class="overlay" hidden>
+      <h2 data-i18n="evac.beaconActive"></h2>
+      <p id="evac-eta"></p>
+      <p id="evac-note" data-i18n="evac.hold"></p>
+    </div>
+  </section>
+</div>
+<script type="importmap">
+{ "imports": { "three": "/vendor/three/build/three.module.js" } }
+</script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

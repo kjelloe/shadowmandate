@@ -1,0 +1,11 @@
+{
+  "note": "D38 Cover Shop appearance changes. The engine only stores disguiseId; the client picks the portrait and the field figure's palette from here. Deliberately comic — the joke is that it works (mild noir, D23: no vice imagery, just bad wigs).",
+  "disguises": [
+    { "id": 0, "key": "disguise.none",      "portrait": "agent_base",      "note": "lean, black-framed glasses — the house look" },
+    { "id": 1, "key": "disguise.moustache", "portrait": "agent_moustache", "note": "an enormous moustache and nothing else changed" },
+    { "id": 2, "key": "disguise.pinkGlasses", "portrait": "agent_pink",    "note": "big pink glasses instead of the lean black ones" },
+    { "id": 3, "key": "disguise.courier",   "portrait": "agent_courier",   "note": "hi-vis vest and a clipboard; nobody questions a clipboard" },
+    { "id": 4, "key": "disguise.tourist",   "portrait": "agent_tourist",   "note": "sun hat, terrible shirt, camera" },
+    { "id": 5, "key": "disguise.executive", "portrait": "agent_executive", "note": "borrowed suit one size wrong" }
+  ]
+}
