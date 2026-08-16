@@ -5,7 +5,7 @@ Drop-in/drop-out covert-ops game. Sibling of Fireline Command
 
 **Status: M0–M6 complete; M7 done as far as it can go solo, and PLAYABLE in a
 browser. `npm test` = 313 green**, plus four browser gates (`smoke`, `ui`,
-`mobile`, `gallery`). Batch lane verified (`BATCH_PC.md`). **Remaining in M7**:
+`mobile`, `gallery`). Batch lane verified (`ops/BATCH_PC.md`). **Remaining in M7**:
 the VM deploy (7e) and native GPU perf (7f) — both need the owner's hardware.
 **M8 — opposition and site security — IS IN PROGRESS** (8a–8k done: alarms, cameras,
 beams, junctions, credentials, secured facilities, contested contracts, raids
@@ -20,7 +20,7 @@ on (D42/D43). All owner questions are answered (D1–D50).
 1. `specs/00_document_index.md` — document map, rulings D1–D50
 2. `plan-version1.md` — the operational plan (milestones M0–M7, gates)
 3. `plan-implementation-order.md` — slice-by-slice execution order, per-milestone
-   STATUS markers, and the gaming-PC battery runbook (hub port 8972)
+   STATUS markers (battery runbook: `ops/BATCH_PC.md`, private ops repo)
 4. `specs/07_spec_map.md` → `specs/systems/S*.md` — implementation contracts
 5. `dev-log.md` — what actually happened, including every dead end
 6. `dev-questions.md` — decisions waiting on the owner
@@ -58,7 +58,8 @@ node tools/repin_fixture.mjs "<reason>"     # deliberate fixture re-pin
 | `client/assets/metadata/` | **all art direction**: `style_tokens.json` (materials, marks, body, Firm identity, tile palette, triangle budgets, lighting) + `asset_manifest.json` (role → builder) |
 | `client/i18n/` | `en.json` / `no.json`, key-parity enforced |
 | `test/` | suite + `helpers.js` + `fixture_hash.js` (the paired hash) + `fixtures/` |
-| `tools/`, `debugging/` | re-pin tool, city renderer, agent-mail; probes kept forever |
+| `tools/`, `debugging/` | re-pin tool, city renderer; probes kept forever |
+| `ops/` | **gitignored, private ops repo**: deploy runbooks (`DEPLOYING.md`, `BATCH_PC.md`), agent-mail hub + batch-lane scripts — never on public GitHub |
 
 ## Terminology contract (D8 — enforced by test)
 
@@ -289,7 +290,8 @@ is undeclared. A missed mirror field silently invalidates every future battery.
 - **Fixture re-pins** are deliberate: `node tools/repin_fixture.mjs "<reason>"`.
   It refuses on event drift (exit 2) — that means the reducer changed, not the
   fixture. Inspect `test/fixtures/microscope.txt` by eye before regenerating it.
-- **Batch lane** (D25): shared with firepower, repo-tagged, hub port 8972.
+- **Batch lane** (D25): shared with firepower, repo-tagged; setup in
+  `ops/BATCH_PC.md` (private ops repo, gitignored).
   Never tune or convict on 5 seeds — batteries (n=300+) decide. Not live until
   M5 slice 5g.
 - **Git (updated 2026-08-04): committing and pushing to `dev_night` is

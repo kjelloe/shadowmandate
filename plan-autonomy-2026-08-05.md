@@ -48,7 +48,7 @@ No asset pipeline yet, but silhouettes and colour can improve a lot: distinct
 shapes per marker type, district tinting, better building variation.
 
 ### 8. VM deploy runbook
-`DEPLOYING.md` for the sample world, following the sibling project's pattern.
+`ops/DEPLOYING.md` for the sample world, following the sibling project's pattern.
 
 ## Rules for this session
 - Every slice: tests first where testable, suite double-run green, dev-log
@@ -83,7 +83,7 @@ shapes per marker type, district tinting, better building variation.
   wrong lever entirely. Extraction and acquisition are under-opposed, not
   mispriced (D42), and the difficulty belongs in the opposition system now
   specced as S16.
-- **8. VM deploy runbook — DONE.** `DEPLOYING.md`, plus the `/health` endpoint
+- **8. VM deploy runbook — DONE.** `ops/DEPLOYING.md`, plus the `/health` endpoint
   it depends on (a sleeping world counts as healthy, per D16).
 - **Unplanned, and I judged it worth the detour:** the paired-hash test — the
   project's strongest guarantee — ran only against a world with an empty

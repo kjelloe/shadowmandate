@@ -18,8 +18,9 @@ the layer below can't; every plan-version1 milestone gate maps onto these.
 3. **Headless sim campaigns** — the standard gate: 5 pinned seeds × 12–16k
    ticks, outcome + systems-fired census. **Every gameplay slice ends here.**
 4. **Batteries** — `tools/sm_worldday.mjs`: one CSV row per simulated world-day,
-   including D11/D19 pacing columns. **LIVE since 2026-08-05** — hub on port
-   8972, worker on the shared PC (D25), full setup and rules in `BATCH_PC.md`.
+   including D11/D19 pacing columns. **LIVE since 2026-08-05** — hub on the
+   dev machine, worker on the shared PC (D25); full setup, ports and rules in
+   `ops/BATCH_PC.md` (private ops repo, gitignored here).
    The worker refuses red suites, names its commit in every result, mails
    failure as loudly as success, and shelves rather than clobbers.
 5. **Client smoke + UI acceptance** — Playwright/SwiftShader per S12.

@@ -25,7 +25,8 @@ npm test                     # 313 tests
 npm run gallery              # every visual and portrait -> reports/gallery.png
 ```
 
-See `RUNNING.md` to play, `BATCH_PC.md` for the sim battery lane.
+See `RUNNING.md` to play. The sim battery lane and deploy runbooks live in
+the private ops repo (checked out locally as `ops/`, gitignored).
 
 | Start here | |
 |---|---|

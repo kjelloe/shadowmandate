@@ -50,8 +50,8 @@ report with the suggested message).
 - **0c** Re-pin the fixture: adapt `tools/repin_1a.mjs`, record the Shadow
   Mandate baseline (a minimal command script on a stub map), event-drift
   abort verified.
-- **0d** Batch tools kept but dormant (`tools/agent-mail.py`,
-  `batch_send.sh`, `batch_worker.sh`, `sim_sweep.mjs` left compiling but
+- **0d** Batch tools kept but dormant (`ops/agent-mail.py`,
+  `ops/batch_send.sh`, `batch_worker.sh`, `sim_sweep.mjs` left compiling but
   unretargeted until M5); README/CLAUDE alignment; dev-log entry.
 
 **Watch for:** firepower modules with hidden imports of deleted systems —
@@ -126,7 +126,7 @@ downed→captured / heat rise+decay) + census shows every transition fires.
 **Gate:** scripted agent completes each type; economy census columns
 (offered/accepted/completed/expired) emitting — these become battery columns.
 
-## M5 — AI Rival Firms 🟢 DONE (5g lane built + verified; see BATCH_PC.md)
+## M5 — AI Rival Firms 🟢 DONE (5g lane built + verified; see ops/BATCH_PC.md)
 
 - **5a** **Sim harness before doctrine** (instrument-first): `tools/
   sm_worldday.mjs` — runs K Firms through a world-day of deployments on a
@@ -340,11 +340,10 @@ Ordered so each slice is playable and measurable on its own.
 
 ## Battery / sim runbook (the gaming PC lane)
 
-Adapted from firepower's proven `BATCH_PC.md`; per D25 we share the machine
-and the tooling pattern. **Topology precedent: one hub per project** —
-multiciv owns 8970 (on the PC), firepower owns 8971 (on the dev machine).
-**Shadow Mandate takes port 8972, hub on the dev machine** (firepower
-pattern).
+Adapted from firepower's proven pattern; per D25 we share the machine and the
+tooling. **Topology, ports, firewall/portproxy setup and the worker bring-up
+live in the private ops repo** (`ops/BATCH_PC.md`, gitignored here) — one hub
+per project so the sibling queues never cross.
 
 ### Local quick gates (dev machine — NOT the PC)
 
@@ -362,34 +361,14 @@ batteries decide (n=300+).
 
 ### One-time bring-up (at slice 5g)
 
-Dev machine (WSL):
-```bash
-bash tools/hub_up.sh                       # port 8972; verifies portproxy
-                                           # freshness + firewall, prints the
-                                           # admin commands if stale
-```
-One-time ADMIN PowerShell on the dev machine's Windows side (re-run the
-portproxy line after reboots — the WSL IP changes and a stale proxy
-black-holes the hub silently):
-```powershell
-netsh interface portproxy add v4tov4 listenport=8972 listenaddress=0.0.0.0 connectport=8972 connectaddress=<WSL-IP>
-netsh advfirewall firewall add rule name="shadow-mandate agent-mail hub" dir=in action=allow protocol=TCP localport=8972
-```
-Gaming PC (WSL2, beside the firepower clone):
-```bash
-git clone <remote> multisyndicate && cd multisyndicate
-npm install && npm test                    # MUST be green — the worker
-                                           # refuses to serve on a red suite
-echo "http://<dev-machine-lan-ip>:8972" > .agent-mail/remote
-bash tools/batch_worker.sh                 # sits in flag-wait forever
-# ONCE=1 bash tools/batch_worker.sh        # drain once (bring-up test)
-# --verbose / --debug when anything looks stuck; always logs to
-# reports/sweeps/worker.log regardless
-```
+The full bring-up (hub start, Windows firewall + portproxy, worker clone and
+flag-wait) is machine-specific and lives in `ops/BATCH_PC.md` in the private
+ops repo. The invariant that matters here: **the worker refuses to serve on a
+red suite**, and everything logs to `reports/sweeps/worker.log`.
 
 ### Job kinds (implemented in OUR worker at 5g)
 
-Queued from the dev machine with `bash tools/batch_send.sh <kind> …`:
+Queued from the dev machine with `bash ops/batch_send.sh <kind> …`:
 
 | Kind | Body | Purpose |
 |---|---|---|
@@ -401,7 +380,7 @@ Queued from the dev machine with `bash tools/batch_send.sh <kind> …`:
 | `size128 N` | world.size=128 sweep | D26 capability check |
 | `update` / `resync` / `sendresults` / `perf` | as firepower | worker maintenance + GPU |
 
-`batch_send.sh board` shows queue + status; `batch_send.sh collect` settles
+`ops/batch_send.sh board` shows queue + status; `ops/batch_send.sh collect` settles
 summaries and extracts CSVs into `reports/sweeps/` (gitignored) —
 `.prev`-shelving on same-label collisions, never silent overwrite.
 
@@ -419,7 +398,7 @@ summaries and extracts CSVs into `reports/sweeps/` (gitignored) —
   nothing and results are gitignored). A stale worker refuses unknown kinds
   by mail, naming its commit — that's the version check.
 - **PC contention (D25):** before queueing a ≥300 battery, run `board` on
-  BOTH repos (`bash tools/batch_send.sh board` here and in
+  BOTH repos (`bash ops/batch_send.sh board` here and in
   `~/GIT/firepower`). One big battery at a time — both workers shard to all
   6 cores and will thrash if run together. Overnight: queue one repo's
   batteries, let them drain, then start the other worker.

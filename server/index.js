@@ -71,7 +71,7 @@ const http = createServer((req, res) => {
   // The deploy guard's probe. It reports the TICK rather than a bare "ok",
   // because a wedged pump still answers HTTP and a liveness-only check would
   // call that a successful deploy. The guard curls twice and requires the tick
-  // to move — see DEPLOYING.md.
+  // to move — see ops/DEPLOYING.md (private ops repo).
   //
   // A SLEEPING world is healthy, not broken: D16 parks an empty world so it
   // costs nothing, and the sample host is empty most of the time. Reporting
