@@ -17,7 +17,8 @@ import {
   generateRecoveryCode, CODE_WORDS,
 } from "../server/identity.js";
 import { buildView, FORBIDDEN_IN_VIEW } from "../engine/view.js";
-import { CMD_DROP_IN } from "../engine/commands.js";
+import { CMD_DROP_IN, CMD_EXTRACT } from "../engine/commands.js";
+import { AGENT_ACTIVE, AGENT_HELD } from "../engine/state.js";
 import { findDropZones } from "../engine/citygen.js";
 import { RULES, centralDropZone } from "./helpers.js";
 
@@ -321,5 +322,62 @@ test("events are routed to the Firm they concern, not broadcast to everyone", ()
   const bSaw = b.flatMap((m) => m.events).some((e) => e.type === "firmDeployed");
   assert.ok(aSaw, "the deploying Firm was not told it deployed");
   assert.ok(!bSaw, "a rival was told about someone else's deployment");
+  world.stop();
+});
+
+// ── The dropship must actually land (playtest 3, finding 5) ────────────────
+//
+// The engine emits `evacReady` at ETA 0 and then waits for CMD_EXTRACT. The AI
+// issues its own; NO CLIENT CODE EVER SENT ONE, so a human player's beacon hung
+// at "DROPSHIP ETA: 0 SECONDS" forever. The older debrief test above never saw
+// it because it submits type 13 itself — an instrument playing the part of a
+// client that did not exist. These two drive the loop with the only input a
+// player actually has: the evac button.
+
+test("the dropship lands by itself: ETA 0 extracts a seated Firm with no client command", () => {
+  const { world } = hostedWorld();
+  const got = [];
+  world.seat(2, (m) => got.push(m));   // firms 0-1 are the AI seats in hostedWorld
+  const zone = centralDropZone(world.state, findDropZones(world.state, RULES.citygen));
+  world.submit({ type: CMD_DROP_IN, firmId: 2, cellX: zone.cellX, cellY: zone.cellY });
+  world.tick();
+  world.state.hqs.find((h) => h.firmId === 2).cacheResources = 120;
+
+  world.submit({ type: 11, firmId: 2 });   // activateEvac — the ONLY input sent
+  for (let i = 0; i <= RULES.hq.evacHoldTicks + 6
+       && !got.some((m) => m.type === "debrief"); i++) world.tick();
+
+  const debrief = got.find((m) => m.type === "debrief");
+  assert.ok(debrief, "ETA hit 0 and nothing happened — the dropship never landed");
+  assert.equal(debrief.debrief.banked, 120, "the fold did not bank the cache");
+  const extracts = world.commandLog.filter((c) => c.type === CMD_EXTRACT);
+  assert.equal(extracts.length, 1,
+    "evacReady re-fires every tick at 0 — the server must enqueue exactly one extract");
+  assert.ok(extracts.every((c) => c.firmId === 2),
+    "the server must never extract for an AI Firm — they issue their own");
+  world.stop();
+});
+
+test("D51: folding with the only operative in custody COMPLETES, and the debt survives", () => {
+  // The exact playtest sequence: burned, captured, evac — the countdown must
+  // end in a debrief, not a hung banner, and the prisoner stays on the books.
+  const { world } = hostedWorld();
+  const got = [];
+  world.seat(2, (m) => got.push(m));   // firms 0-1 are the AI seats in hostedWorld
+  const zone = centralDropZone(world.state, findDropZones(world.state, RULES.citygen));
+  world.submit({ type: CMD_DROP_IN, firmId: 2, cellX: zone.cellX, cellY: zone.cellY });
+  world.tick();
+  const agent = world.state.agents.find((a) => a.firmId === 2 && a.state === AGENT_ACTIVE);
+  agent.state = AGENT_HELD;
+
+  world.submit({ type: 11, firmId: 2 });   // activateEvac, abandoning branch
+  for (let i = 0; i <= RULES.hq.evacHoldTicks + 6
+       && !got.some((m) => m.type === "debrief"); i++) world.tick();
+
+  const debrief = got.find((m) => m.type === "debrief");
+  assert.ok(debrief, "folding with everyone in custody hung at ETA 0");
+  assert.equal(
+    world.state.agents.filter((a) => a.firmId === 2 && a.state === AGENT_HELD).length, 1,
+    "the abandoned operative must remain HELD under this Firm — that debt is the recovery contract");
   world.stop();
 });

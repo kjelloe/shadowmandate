@@ -128,7 +128,7 @@ Layered gates, each catching what the layer below can't:
 4. **Batteries** — `tools/sim_sweep.mjs` retargeted: one CSV row per simulated world-day. Metrics: contracts completed/failed per tier, burn rate, heat trajectories, capture/rescue counts, cache-vs-bank outcomes, standoff resolutions, AI Firm reputation spread. Fairness instruments: mirror + firm-swap (the mirror transform must learn every new positional subsystem — HQs, contract sites, patrol routes).
 5. **Client smoke + UI acceptance** (Playwright, SwiftShader) — page errors, join, ticks; buttons DO things.
 6. **Server tests** — real ws clients: drop-in, evac, reconnect grace, ledger write/read, dormancy transition, tamper rejection.
-7. **Batch lane** — reuse the agent-mail queue to the Ryzen PC for 300+ world batteries; results name their commit; failures mailed as loudly as success.
+7. **Batch lane** — reuse the agent-mail queue to the shared batch PC for 300+ world batteries; results name their commit; failures mailed as loudly as success. Machine detail lives in `ops/` (private).
 
 **Balance doctrine:** never tune or convict on 5 seeds; batteries decide. Every measured number belongs to an era; re-pin baselines on era changes (coordinate/ruleset/AI-doctrine shifts).
 

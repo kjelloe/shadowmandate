@@ -147,5 +147,16 @@
   "toast.accessDenied": "Locked — you need a pass",
   "contract.defend": "DEFEND",
   "toast.defenceBreached": "They are on the site — hold it",
-  "access.lift": "TAKE BADGE"
+  "access.lift": "TAKE BADGE",
+  "splash.welcome": "WELCOME, DIRECTOR.\nA NEW FIRM AWAITS ITS FIRST DEPLOYMENT.",
+  "board.pin": "PIN",
+  "board.unpin": "UNPIN",
+  "intro.welcome": "FIRST DEPLOYMENT",
+  "intro.move": "Tap a street to move. Double-tap to hurry — faster, but louder and easier to spot.",
+  "intro.goal": "Take contracts, work them, then hold your HQ with EVAC to bank everything you earned.",
+  "intro.stance": "Stance chips: SNEAK plus cover is what actually defeats a patrol.",
+  "intro.board": "CONTRACTS: your offers. Accept up to two, PIN the ones you want ringed on the radar.",
+  "intro.evac": "EVAC: raise the beacon and hold your HQ until the dropship arrives.",
+  "intro.radar": "The radar. The ringed emblem is your HQ — that is home, and where the dropship lands.",
+  "intro.go": "UNDERSTOOD"
 }

@@ -23,7 +23,10 @@ import {
 import {
   portraitLayers, layerDiff, disguiseCount, drawableLayers,
 } from "../client/js/portraits.js";
-import { setTerrainTokens, hexRgb, buildGround } from "../client/js/terrain3d.js";
+import {
+  setTerrainTokens, hexRgb, buildGround, buildBlocks, buildWindowData,
+  WIN_TEX, ROOF_BAND, BLOCK_TILE,
+} from "../client/js/terrain3d.js";
 import { buildingRole, siteRole } from "../client/js/models.js";
 import { TILE_COUNT } from "../engine/terrain.js";
 
@@ -208,6 +211,53 @@ test("terrain built before its tokens fails loudly, never as a grey slab", () =>
   const tiles = new Uint8Array(16 * 16);
   assert.throws(() => buildGround(tiles, 16, 1), /setTerrainTokens/);
   setTerrainTokens(tokens.terrain);   // leave the module usable for other tests
+});
+
+// ── The lit windows (playtest 3, finding 3) ────────────────────────────────
+// The dystopian reference is mostly windows: a dark tower with none reads as
+// a hole in the render. The sheet is raw bytes, so all of this is checkable
+// without a browser.
+
+test("the window sheet is deterministic per seed, and actually lit", () => {
+  const a = buildWindowData(4711, tokens.terrain.windows);
+  const b = buildWindowData(4711, tokens.terrain.windows);
+  assert.deepEqual(a, b, "the same seed must print the same facade on every machine");
+  const c = buildWindowData(90210, tokens.terrain.windows);
+  assert.notDeepEqual(a, c, "different worlds should not share a facade");
+
+  const lit = [];
+  for (let i = 0; i < a.length; i += 4) if (a[i] || a[i + 1] || a[i + 2]) lit.push(i);
+  assert.ok(lit.length > 0, "no window is lit — the city is a silhouette again");
+  assert.ok(lit.length * 4 < a.length / 2, "more than half the sheet lit — that is an office at noon, not a dystopia");
+});
+
+test("the roof band stays black — a glowing roof reads as a lit plaza", () => {
+  const data = buildWindowData(4711, tokens.terrain.windows);
+  for (let y = 0; y < ROOF_BAND; y++) {
+    for (let x = 0; x < WIN_TEX; x++) {
+      const i = (y * WIN_TEX + x) * 4;
+      assert.equal(data[i] + data[i + 1] + data[i + 2], 0,
+        `texel ${x},${y} inside the roof band is lit`);
+    }
+  }
+});
+
+test("building mass carries the window sheet as an emissive map", () => {
+  setTerrainTokens(tokens.terrain);
+  const size = 8;
+  const tiles = new Uint8Array(size * size);
+  tiles[2 * size + 3] = BLOCK_TILE;
+  tiles[5 * size + 5] = BLOCK_TILE;
+  const mesh = buildBlocks(tiles, size, 4711);
+  assert.ok(mesh, "no mass built from block tiles");
+  assert.ok(mesh.material.emissiveMap, "the facade has no emissive map — windows would be painted on, not lit");
+  // The top face samples the reserved band: BoxGeometry verts 8..15 are the
+  // +y and -y faces.
+  const uv = mesh.geometry.attributes.uv;
+  for (let v = 8; v < 16; v++) {
+    assert.ok(uv.getY(v) * WIN_TEX < ROOF_BAND,
+      `roof/floor vertex ${v} samples outside the dark band`);
+  }
 });
 
 // ── Portraits (D47) ────────────────────────────────────────────────────────

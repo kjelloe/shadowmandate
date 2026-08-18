@@ -147,5 +147,16 @@
   "toast.accessDenied": "Låst — du trenger et adgangskort",
   "contract.defend": "FORSVAR",
   "toast.defenceBreached": "De er på stedet — hold det",
-  "access.lift": "TA SKILTET"
+  "access.lift": "TA SKILTET",
+  "splash.welcome": "VELKOMMEN, DIREKTØR.\nET NYTT FIRMA VENTER PÅ FØRSTE UTPLASSERING.",
+  "board.pin": "FEST",
+  "board.unpin": "LØSNE",
+  "intro.welcome": "FØRSTE UTPLASSERING",
+  "intro.move": "Trykk på en gate for å bevege deg. Dobbelttrykk for å haste — raskere, men lettere å oppdage.",
+  "intro.goal": "Ta oppdrag, fullfør dem, og hold hovedkvarteret med EVAK for å sikre alt du har tjent.",
+  "intro.stance": "Holdningsknappene: SNIK pluss dekning er det som faktisk slår en patrulje.",
+  "intro.board": "OPPDRAG: dine tilbud. Ta inntil to, FEST de du vil ha ringet på radaren.",
+  "intro.evac": "EVAK: tenn signalet og hold hovedkvarteret til droppskipet kommer.",
+  "intro.radar": "Radaren. Emblemet med ring er hovedkvarteret ditt — det er hjem, og der droppskipet lander.",
+  "intro.go": "FORSTÅTT"
 }

@@ -129,3 +129,47 @@ test("no runtime dependencies are imported by engine/ or shared/", () => {
   }
   assert.deepEqual(offenders, [], `dependency in pure code: ${offenders.join(", ")}`);
 });
+
+test("ops boundary: private machine detail stays out of the tracked tree", () => {
+  // 2026-08-16: deploy runbooks and the batch lane moved to gitignored ops/
+  // after LAN IPs, hub ports and netsh runbook lines were found duplicated
+  // across tracked docs (plan-implementation-order.md carried the whole
+  // bring-up wholesale). The guard matches the FORMS the leak actually took:
+  // a 192.168 LAN address, the sibling hub ports 8970-8972 as standalone
+  // numbers (local test ports 8977-8979 stay legal), and netsh lines.
+  const LEAKS = [
+    [/\b192\.168\.\d{1,3}\.\d{1,3}\b/, "LAN IP"],
+    [/\bnetsh\b/i, "netsh runbook line"],
+    [/\b897[0-2]\b/, "agent-mail hub port"],
+  ];
+  const SELF = new URL(import.meta.url).pathname;
+  // ops/ is the sanctioned home; .claude/, .agent-mail/ and the dev-*.md
+  // journals are gitignored and local-only.
+  const TRACKED = ALL_FILES.filter((f) =>
+    !["/ops/", "/.claude/", "/.agent-mail/"].some((d) => f.includes(d))
+    && !/dev-(log|prompts|questions)\.md$/.test(f)
+    && f !== SELF
+    && ![".png", ".jpg", ".ico", ".gz"].includes(extname(f)));
+
+  const offenders = [];
+  for (const file of TRACKED) {
+    let text;
+    try { text = readFileSync(file, "utf8"); } catch { continue; }
+    for (const [i, line] of text.split("\n").entries()) {
+      for (const [re, what] of LEAKS) {
+        if (re.test(line)) {
+          offenders.push(`${file.replace(ROOT, "")}:${i + 1} (${what}): ${line.trim().slice(0, 80)}`);
+        }
+      }
+    }
+  }
+  assert.deepEqual(offenders, [], `private ops detail in tracked file:\n${offenders.join("\n")}`);
+
+  // The boundary itself: ops must stay gitignored, or the next commit
+  // re-publishes everything the move just removed. The pattern must be "ops"
+  // WITHOUT a trailing slash — ops is a symlink into the private repo
+  // checkout, and "ops/" only matches a real directory, so the slashed form
+  // leaves the link itself unignored (found live: git showed "?? ops").
+  const gitignore = readFileSync(join(ROOT, ".gitignore"), "utf8");
+  assert.match(gitignore, /^ops$/m, '.gitignore must contain a bare "ops" line (no trailing slash)');
+});

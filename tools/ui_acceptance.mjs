@@ -111,6 +111,20 @@ async function main() {
     check("drop-in reaches the world screen", deployed);
     if (!deployed) throw new Error("cannot test HUD controls without deploying");
 
+    // --- first-deployment intro (playtest 3) -------------------------------
+    // A fresh browser context IS a first deployment, so the guided overlay
+    // must appear — and its dismiss must actually dismiss, or every control
+    // below is buried under it and the whole HUD is unusable for a new player.
+    const introShown = await page.evaluate(() => !document.getElementById("intro").hidden);
+    check("first deployment shows the intro overlay", introShown);
+    if (introShown) {
+      await evalT(() => document.getElementById("intro-dismiss").click(), undefined, "dismiss intro");
+      await sleep(300);
+      const gone = await page.evaluate(() =>
+        document.getElementById("intro").hidden && !!localStorage.getItem("sm_intro_seen"));
+      check("dismissing the intro hides it and remembers", gone);
+    }
+
     // --- stance ------------------------------------------------------------
     // The stance buttons must change the stance the SERVER agrees we have, not
     // merely the button's own styling.

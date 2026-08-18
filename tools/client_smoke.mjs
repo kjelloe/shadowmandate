@@ -125,6 +125,9 @@ async function main() {
       const dbg = await page.evaluate(() => window.__smDebug ?? null);
       failures.push(`drop-in never reached the world screen (debug: ${JSON.stringify(dbg)})`);
     } else {
+      // A fresh context gets the first-deployment intro; dismiss it so the
+      // checks below see the world, not the overlay.
+      await page.evaluate(() => document.getElementById("intro-dismiss")?.click());
       // The world must actually TICK. A frozen world renders identically to a
       // live one, so compare two samples rather than trusting a single read.
       const t1 = await page.evaluate(() => window.__smDebug.tick);

@@ -6,7 +6,7 @@
 // fog-filtered VIEWS. It never sends state.
 
 import { apply } from "../engine/reducer.js";
-import { CMD_ADVANCE_TICK, CMD_DORMANCY_TICK, validate } from "../engine/commands.js";
+import { CMD_ADVANCE_TICK, CMD_DORMANCY_TICK, CMD_EXTRACT, validate } from "../engine/commands.js";
 import { createInitialState } from "../engine/state.js";
 import { generateCity, findDropZones, autoSelectDropZone } from "../engine/citygen.js";
 import { buildView } from "../engine/view.js";
@@ -211,6 +211,18 @@ export class World {
     this.commandLog.push({ type: CMD_ADVANCE_TICK });
     this.state = apply(this.state, { type: CMD_ADVANCE_TICK });
     for (const e of this.state.events) events.push(e);
+    // The dropship lands by itself. `evacReady` means the hold succeeded; the
+    // AI issues its own extract, but a human seat has no client code that ever
+    // sent CMD_EXTRACT — the beacon hung at "ETA: 0 SECONDS" forever (playtest
+    // 3). Enqueued as a real command so the log replays it; deduped because
+    // evacReady re-fires every tick while the beacon stands at zero.
+    for (const e of events) {
+      if (e.type !== "evacReady") continue;
+      const firm = this.state.firms[e.firmId];
+      if (!firm || firm.isAi) continue;
+      if (this.queue.some((c) => c.type === CMD_EXTRACT && c.firmId === e.firmId)) continue;
+      this.queue.push({ type: CMD_EXTRACT, firmId: e.firmId });
+    }
     this.broadcast(events);
     // After the broadcast: the last view of a season should be the season's
     // last view, not the empty world that replaces it.

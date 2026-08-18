@@ -19,7 +19,7 @@ import * as THREE from "three";
 // hex copy in minimap.js. They are style tokens now (D46) — Q41c is a judgement
 // about the tile look, and it cannot be a token edit while the tiles are hard
 // wired into two renderers that can drift apart.
-let COLOUR = null, BLOCK_LO = null, BLOCK_SPAN = null;
+let COLOUR = null, BLOCK_LO = null, BLOCK_SPAN = null, WINDOWS = null;
 
 // Raw /255, deliberately NOT THREE.Color: these floats are written straight
 // into a vertex-colour buffer, and three's colour management would sRGB-decode
@@ -32,13 +32,14 @@ export function hexRgb(hex) {
 }
 
 export function setTerrainTokens(terrain) {
-  if (!terrain) { COLOUR = null; BLOCK_LO = null; BLOCK_SPAN = null; return; }
+  if (!terrain) { COLOUR = null; BLOCK_LO = null; BLOCK_SPAN = null; WINDOWS = null; return; }
   COLOUR = {};
   for (const [id, hex] of Object.entries(terrain.tiles)) COLOUR[Number(id)] = hexRgb(hex);
   COLOUR.unknown = hexRgb(terrain.unknown);
   BLOCK_LO = hexRgb(terrain.blockLo);
   const hi = hexRgb(terrain.blockHi);
   BLOCK_SPAN = hi.map((c, i) => c - BLOCK_LO[i]);
+  WINDOWS = terrain.windows ?? null;
 }
 
 // Purely cosmetic relief. Water sinks, yards and rough sit slightly proud.
@@ -114,6 +115,46 @@ export function buildGround(tiles, size, seed) {
   return new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true }));
 }
 
+// The lit-window sheet (playtest 3, finding 3). What makes a dark tower read
+// as a TOWER instead of a hole in the render is its windows — the reference
+// image is mostly windows. Built as raw RGBA bytes rather than a canvas so it
+// is identical on every machine and testable without a DOM. Deterministic
+// from the seed via hash2, like everything else here.
+//
+// Layout: WIN_TEX x WIN_TEX texels; the bottom ROOF_BAND rows stay black and
+// the box's top face is remapped onto them, so roofs never glow — a glowing
+// roof under a 52-degree camera would read as a lit plaza, which is a
+// gameplay lie. Sockets are 2x3 texels on a 4x5 pitch; a socket is lit with
+// probability `density`, warm or cool by a second draw.
+export const WIN_TEX = 64;
+export const ROOF_BAND = 5;
+export function buildWindowData(seed, windows) {
+  const data = new Uint8Array(WIN_TEX * WIN_TEX * 4);
+  const warm = hexRgb(windows.lit).map((c) => Math.round(c * 255));
+  const cool = hexRgb(windows.cool).map((c) => Math.round(c * 255));
+  const density = windows.density ?? 0.16;
+  for (let wy = 0; wy * 5 + ROOF_BAND + 3 < WIN_TEX; wy++) {
+    for (let wx = 0; wx * 4 + 3 <= WIN_TEX; wx++) {
+      if (hash2(seed ^ 0x33b1, wx, wy) >= density) continue;
+      const c = hash2(seed ^ 0x77aa, wx, wy) < 0.72 ? warm : cool;
+      // A lit socket flickers in brightness a little between neighbours, so a
+      // facade reads as many rooms rather than one printed pattern.
+      const dim = 0.6 + hash2(seed ^ 0x1234, wx, wy) * 0.4;
+      for (let py = 0; py < 3; py++) {
+        for (let px = 0; px < 2; px++) {
+          const x = wx * 4 + 1 + px, y = ROOF_BAND + wy * 5 + 1 + py;
+          const i = (y * WIN_TEX + x) * 4;
+          data[i] = Math.round(c[0] * dim);
+          data[i + 1] = Math.round(c[1] * dim);
+          data[i + 2] = Math.round(c[2] * dim);
+          data[i + 3] = 255;
+        }
+      }
+    }
+  }
+  return data;
+}
+
 // Building mass, as one instanced box mesh. Heights vary by district so a
 // commercial block reads differently from a residential one at a glance — the
 // silhouette is what makes a city legible from above.
@@ -126,22 +167,53 @@ export function buildBlocks(tiles, size, seed) {
   }
   if (!cells.length) return null;
   const geo = new THREE.BoxGeometry(1, 1, 1);
+  if (!BLOCK_LO) throw new Error("terrain3d: setTerrainTokens() was never called");
+
+  // The dystopian pass (playtest 3, finding 3): every facade carries the lit
+  // window sheet as an EMISSIVE map, so windows glow out of the dark instead
+  // of being painted on. The box's top face is remapped into the sheet's
+  // reserved black band — roofs must not glow (see buildWindowData).
+  const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
+  if (WINDOWS) {
+    const tex = new THREE.DataTexture(buildWindowData(seed, WINDOWS), WIN_TEX, WIN_TEX);
+    tex.magFilter = THREE.NearestFilter;
+    tex.minFilter = THREE.LinearFilter;
+    tex.needsUpdate = true;
+    mat.emissive = new THREE.Color(1, 1, 1);
+    mat.emissiveMap = tex;
+    // BoxGeometry face order: +x,-x,+y,-y,+z,-z, four uv pairs each. Faces 2
+    // and 3 (top and bottom) collapse onto one texel inside the roof band.
+    const uv = geo.attributes.uv;
+    const dead = (ROOF_BAND - 2) / WIN_TEX;
+    for (let v = 8; v < 16; v++) uv.setXY(v, dead, dead);
+    uv.needsUpdate = true;
+  }
+
   // Per-instance colour: one flat grey made the whole city read as a single
   // mass, which defeats the point of varying the heights at all. The tint uses
   // a SECOND hash draw so tone and height vary independently — keying both off
   // one value makes every tall block the same shade, which looks authored.
-  if (!BLOCK_LO) throw new Error("terrain3d: setTerrainTokens() was never called");
-  const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
   const mesh = new THREE.InstancedMesh(geo, mat, cells.length);
   const m = new THREE.Matrix4();
+  const pos = new THREE.Vector3(), scl = new THREE.Vector3();
+  const quat = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0);
   const colour = new THREE.Color();
   for (let i = 0; i < cells.length; i++) {
     const [x, y] = cells[i];
-    const h = 0.6 + hash2(seed, x, y) * 2.4;
-    // Footprint varies slightly too: a uniform 0.94 grid reads as tiling.
+    // Taller and meaner than the first pass (0.6–3.0): the reference city is
+    // a canyon. Skewed toward height, with the occasional genuine tower —
+    // capped so the 52-degree camera can still see over the mass into the
+    // streets the player actually plays in.
+    let h = 0.9 + Math.pow(hash2(seed, x, y), 0.8) * 3.1;
+    if (hash2(seed ^ 0x70e5, x, y) > 0.94) h += 1.8;
     const w = 0.88 + hash2(seed ^ 0x51ed, x, y) * 0.10;
-    m.makeScale(w, h, w);
-    m.setPosition(x + 0.5, h / 2, y + 0.5);
+    // A quarter-turn per instance: four different facades from one window
+    // sheet, which breaks the repetition an instanced texture would otherwise
+    // print across the whole city.
+    quat.setFromAxisAngle(up, Math.floor(hash2(seed ^ 0x2b5f, x, y) * 4) * (Math.PI / 2));
+    pos.set(x + 0.5, h / 2, y + 0.5);
+    scl.set(w, h, w);
+    m.compose(pos, quat, scl);
     mesh.setMatrixAt(i, m);
     const t = hash2(seed ^ 0x9e37, x, y);
     colour.setRGB(BLOCK_LO[0] + t * BLOCK_SPAN[0],

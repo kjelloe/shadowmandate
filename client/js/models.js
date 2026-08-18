@@ -136,6 +136,43 @@ export function evacDisplay(view) {
   };
 }
 
+// PLAYTEST 3 (finding 4): a burned operative must be TOLD where the re-spray
+// is, not left to remember which building was the cover shop. Pure decision:
+// burned -> the nearest cover shop by walking distance; any other state ->
+// null. The minimap and the diorama both draw exactly what this returns, so
+// the ping and the in-world target can never point at different shops.
+export function burnedGuidance(view) {
+  const agent = ownAgent(view);
+  if (!agent || agent.detection !== 2) return null;
+  const hx = Math.floor(agent.x / 256), hy = Math.floor(agent.y / 256);
+  let best = null, bestD = Infinity;
+  for (const b of view?.buildings ?? []) {
+    if (buildingRole(b.kind) !== "coverShop") continue;
+    const d = Math.abs(b.cellX - hx) + Math.abs(b.cellY - hy);
+    if (d < bestD) { bestD = d; best = b; }
+  }
+  if (!best) return null;
+  return { buildingId: best.id, cellX: best.cellX, cellY: best.cellY, distance: bestD };
+}
+
+// PLAYTEST 3 (finding 2): pin up to three ACCEPTED contracts so their targets
+// carry an extra ring on the radar and in the world. Resolution goes through
+// objectiveFor, so a pinned ring follows the contract to its return leg
+// rather than pointing at a site the player is already done with. Stale ids
+// (completed, expired, abandoned) simply stop resolving — no cleanup pass.
+export const MAX_PINS = 3;
+export function pinnedCells(view, pinnedIds) {
+  if (!view || !pinnedIds) return [];
+  const out = [];
+  for (const c of view.active ?? []) {
+    if (!pinnedIds.has(c.id)) continue;
+    const cell = objectiveFor(view, c);
+    if (cell) out.push({ id: c.id, cellX: cell.cellX, cellY: cell.cellY });
+    if (out.length >= MAX_PINS) break;
+  }
+  return out;
+}
+
 // The debrief, as label/value rows the screen can print directly. Kept here so
 // the payoff screen is testable without a browser.
 export function debriefRows(debrief, ledger) {

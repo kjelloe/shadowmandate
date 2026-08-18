@@ -47,7 +47,8 @@
     "dropZoneAuto": "#D9A441",
     "junction": "#D9A441",
     "junctionCut": "#3E4650",
-    "dropship": "#53D6C6"
+    "dropship": "#53D6C6",
+    "pinned": "#8FA7C4"
   },
   "note_body": "Body colours are the PAINTED part — the part a tint never touches. Keeping them separate from marks is what lets detection state stay readable: the coat stays the coat while the state band changes colour.",
   "body": {
@@ -90,26 +91,32 @@
       "symbol": "dot"
     }
   ],
-  "note_terrain": "The TILE look — the other half of Q41c. These were the last colours still living in the renderer: the diorama ground held them as float RGB triples in terrain3d.js, the radar held a hand-synced hex copy in minimap.js, and the building mass had a third ramp inline. Three copies of one colour language, in two colour spaces, with nothing keeping them equal. Now both surfaces read this table, and 'a candidate look is a token file' is true for tiles as well as figures. Values are the authored hex; consumers convert with a plain /255, NOT through THREE.Color — colour management would sRGB-decode them and darken the ground by a factor of five.",
+  "note_terrain": "The TILE look — the other half of Q41c, retuned 2026-08-18 to the dystopian night reference (playtest 3, finding 3; debugging/dystopia-city-01.png): colder, darker, streets kept a step brighter than the mass so navigation survives the murk, warm sodium reserved for entrances and checkpoints. Values are the authored hex; consumers convert with a plain /255, NOT through THREE.Color — colour management would sRGB-decode them and darken the ground by a factor of five.",
   "terrain": {
     "tiles": {
-      "0": "#2A2E26",
-      "1": "#3B3F46",
-      "2": "#24272C",
-      "3": "#454B54",
-      "4": "#171A1F",
+      "0": "#1E2124",
+      "1": "#49515E",
+      "2": "#2A2F36",
+      "3": "#545B67",
+      "4": "#101318",
       "5": "#6A5B3E",
       "6": "#4A5566",
       "7": "#7A4A3A",
-      "8": "#33352C",
-      "9": "#2E2A24",
-      "10": "#1B2A33"
+      "8": "#2A2D28",
+      "9": "#2A2724",
+      "10": "#152028"
     },
     "note_block": "Building mass tone ramp. A second seeded hash draw picks a point on it, so tone and height vary independently — keying both off one value makes every tall block the same shade, which reads as authored rather than grown.",
-    "blockLo": "#252A33",
-    "blockHi": "#383D49",
+    "blockLo": "#1A1E28",
+    "blockHi": "#2E3542",
     "unknown": "#222222",
-    "backdrop": "#0F1114"
+    "backdrop": "#0B0E14",
+    "note_windows": "The lit windows are what make a dark tower read as a TOWER rather than a hole in the render (the reference image is mostly windows). Deterministic per seed; density is the fraction of sockets lit. Warm is interior sodium, cool is screen-glow — two temperatures is what makes a facade look inhabited rather than printed.",
+    "windows": {
+      "lit": "#E4C87A",
+      "cool": "#8FB6C9",
+      "density": 0.16
+    }
   },
   "note_budget": "Triangle budgets are a MOBILE constraint, not an aesthetic one. The client already runs on a phone (7b) and a busy street draws dozens of these.",
   "triBudget": {
@@ -117,12 +124,12 @@
     "marker": 260,
     "structure": 700
   },
-  "note_light": "Lighting IS art direction, not renderer plumbing: the low, warm key from the north-west is what makes the painted low-poly look read as evening. Keeping it in tokens means a look candidate (Q41c) can change the mood without touching scene.js.",
+  "note_light": "Lighting IS art direction, not renderer plumbing. Retuned 2026-08-18 with the dystopian pass (finding 3): the warm evening key became a cold skyglow key — the city is NIGHT now, and warmth belongs to the windows and doorways, not the sky. Keeping it in tokens means a look candidate (Q41c) can change the mood without touching scene.js.",
   "lighting": {
-    "clear": "#0F1114",
+    "clear": "#0B0E14",
     "key": {
-      "color": "#FFF2DC",
-      "intensity": 1.15,
+      "color": "#C9D6E8",
+      "intensity": 1.05,
       "position": [
         -40,
         60,
@@ -130,12 +137,13 @@
       ]
     },
     "ambient": {
-      "color": "#4A5566",
-      "intensity": 0.75
+      "color": "#3D4654",
+      "intensity": 0.8,
+      "note": "Cool and LOW, but not lower: the 7a lesson was figures reading as dark blobs, and the coats are still the same dark paint."
     },
     "bounce": {
       "color": "#3E8E8C",
-      "intensity": 0.28,
+      "intensity": 0.24,
       "position": [
         30,
         20,

@@ -11,7 +11,7 @@
 
 import * as THREE from "three";
 import { buildGround, buildBlocks, setTerrainTokens } from "./terrain3d.js";
-import { siteRoles, objectiveCell, buildingRole, siteRole } from "./models.js";
+import { siteRoles, objectiveCell, buildingRole, siteRole, burnedGuidance, pinnedCells } from "./models.js";
 import { buildProcedural, applyTint } from "./asset_factory.js";
 import { resolveVisual, tintFor, detectionMark } from "./asset_resolver.js";
 import { art } from "./assets.js";
@@ -163,6 +163,10 @@ export function createScene(canvas) {
     m.inUse = true;
     m.group.visible = true;
     m.group.material.color.set(colour);
+    // Pooled rings are shared across users; the re-spray ping scales its ring
+    // per frame, so every take starts from neutral or the pulse leaks onto
+    // whatever ring happens to reuse this slot next frame.
+    m.group.scale.setScalar(1);
     return m.group;
   }
 
@@ -246,7 +250,7 @@ export function createScene(canvas) {
     return c;
   }
 
-  function draw(view) {
+  function draw(view, pinnedIds = null) {
     if (!view || !resize()) return;
       for (const m of pool) { m.inUse = false; m.group.visible = false; }
 
@@ -271,7 +275,14 @@ export function createScene(canvas) {
       at(takeVisual(buildingRole(b.kind)), b.cellX + 0.5, b.cellY + 0.5);
     }
     for (const h of view.holdingSites) at(takeVisual("holding"), h.cellX + 0.5, h.cellY + 0.5);
-    if (view.hq) at(takeVisual("ownHq"), view.hq.cellX + 0.5, view.hq.cellY + 0.5);
+    if (view.hq) {
+      at(takeVisual("ownHq"), view.hq.cellX + 0.5, view.hq.cellY + 0.5);
+      // The ring under the tent is the HQ's EMBLEM (playtest 3): the tent
+      // model alone read as one more dark structure, and a player two streets
+      // away had nothing on screen that said "home". Same HUD-affordance ring
+      // as the one under the operative, in the Firm's own mark.
+      at(takeRing(tokens.marks.ownHq), view.hq.cellX + 0.5, view.hq.cellY + 0.5, 0.12);
+    }
     for (const h of view.rivalHqs) at(takeVisual("rivalHq"), h.cellX + 0.5, h.cellY + 0.5);
     for (const p of view.patrols) {
       at(takeVisual(p.alerted ? "patrolAlert" : "patrol"), p.x + 0.5, p.y + 0.5);
@@ -311,6 +322,22 @@ export function createScene(canvas) {
       // HUD affordance rather than a thing in the world, so it is not a
       // manifest visual.
       at(takeRing(tokens.marks[stateMark]), a.x / CELL, a.y / CELL, 0.12);
+    }
+    // Pinned contracts (playtest 3): a steady watched-ring at each pinned
+    // objective, in the pinned mark — the pulse stays reserved for the
+    // CURRENT objective below.
+    for (const p of pinnedCells(view, pinnedIds)) {
+      at(takeRing(tokens.marks.pinned), p.cellX + 0.5, p.cellY + 0.5, 0.12);
+    }
+    // Burned (playtest 3): mark the nearest cover shop in the world with a
+    // breathing ring in the shop's colour, matching the radar ping.
+    const respray = burnedGuidance(view);
+    if (respray) {
+      const ring = takeRing(tokens.marks.coverShop);
+      if (ring) {
+        at(ring, respray.cellX + 0.5, respray.cellY + 0.5, 0.12);
+        ring.scale.setScalar(1 + 0.35 * (0.5 + 0.5 * Math.sin(view.tick / 3)));
+      }
     }
     // The objective beacon, pulsing so it reads as live rather than painted on.
     const objective = objectiveCell(view);

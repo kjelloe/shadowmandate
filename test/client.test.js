@@ -15,6 +15,7 @@ import {
   ownAgent, heatDisplay, districtUnder, boardRows, evacDisplay, toastsFor,
   STANCES, DETECTION_KEYS, HEAT_KEYS, CONTRACT_KEYS,
   MARKER_SHAPES, markerShape, buildingRole, siteRole,
+  burnedGuidance, pinnedCells, MAX_PINS,
 } from "../client/js/models.js";
 
 const ROOT = new URL("..", import.meta.url).pathname;
@@ -119,6 +120,49 @@ test("the evac panel shows seconds, and distinguishes paused from emergency", ()
   assert.equal(evacDisplay(paused).paused, true);
   const emergency = { hq: { evacActive: 2, evacTicks: 600, evacPaused: 0 } };
   assert.equal(evacDisplay(emergency).emergency, true);
+});
+
+test("PLAYTEST 3: a burned operative is pointed at the NEAREST cover shop, and only then", () => {
+  // kind 2 is the cover shop; kinds 0/1 are informant and market and must
+  // never be offered as a re-spray.
+  const burned = {
+    ...VIEW,
+    agents: [{ ...VIEW.agents[0], detection: 2 }],
+    buildings: [
+      { id: 3, kind: 1, cellX: 11, cellY: 10 },   // market NEXT DOOR — a trap answer
+      { id: 4, kind: 2, cellX: 30, cellY: 10 },
+      { id: 5, kind: 2, cellX: 14, cellY: 12 },   // the nearest actual shop
+    ],
+  };
+  const g = burnedGuidance(burned);
+  assert.equal(g.buildingId, 5, "guidance must pick the nearest COVER SHOP, not the nearest building");
+  assert.equal(g.cellX, 14); assert.equal(g.cellY, 12);
+
+  assert.equal(burnedGuidance(VIEW), null, "an unburned agent gets no ping");
+  assert.equal(burnedGuidance({ ...burned, buildings: [] }), null,
+    "no shops in view -> no ping, never a crash");
+});
+
+test("PLAYTEST 3: pinned contracts resolve to their CURRENT objective, capped and stale-proof", () => {
+  const view = {
+    ...VIEW,
+    sites: [{ id: 7, cellX: 20, cellY: 21 }, { id: 8, cellX: 40, cellY: 41 }],
+    active: [
+      { id: 1, kind: 1, stage: 1, siteId: 7 },
+      { id: 2, kind: 1, stage: 3, siteId: 8 },              // return leg -> the HQ
+      { id: 3, kind: 1, stage: 1, siteId: 8 },
+      { id: 4, kind: 1, stage: 1, siteId: 7 },
+    ],
+  };
+  const pins = pinnedCells(view, new Set([1, 2]));
+  assert.deepEqual(pins.map((p) => p.id), [1, 2]);
+  assert.deepEqual(pins[0], { id: 1, cellX: 20, cellY: 21 });
+  assert.deepEqual(pins[1], { id: 2, cellX: 10, cellY: 10 },
+    "a stage-3 pin must follow the contract home, not point at the finished site");
+
+  assert.equal(pinnedCells(view, new Set([1, 2, 3, 4])).length, MAX_PINS, "pins cap at three");
+  assert.deepEqual(pinnedCells(view, new Set([99])), [], "a stale id resolves to nothing");
+  assert.deepEqual(pinnedCells(view, null), [], "no pin set -> empty, never a crash");
 });
 
 test("only events worth interrupting a player become toasts", () => {

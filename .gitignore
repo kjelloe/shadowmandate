@@ -11,5 +11,7 @@ reports/
 .agent-mail/
 
 # Private ops: deploy runbooks + batch-lane infra, lives in the shared
-# private ops repo for this game and its siblings — never on public GitHub
-ops/
+# private ops repo for this game and its siblings — never on public GitHub.
+# No trailing slash: ops is a SYMLINK into the private repo checkout, and
+# "ops/" would only match a real directory, leaving the link unignored.
+ops

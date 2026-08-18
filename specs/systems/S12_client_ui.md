@@ -169,3 +169,25 @@ ids, so the client cannot tint ground by district without a view change.
 
 `❑` HUD layout wireframe (M3 slice, with screenshot gallery) · `⚙` zoom
 bounds, camera tilt copied from Fireline then adjusted.
+
+## Playtest 3 additions (2026-08-18)
+
+- **Auto-extract**: `evacReady` on a human-seated Firm makes the SERVER issue
+  `CMD_EXTRACT` (deduped; AI Firms issue their own). The beacon must end in a
+  debrief, never a hung "ETA: 0".
+- **First-deployment intro**: `#intro` overlay on the first `show("world")` of
+  a browser (localStorage `sm_intro_seen`), corner notes anchored to the HUD
+  clusters they describe. The ui gate asserts it appears and dismisses.
+- **Pins**: up to `MAX_PINS` (3) accepted contracts; `pinnedCells` in models
+  resolves through `objectiveFor` so a ring follows the contract's current
+  target. Steady ring = watched, pulsing ring = current objective, on BOTH
+  surfaces.
+- **Burned guidance**: `burnedGuidance` in models points at the nearest cover
+  shop only while burned; the radar pings it and the diorama rings it in the
+  shop's mark colour.
+- **HQ emblem**: ring + core on the radar, HUD ring under the tent in the
+  world — a dot was invisible on the night ground.
+- **The night look**: tile/lighting tokens retuned to the dystopian reference;
+  building mass carries a deterministic emissive window sheet
+  (`buildWindowData`, roof band reserved dark). All colour still lives in
+  `style_tokens.json`.

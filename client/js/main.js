@@ -12,7 +12,7 @@ import {
   ownAgent, heatDisplay, districtUnder, boardRows, activeRows, objectiveFor,
   objectiveBearing, evacDisplay, toastsFor, debriefRows, reputationBar,
   payloadForBuilding, overlayRows, disguiseFor, districtChoices, standingRows,
-  cuttableJunction, liftableGuard, dropshipFlight, DROPSHIP_MS,
+  cuttableJunction, liftableGuard, dropshipFlight, DROPSHIP_MS, MAX_PINS,
   HEAT_CLASS as HEAT_CLASSES,
 } from "./models.js";
 
@@ -59,6 +59,9 @@ function splashText(b) {
   const pad = (label, value) => `${label.padEnd(24, ".")} ${value}`;
   return [
     t("splash.title"), t("splash.terminal"), "",
+    // A fresh identity just got its recovery code — this is a NEW director,
+    // and the splash should say hello before it says numbers (playtest 3).
+    ...(session.recoveryCode ? [t("splash.welcome"), ""] : []),
     pad(t("splash.world"), b?.worldId ?? "—"),
     ...standingRows(b?.standing).map(([k, v, ...a]) => pad(t(k), t(v, ...a))),
     pad(t("splash.activeFirms"), b?.activeFirms ?? 0),
@@ -95,6 +98,10 @@ session.onChange((s, events) => {
     renderer?.resize();
     // First sight of the world this session: fly the ship in.
     if (!flightSeen) { flightSeen = true; startDropship(1); }
+    // First deployment EVER on this browser: the guided overlay (playtest 3).
+    // localStorage rather than the ledger, because the thing being taught is
+    // this client's controls, not this Firm's history.
+    if (!localStorage.getItem("sm_intro_seen")) $("#intro").hidden = false;
   }
   if (!deployed) flightSeen = false;
   paint(s, events ?? []);
@@ -149,14 +156,14 @@ function paint(s, events) {
     // under software rendering; it costs real devices battery rather than
     // seconds, which is why it went unnoticed.
     if (!$("#world").hidden) {
-      renderer.draw(view);
+      renderer.draw(view, pinned);
       // The dropship rides on top of the drawn frame. A null flight hides it,
       // so an interrupted or finished sequence needs no extra bookkeeping.
       const flight = flightStartedAt === null
         ? null : dropshipFlight(Date.now() - flightStartedAt, flightDir);
       if (flightStartedAt !== null && !flight) flightStartedAt = null;
       renderer.drawDropship(flight, view.hq ? { x: view.hq.cellX, y: view.hq.cellY } : null);
-      minimap.draw(view);
+      minimap.draw(view, pinned);
     }
   } catch (err) {
     fatal("render", err);
@@ -249,11 +256,16 @@ function renderBoard(view) {
   }
 }
 
+// Pinned contract ids (playtest 3): session-local, cleared with each debrief.
+// A stale id simply stops resolving in pinnedCells, so nothing here has to
+// chase contract lifecycles.
+const pinned = new Set();
+
 let activeSignature = "";
 const progressBars = new Map();   // contractId -> the fill element
 function renderActive(view) {
   const rows = activeRows(view);
-  const signature = rows.map((r) => `${r.id}:${r.stageKey}:${r.atRisk}`).join("|");
+  const signature = rows.map((r) => `${r.id}:${r.stageKey}:${r.atRisk}:${pinned.has(r.id) ? 1 : 0}`).join("|");
   if (signature !== activeSignature) {
     activeSignature = signature;
     const list = $("#active-list");
@@ -272,6 +284,17 @@ function renderActive(view) {
       const right = document.createElement("span");
       right.textContent = `+${row.reward}`;
       li.append(label, right);
+      // Pin toggle (playtest 3): tracked contracts carry an extra ring on the
+      // radar and in the world, up to MAX_PINS at once.
+      const pin = document.createElement("button");
+      pin.className = "pin";
+      pin.textContent = t(pinned.has(row.id) ? "board.unpin" : "board.pin");
+      pin.addEventListener("click", () => {
+        if (pinned.has(row.id)) pinned.delete(row.id);
+        else if (pinned.size < MAX_PINS) pinned.add(row.id);
+        activeSignature = "";   // membership is in the signature; force redraw
+      });
+      li.appendChild(pin);
       if (row.working) {
         // Built ONCE here and only its width mutated below. Putting progress in
         // the signature above would rebuild this list ten times a second, which
@@ -336,6 +359,7 @@ function showDebrief(s) {
       `${d.reputationDelta >= 0 ? "+" : ""}${d.reputationDelta}`,
   ];
   $("#debrief-terminal").textContent = lines.join("\n");
+  pinned.clear();   // the contracts these ids named left with the sortie
   show("debrief");
 }
 
@@ -616,6 +640,10 @@ $("#enter-btn").addEventListener("click", () => {
 });
 $("#board-btn").addEventListener("click", () => { $("#board").hidden = !$("#board").hidden; });
 $("#evac-btn").addEventListener("click", () => session.send({ type: 11, firmId: session.firmId }));
+$("#intro-dismiss").addEventListener("click", () => {
+  $("#intro").hidden = true;
+  localStorage.setItem("sm_intro_seen", "1");
+});
 for (const b of document.querySelectorAll("#standoff [data-choice]")) {
   b.addEventListener("click", () => {
     const a = ownAgent(session.view);

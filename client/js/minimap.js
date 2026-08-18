@@ -10,7 +10,7 @@
 // candidate changes both at once.
 const CELL = 256;
 
-import { siteRoles, objectiveCell, siteRole } from "./models.js";
+import { siteRoles, objectiveCell, siteRole, burnedGuidance, pinnedCells } from "./models.js";
 import { mark, terrain } from "./assets.js";
 import { detectionMark } from "./asset_resolver.js";
 
@@ -38,7 +38,7 @@ export function createMinimap(canvas) {
   return {
     setTiles(next, size) { tiles = next; if (tiles) bake(size); },
     hasTiles() { return tiles !== null; },
-    draw(view) {
+    draw(view, pinnedIds = null) {
       if (!view) return;
       const w = canvas.width, h = canvas.height;
       ctx.fillStyle = terrain().backdrop;
@@ -81,8 +81,36 @@ export function createMinimap(canvas) {
       for (const c of view.cameras ?? []) {
         dot(c.cellX, c.cellY, mark(c.disabled ? "cameraDisabled" : "camera"), 1.2);
       }
+      // Pinned contracts (playtest 3): a steady double ring over the site
+      // token, distinct from the objective's PULSING ring — the pulse means
+      // "current", the steady ring means "watched".
+      for (const p of pinnedCells(view, pinnedIds)) {
+        ctx.strokeStyle = mark("pinned"); ctx.lineWidth = 1.2;
+        for (const r of [3.4, 5]) {
+          ctx.beginPath(); ctx.arc(p.cellX * s, p.cellY * s, r, 0, Math.PI * 2); ctx.stroke();
+        }
+      }
+      // Burned (playtest 3): ping the nearest cover shop. Same pulse rhythm as
+      // the objective ring but in the shop's own colour, so "go here to fix
+      // this" cannot be mistaken for "go here to work".
+      const respray = burnedGuidance(view);
+      if (respray) {
+        const pulse = 3 + 1.8 * Math.sin(view.tick / 3);
+        ctx.strokeStyle = mark("coverShop"); ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.arc(respray.cellX * s, respray.cellY * s, pulse, 0, Math.PI * 2);
+        ctx.stroke();
+      }
       for (const r of view.rivals) dot(r.x / CELL, r.y / CELL, mark("rival"), 2);
-      if (view.hq) dot(view.hq.cellX, view.hq.cellY, mark("ownHq"), 2.4);
+      // The HQ as an EMBLEM, not a dot (playtest 3): the dot vanished into the
+      // dark ground and a player who drifted two streets away had no idea
+      // where home was. Ring + core reads at radar size on every tile colour.
+      if (view.hq) {
+        const hx = view.hq.cellX * s, hy = view.hq.cellY * s;
+        ctx.strokeStyle = mark("ownHq"); ctx.lineWidth = 1.6;
+        ctx.beginPath(); ctx.arc(hx, hy, 4.4, 0, Math.PI * 2); ctx.stroke();
+        dot(view.hq.cellX, view.hq.cellY, mark("ownHq"), 2.4);
+      }
       for (const a of view.agents) {
         const colour = mark(detectionMark(a.detection));
         dot(a.x / CELL, a.y / CELL, colour, 2.6);

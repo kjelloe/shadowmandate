@@ -123,3 +123,27 @@ button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal)
   background: #2A2E36; border-radius: 2px; overflow: hidden; }
 .prog i { display: block; height: 100%; width: 0; background: #53D6C6;
   transition: width .1s linear; }
+
+/* First-deployment intro (playtest 3). Corner notes point at the HUD clusters
+   they describe — the layout is corner-anchored on every viewport, so the
+   notes stay truthful on a phone without measuring anything. */
+#intro { position: absolute; inset: 0; z-index: 30;
+  background: rgba(10,12,15,.72); pointer-events: auto; }
+.intro-note { position: absolute; max-width: 15rem; margin: 0;
+  color: var(--ink); font-size: .8rem; line-height: 1.35;
+  background: rgba(29,32,38,.95); border: 1px solid var(--teal);
+  border-radius: 6px; padding: .5rem .65rem; }
+.intro-tl { top: 7.5rem; left: .8rem; }
+.intro-tr { top: 5.2rem; right: .8rem; text-align: right; }
+.intro-tr2 { top: 11.5rem; right: .8rem; text-align: right; }
+.intro-bl { bottom: 13.5rem; left: .8rem; }
+#intro-card { position: absolute; left: 50%; top: 46%;
+  transform: translate(-50%, -50%); width: min(22rem, 84vw);
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+  padding: 1rem 1.2rem; text-align: center; }
+#intro-card h2 { margin: 0 0 .6rem; letter-spacing: .12em; }
+#intro-card p { margin: .4rem 0; font-size: .85rem; line-height: 1.4; }
+#intro-card button { margin-top: .8rem; }
+
+/* Pin toggle on active-contract rows (playtest 3). */
+#active-list button.pin { font-size: .68rem; padding: .15rem .5rem; }
