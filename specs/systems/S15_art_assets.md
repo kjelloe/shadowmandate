@@ -189,3 +189,30 @@ point of having done 7a-1 and 7a-4 before asking the question.
 live in `portraits.js` rather than the tokens, because they read as part of the
 layer definitions rather than the world's look. If a look candidate should reach
 the faces too, that is a small follow-up and the guard's scope comment says so.
+
+## Playtest 3, finding 3 — the deferred half (2026-08-19)
+
+The dystopian night pass (2026-08-18) shipped the palette, lighting and window
+sheet; this closes the two pieces recorded as deferred:
+
+- **The detail pass.** Every builder in `asset_factory.js` was upgraded from
+  literal boxes: figures share a `personCore` (legs, boots, flared coat, arms,
+  hands) under their class-specific reads (yoke, cap, lamp); kiosks gained
+  corner posts, a framed doorway with an awning, a shuttered window and a wall
+  vent plus per-variant roof furniture; the HQ is a working camp (comms mast,
+  crates, sandbag arc, entrance flap); the dropship has a nose cone, winglets,
+  twin fins, cylindrical pods with intake rings and skids. `triBudget` rose to
+  700/420/900 (figure/marker/structure) — still a phone constraint (7b) — and
+  a new **`triFloor`** (320/100/220) makes the pass *assertable*: a builder
+  that quietly regresses to boxes stays under budget and green, and "a feature
+  can silently do nothing" is this project's signature failure.
+- **Street clutter.** `terrain3d.js` grows `clutterPlacements` (pure,
+  node-testable) + `buildClutter` (instanced crates, barrels, vents, tarps;
+  colours and density from `terrain.clutter` tokens). The honesty rule applies
+  hardest here: clutter lands only on alleys, yards and rough ground (streets
+  are the navigation surface), sits outside a 0.2-cell clearance ring around
+  every cell centre so it can never cover a standing agent, and stays
+  knee-high. The eligible-tile set is PINNED in the test as a deliberate
+  duplicate — the first version checked placements against `CLUTTER_TILES`
+  itself, which is self-referential: widening the set in code widened the
+  check with it, found by mutation.

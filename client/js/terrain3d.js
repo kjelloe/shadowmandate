@@ -19,7 +19,7 @@ import * as THREE from "three";
 // hex copy in minimap.js. They are style tokens now (D46) — Q41c is a judgement
 // about the tile look, and it cannot be a token edit while the tiles are hard
 // wired into two renderers that can drift apart.
-let COLOUR = null, BLOCK_LO = null, BLOCK_SPAN = null, WINDOWS = null;
+let COLOUR = null, BLOCK_LO = null, BLOCK_SPAN = null, WINDOWS = null, CLUTTER = null;
 
 // Raw /255, deliberately NOT THREE.Color: these floats are written straight
 // into a vertex-colour buffer, and three's colour management would sRGB-decode
@@ -32,7 +32,7 @@ export function hexRgb(hex) {
 }
 
 export function setTerrainTokens(terrain) {
-  if (!terrain) { COLOUR = null; BLOCK_LO = null; BLOCK_SPAN = null; WINDOWS = null; return; }
+  if (!terrain) { COLOUR = null; BLOCK_LO = null; BLOCK_SPAN = null; WINDOWS = null; CLUTTER = null; return; }
   COLOUR = {};
   for (const [id, hex] of Object.entries(terrain.tiles)) COLOUR[Number(id)] = hexRgb(hex);
   COLOUR.unknown = hexRgb(terrain.unknown);
@@ -40,6 +40,7 @@ export function setTerrainTokens(terrain) {
   const hi = hexRgb(terrain.blockHi);
   BLOCK_SPAN = hi.map((c, i) => c - BLOCK_LO[i]);
   WINDOWS = terrain.windows ?? null;
+  CLUTTER = terrain.clutter ?? null;
 }
 
 // Purely cosmetic relief. Water sinks, yards and rough sit slightly proud.
@@ -225,6 +226,92 @@ export function buildBlocks(tiles, size, seed) {
   if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   mesh.castShadow = false;
   return mesh;
+}
+
+// ── Street clutter (playtest 3, finding 3 — the deferred half) ─────────────
+// The reference city is CLUTTERED at ground level: crates, drums, ducting,
+// dumped tarps. Purely cosmetic set dressing, deterministic per seed like
+// everything else here.
+//
+// THE HONESTY RULE APPLIES HARDEST HERE. Gameplay is flat 2D cells with
+// entities at cell CENTRES, so clutter (a) only lands on alleys, yards and
+// rough ground — streets stay clear because they are the navigation surface,
+// (b) sits OFF the cell centre so it can never cover a standing agent, and
+// (c) stays knee-high so it cannot read as an obstacle the simulation does
+// not model.
+
+export const CLUTTER_TILES = new Set([2, 8, 9]);
+export const CLUTTER_KINDS = ["crate", "barrel", "vent", "tarp"];
+// The exclusion ring around a cell centre, in cell units. Entities stand at
+// the centre; nothing decorative may sit within this radius of one.
+export const CLUTTER_CLEARANCE = 0.2;
+
+// Pure placement, split from the mesh build so it is testable without
+// inspecting instance matrices. Offsets are drawn from [CLEARANCE+0.06, 0.38]
+// and pushed to one side per axis, so every prop keeps the clearance ring by
+// construction rather than by luck.
+export function clutterPlacements(tiles, size, seed, density) {
+  const out = [];
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (!CLUTTER_TILES.has(tiles[y * size + x])) continue;
+      if (hash2(seed ^ 0xc1a7, x, y) >= density) continue;
+      const n = hash2(seed ^ 0x5eed, x, y) < 0.35 ? 2 : 1;
+      for (let k = 0; k < n; k++) {
+        const salt = k * 0x101;
+        out.push({
+          x, y,
+          kind: CLUTTER_KINDS[Math.floor(hash2((seed + salt) ^ 0x9a11, x, y) * CLUTTER_KINDS.length) % CLUTTER_KINDS.length],
+          dx: (hash2((seed + salt) ^ 0x0ff1, x, y) < 0.5 ? -1 : 1)
+            * (CLUTTER_CLEARANCE + 0.06 + hash2((seed + salt) ^ 0x0ff2, x, y) * 0.12),
+          dz: (hash2((seed + salt) ^ 0x0ff3, x, y) < 0.5 ? -1 : 1)
+            * (CLUTTER_CLEARANCE + 0.06 + hash2((seed + salt) ^ 0x0ff4, x, y) * 0.12),
+          rot: hash2((seed + salt) ^ 0x0ff5, x, y) * Math.PI * 2,
+          s: 0.8 + hash2((seed + salt) ^ 0x0ff6, x, y) * 0.4,
+        });
+      }
+    }
+  }
+  return out;
+}
+
+// Base geometry per kind: footprint and height in cell units, all knee-high.
+const CLUTTER_GEO = {
+  crate: () => new THREE.BoxGeometry(0.20, 0.20, 0.20),
+  barrel: () => new THREE.CylinderGeometry(0.095, 0.10, 0.26, 7),
+  vent: () => new THREE.BoxGeometry(0.28, 0.12, 0.20),
+  tarp: () => new THREE.BoxGeometry(0.32, 0.09, 0.26),
+};
+const CLUTTER_BASE_H = { crate: 0.20, barrel: 0.26, vent: 0.12, tarp: 0.09 };
+
+export function buildClutter(tiles, size, seed) {
+  if (!CLUTTER) return null;
+  const placements = clutterPlacements(tiles, size, seed, CLUTTER.density ?? 0.55);
+  if (!placements.length) return null;
+  const byKind = {};
+  for (const p of placements) (byKind[p.kind] ??= []).push(p);
+  const group = new THREE.Group();
+  const m = new THREE.Matrix4();
+  const pos = new THREE.Vector3(), scl = new THREE.Vector3();
+  const quat = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0);
+  for (const [kind, list] of Object.entries(byKind)) {
+    const mesh = new THREE.InstancedMesh(
+      CLUTTER_GEO[kind](),
+      new THREE.MeshLambertMaterial({ color: new THREE.Color().setRGB(...hexRgb(CLUTTER[kind])) }),
+      list.length);
+    for (let i = 0; i < list.length; i++) {
+      const p = list[i];
+      quat.setFromAxisAngle(up, p.rot);
+      pos.set(p.x + 0.5 + p.dx, (CLUTTER_BASE_H[kind] * p.s) / 2, p.y + 0.5 + p.dz);
+      scl.set(p.s, p.s, p.s);
+      m.compose(pos, quat, scl);
+      mesh.setMatrixAt(i, m);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.castShadow = false;
+    group.add(mesh);
+  }
+  return group;
 }
 
 export function countBlocks(tiles) {

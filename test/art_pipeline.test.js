@@ -25,7 +25,8 @@ import {
 } from "../client/js/portraits.js";
 import {
   setTerrainTokens, hexRgb, buildGround, buildBlocks, buildWindowData,
-  WIN_TEX, ROOF_BAND, BLOCK_TILE,
+  buildClutter, clutterPlacements, WIN_TEX, ROOF_BAND, BLOCK_TILE,
+  CLUTTER_TILES, CLUTTER_KINDS, CLUTTER_CLEARANCE,
 } from "../client/js/terrain3d.js";
 import { buildingRole, siteRole } from "../client/js/models.js";
 import { TILE_COUNT } from "../engine/terrain.js";
@@ -64,6 +65,7 @@ test("an unknown role is reported, never silently substituted", () => {
 
 test("triangle budgets hold — the client runs on a phone", () => {
   const budgets = tokens.triBudget;
+  const floors = tokens.triFloor;
   for (const role of ROLES) {
     const entry = manifestEntry(manifest, role);
     const group = buildProcedural(entry.procedural);
@@ -72,7 +74,14 @@ test("triangle budgets hold — the client runs on a phone", () => {
     assert.ok(budget, `class "${entry.class}" has no triangle budget`);
     assert.ok(tris <= budget,
       `${role} (${entry.procedural}) is ${tris} triangles, over the ${entry.class} budget of ${budget}`);
-    assert.ok(tris > 0, `${role} built no geometry at all`);
+    // The FLOOR is the detail pass's teeth (playtest 3, finding 3). A builder
+    // that quietly regresses to boxes stays under budget and green — "a
+    // feature can silently do nothing" is this project's signature failure,
+    // and a ceiling alone cannot catch it.
+    const floor = floors[entry.class];
+    assert.ok(floor, `class "${entry.class}" has no triangle floor`);
+    assert.ok(tris >= floor,
+      `${role} (${entry.procedural}) is ${tris} triangles, under the ${entry.class} floor of ${floor} — the detail pass regressed`);
   }
 });
 
@@ -258,6 +267,76 @@ test("building mass carries the window sheet as an emissive map", () => {
     assert.ok(uv.getY(v) * WIN_TEX < ROOF_BAND,
       `roof/floor vertex ${v} samples outside the dark band`);
   }
+});
+
+// ── Street clutter (playtest 3, finding 3 — the deferred half) ─────────────
+// Set dressing is where the honesty rule is easiest to break by accident:
+// gameplay is flat cells with entities at cell CENTRES, so a crate that lands
+// on a centre hides an agent, and clutter on a street muddies the one surface
+// navigation depends on. Placement is a pure function, so all of it is
+// checkable without a browser.
+
+// A little map with every eligible surface: alleys, a yard, rough ground —
+// plus streets, a block and water that must all stay clean.
+function clutterTestTiles(size) {
+  const tiles = new Uint8Array(size * size);
+  for (let i = 0; i < tiles.length; i++) tiles[i] = [1, 2, 8, 9, 4, 10][i % 6];
+  return tiles;
+}
+
+test("clutter is deterministic per seed, present, and only on its tiles", () => {
+  const size = 24;
+  const tiles = clutterTestTiles(size);
+  const a = clutterPlacements(tiles, size, 4711, tokens.terrain.clutter.density);
+  const b = clutterPlacements(tiles, size, 4711, tokens.terrain.clutter.density);
+  assert.deepEqual(a, b, "the same seed must dress the same streets on every machine");
+  assert.notDeepEqual(a, clutterPlacements(tiles, size, 90210, tokens.terrain.clutter.density),
+    "different worlds should not share their litter");
+  assert.ok(a.length > 0, "no clutter at all — the pass silently did nothing");
+  // A DELIBERATE duplicate, like the fixture hash twin: checking placements
+  // against CLUTTER_TILES alone is self-referential — widen the set in the
+  // code and the check widens with it. Mutation-tested: adding streets to the
+  // set must fail HERE, not somewhere incidental.
+  assert.deepEqual([...CLUTTER_TILES].sort((x, y) => x - y), [2, 8, 9],
+    "the eligible-tile set changed — alleys, yards and rough ground only, or re-decide deliberately");
+  for (const p of a) {
+    assert.ok(CLUTTER_TILES.has(tiles[p.y * size + p.x]),
+      `clutter on tile ${tiles[p.y * size + p.x]} at ${p.x},${p.y} — streets, blocks and water must stay clean`);
+    assert.ok(CLUTTER_KINDS.includes(p.kind), `unknown clutter kind "${p.kind}"`);
+  }
+});
+
+test("clutter keeps the clearance ring — a prop must never cover a standing agent", () => {
+  // Entities are at cell centres; the reducer knows nothing about crates. A
+  // prop inside the ring is a lie about where an agent can be seen.
+  const size = 24;
+  const a = clutterPlacements(clutterTestTiles(size), size, 4711, 1.0);
+  for (const p of a) {
+    assert.ok(Math.abs(p.dx) >= CLUTTER_CLEARANCE && Math.abs(p.dz) >= CLUTTER_CLEARANCE,
+      `prop at ${p.x},${p.y} sits ${p.dx.toFixed(2)},${p.dz.toFixed(2)} from centre — inside the ${CLUTTER_CLEARANCE} clearance ring`);
+    assert.ok(Math.abs(p.dx) < 0.5 && Math.abs(p.dz) < 0.5,
+      `prop at ${p.x},${p.y} drifted out of its own cell`);
+  }
+});
+
+test("clutter colours are tokens, and the build honours them", () => {
+  setTerrainTokens(tokens.terrain);
+  for (const kind of CLUTTER_KINDS) {
+    assert.ok(tokens.terrain.clutter[kind],
+      `clutter kind "${kind}" has no colour in style_tokens.json`);
+  }
+  const size = 24;
+  const group = buildClutter(clutterTestTiles(size), size, 4711);
+  assert.ok(group, "no clutter group built from an eligible map");
+  assert.ok(group.children.length > 0, "clutter group is empty");
+  let instances = 0;
+  for (const mesh of group.children) {
+    assert.ok(mesh.isInstancedMesh, "clutter must be instanced — a busy city draws hundreds of props");
+    instances += mesh.count;
+  }
+  assert.ok(instances > 0, "clutter meshes carry no instances");
+  // A map with nothing to dress builds nothing, quietly and legally.
+  assert.equal(buildClutter(new Uint8Array(16 * 16).fill(1), 16, 4711), null);
 });
 
 // ── Portraits (D47) ────────────────────────────────────────────────────────

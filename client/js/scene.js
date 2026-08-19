@@ -10,7 +10,7 @@
 // reasonably read as "off centre".
 
 import * as THREE from "three";
-import { buildGround, buildBlocks, setTerrainTokens } from "./terrain3d.js";
+import { buildGround, buildBlocks, buildClutter, setTerrainTokens } from "./terrain3d.js";
 import { siteRoles, objectiveCell, buildingRole, siteRole, burnedGuidance, pinnedCells } from "./models.js";
 import { buildProcedural, applyTint } from "./asset_factory.js";
 import { resolveVisual, tintFor, detectionMark } from "./asset_resolver.js";
@@ -214,6 +214,8 @@ export function createScene(canvas) {
     terrain.add(buildGround(tiles, size, seed));
     const blocks = buildBlocks(tiles, size, seed);
     if (blocks) terrain.add(blocks);
+    const clutter = buildClutter(tiles, size, seed);
+    if (clutter) terrain.add(clutter);
     scene.add(terrain);
   }
 
