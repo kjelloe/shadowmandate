@@ -30,21 +30,35 @@ function deployed(seed = 4711) {
   return { s, zone: z };
 }
 
-test("drop-in places an HQ and a lead agent, and marks the Firm deployed", () => {
+test("drop-in establishes the HQ in the nearest safehouse, and the agent lands with it", () => {
   const { s, zone } = deployed();
   assert.equal(s.hqs.length, 1);
-  assert.equal(s.hqs[0].cellX, zone.cellX);
+  const hq = s.hqs[0];
+  // A DELIBERATE duplicate of the landing rule (fixture-twin style): the
+  // nearest safehouse to the requested cell, computed independently here so
+  // the engine's hqLandingFor cannot verify itself.
+  const safehouses = s.buildings.filter((b) => b.kind === 0);
+  assert.ok(safehouses.length, "the reference world generated no safehouse");
+  const dist = (b) => Math.abs(b.entranceX - zone.cellX) + Math.abs(b.entranceY - zone.cellY);
+  const nearest = safehouses.reduce((a, b) => (dist(b) < dist(a) ? b : a));
+  assert.equal(hq.buildingId, nearest.id, "the HQ did not claim the nearest safehouse");
+  assert.equal(hq.cellX, nearest.entranceX);
+  assert.equal(hq.cellY, nearest.entranceY);
   assert.equal(s.firms[0].state, FIRM_DEPLOYED);
   const agent = s.agents.find((a) => a.firmId === 0);
   assert.ok(agent && agent.state === AGENT_ACTIVE, "no lead agent landed");
-  assert.ok(s.events.some((e) => e.type === "firmDeployed"));
+  assert.equal(Math.floor(agent.x / 256), hq.cellX, "the agent landed away from the HQ");
+  assert.equal(Math.floor(agent.y / 256), hq.cellY);
+  const ev = s.events.find((e) => e.type === "firmDeployed");
+  assert.ok(ev && ev.buildingId === nearest.id && ev.cellX === hq.cellX,
+    "the deploy event must report the LANDING, not the request");
 });
 
-test("drop-in is refused onto unlandable ground and next to a rival HQ", () => {
+test("drop-in refuses garbage requests, snaps away from rivals, never doubles a safehouse", () => {
   let { s } = deployed();
-  const hq = s.hqs[0];
+  const hq0 = s.hqs[0];
 
-  // A building-mass cell is unlandable (checked before proximity).
+  // A building-mass REQUEST is still refused loudly (intent validation).
   let blockCell = null;
   for (let y = 0; y < s.size && !blockCell; y++) {
     for (let x = 0; x < s.size; x++) {
@@ -54,19 +68,36 @@ test("drop-in is refused onto unlandable ground and next to a rival HQ", () => {
   const onBlock = apply(s, { type: CMD_DROP_IN, firmId: 1, cellX: blockCell.x, cellY: blockCell.y });
   assert.equal(onBlock.events[0].reason, "unlandable");
 
-  // A LANDABLE cell inside the rival's clear radius is refused for proximity.
+  // A request right on the rival's doorstep SNAPS to a different safehouse
+  // rather than refusing — the landing rule owns proximity now.
+  const snapped = apply(s, { type: CMD_DROP_IN, firmId: 1, cellX: hq0.cellX, cellY: hq0.cellY });
+  const hq1 = snapped.hqs.find((h) => h.firmId === 1);
+  assert.ok(hq1, "a drop near a rival must land somewhere, not refuse");
+  assert.ok(hq1.buildingId >= 0, "the second Firm should still get a safehouse");
+  assert.notEqual(hq1.buildingId, hq0.buildingId, "two HQs may never share one safehouse");
+  assert.ok(Math.abs(hq1.cellX - hq0.cellX) + Math.abs(hq1.cellY - hq0.cellY)
+    >= RULES.hq.dropZoneMinClearRadius, "the snapped landing broke the clear radius");
+
+  // The TENT FALLBACK (no safehouse anywhere) keeps the old proximity rule.
   let nearCell = null;
   for (let r = 1; r < RULES.hq.dropZoneMinClearRadius && !nearCell; r++) {
     for (const [dx, dy] of [[r, 0], [-r, 0], [0, r], [0, -r]]) {
-      const x = hq.cellX + dx, y = hq.cellY + dy;
+      const x = hq0.cellX + dx, y = hq0.cellY + dy;
       if (x < 1 || y < 1 || x >= s.size - 1 || y >= s.size - 1) continue;
       const t = s.map.cells[y * s.size + x];
       if (t !== 4 && t !== 10) { nearCell = { x, y }; break; }
     }
   }
   assert.ok(nearCell, "no landable cell near the HQ to test proximity");
-  const tooClose = apply(s, { type: CMD_DROP_IN, firmId: 1, cellX: nearCell.x, cellY: nearCell.y });
+  const bare = { ...s, buildings: [] };
+  const tooClose = apply(bare, { type: CMD_DROP_IN, firmId: 1, cellX: nearCell.x, cellY: nearCell.y });
   assert.equal(tooClose.events[0].reason, "too_close_to_rival_hq");
+  // And far enough away, the tent still stands where asked.
+  const farCell = cellAwayFrom(s, hq0.cellX, hq0.cellY, RULES.hq.dropZoneMinClearRadius + 2);
+  const tent = apply(bare, { type: CMD_DROP_IN, firmId: 1, cellX: farCell.x, cellY: farCell.y });
+  const tentHq = tent.hqs.find((h) => h.firmId === 1);
+  assert.ok(tentHq && tentHq.buildingId === -1 && tentHq.cellX === farCell.x,
+    "with no safehouse in the world the HQ must fall back to the tent at the request");
 });
 
 test("the evac beacon runs for the ruled hold and then reports ready", () => {

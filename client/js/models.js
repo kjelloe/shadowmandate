@@ -390,6 +390,17 @@ export function cuttableJunction(view) {
   return null;
 }
 
+// Playtest 4: the Field HQ establishes INSIDE a building — the engine snaps
+// the drop to a safehouse door. When an HQ cell is a building entrance, the
+// building itself is the structure, so the client keeps the tent packed and
+// marks home with the emblem ring alone. A view-model decision (pure, unit-
+// tested) because a tent drawn through a safehouse reads as a glitch, and the
+// client must agree with the engine about what "in a building" means.
+export function hqInBuilding(view, hq) {
+  return !!hq
+    && (view.buildings ?? []).some((b) => b.cellX === hq.cellX && b.cellY === hq.cellY);
+}
+
 // ── Dropship choreography (S05) ────────────────────────────────────────────
 //
 // Presentation only: the dropship never exists in engine state, and the server

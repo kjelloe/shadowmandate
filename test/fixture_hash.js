@@ -99,6 +99,7 @@ export function hashStateLocal(state) {
   for (const h of state.hqs) {
     w.writeI32LE(h.id); w.writeI32LE(h.firmId);
     w.writeI32LE(h.cellX); w.writeI32LE(h.cellY);
+    w.writeI32LE(h.buildingId);
     w.writeI32LE(h.condition); w.writeI32LE(h.cacheResources);
     w.writeI32LE(h.evacActive); w.writeI32LE(h.evacTicks); w.writeI32LE(h.evacPaused);
     w.writeI32LE(h.alarmTicks); w.writeI32LE(h.lootTicks); w.writeI32LE(h.lootedBy);

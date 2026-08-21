@@ -31,6 +31,8 @@ import { refillPool, rebuildOffers } from "../engine/contracts.js";
 import { spawnAiFirms, stepAiFirms } from "../engine/ai_firms.js";
 import { raiseAlarm, ALARM_LOCKDOWN } from "../engine/security.js";
 import { grantCredential } from "../engine/access.js";
+import { dropIn } from "../engine/hq.js";
+import { findDropZones } from "../engine/citygen.js";
 import { RULES } from "./helpers.js";
 
 const SEED = 20260805;
@@ -49,7 +51,13 @@ function populatedWorld() {
   // hash-inert collection here, or the guarantee quietly rots again.
   raiseAlarm(s, s.sites[0], RULES.security.alarm, ALARM_LOCKDOWN, "fixture");
   grantCredential(s, 0, 2, "fixture");
-  
+  // An HQ. Discovered missing in playtest 4's slice B: hqs had been a
+  // populated-fixture blind spot since M3 — a field added to one twin's hq
+  // writer alone left the ENTIRE suite green, because no compared world ever
+  // contained one.
+  const zone = findDropZones(s, RULES.citygen)[0];
+  const err = dropIn(s, 0, zone.cellX, zone.cellY, RULES.hq, RULES.agents);
+  if (err) throw new Error(`fixture drop-in failed: ${err}`);
   return s;
 }
 
@@ -69,6 +77,8 @@ test("the populated world actually populates — otherwise this file proves noth
   assert.ok(s.alarms.length > 0,
     "no alarms — the twins' alarm writers would never be compared, which is "
     + "exactly the hole this file exists to close");
+  assert.ok(s.hqs.length > 0,
+    "no HQs — the twins' hq writers go uncompared (this was a real blind spot from M3 to playtest 4)");
 });
 
 test("the paired hash functions agree on a world containing contracts and city", () => {

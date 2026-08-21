@@ -291,7 +291,25 @@ test("the view tells the client when it is standing on a door, and inside one", 
   const agent = world.state.agents.find((a) => a.firmId === 0 && a.state === 1);
   const building = world.state.buildings.find((b) => b.kind === 0);
 
-  assert.equal(world.viewFor(0).atDoor, null, "not on a door yet");
+  // Playtest 4: the drop lands ON the HQ safehouse door, and the client
+  // should know immediately that home has an inside.
+  const hq = world.state.hqs.find((h) => h.firmId === 0);
+  const atHome = world.viewFor(0).atDoor;
+  assert.ok(atHome && atHome.id === hq.buildingId,
+    "the drop lands on the HQ's own door and the view must say so");
+
+  // Step off the door and the report clears.
+  let off = null;
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [2, 0], [-2, 0], [0, 2], [0, -2]]) {
+    const x = hq.cellX + dx, y = hq.cellY + dy;
+    if (!world.state.buildings.some((b) => b.entranceX === x && b.entranceY === y)) {
+      off = { x, y }; break;
+    }
+  }
+  assert.ok(off, "no doorless cell beside the HQ");
+  agent.x = off.x * 256 + 128;
+  agent.y = off.y * 256 + 128;
+  assert.equal(world.viewFor(0).atDoor, null, "off the door but still reported on one");
 
   // Stand on the safe house door (walking there is a real 100 seconds at the
   // D41 pace, which is a pacing fact, not something to assert in a unit test).

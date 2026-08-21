@@ -39,12 +39,20 @@ test("D35: drop-in seeds real work inside the phase-1 radius", () => {
 
 test("D35: seeded sites are close, but never underfoot", () => {
   // A site on the HQ means the agent spawns already standing on its objective.
-  const s = deployed();
+  // The ruling governs the sites the DROP SEEDS — citygen's own sites were
+  // placed before anyone knew where the HQ would land, and playtest 4's snap
+  // to a safehouse means one of them can legitimately sit next door.
+  let s = makeWorld({ seed: 4711 });
+  const preSeeded = s.sites.length;
+  const zone = centralDropZone(s, findDropZones(s, RULES.citygen));
+  s = apply(s, { type: CMD_DROP_IN, firmId: 0, cellX: zone.cellX, cellY: zone.cellY });
   const hq = s.hqs[0];
-  for (const site of s.sites) {
+  assert.ok(s.sites.length > preSeeded,
+    "no site was seeded on this seed — the test's subject is empty and proves nothing");
+  for (const site of s.sites.slice(preSeeded)) {
     const d = Math.abs(site.cellX - hq.cellX) + Math.abs(site.cellY - hq.cellY);
-    assert.ok(d >= RULES.contracts.nearHqMinDistance || d === 0 || d > 8,
-      `site ${site.id} sits ${d} cells from the HQ — too close to be work`);
+    assert.ok(d >= RULES.contracts.nearHqMinDistance,
+      `seeded site ${site.id} sits ${d} cells from the HQ — too close to be work`);
   }
 });
 

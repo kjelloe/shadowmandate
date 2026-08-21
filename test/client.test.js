@@ -519,3 +519,15 @@ test("every marker role has a silhouette, and they are not all the same", () => 
   assert.equal(siteRole("active"), "siteActive");
   assert.equal(siteRole(undefined), "siteScenery");
 });
+
+test("the HQ tent stays packed when the HQ lives in a building (playtest 4)", async () => {
+  const { hqInBuilding } = await import("../client/js/models.js");
+  const view = { buildings: [{ id: 3, kind: 0, cellX: 10, cellY: 12 }] };
+  assert.ok(hqInBuilding(view, { cellX: 10, cellY: 12 }),
+    "an HQ on a building entrance must report in-building, or the tent draws through the safehouse");
+  assert.ok(!hqInBuilding(view, { cellX: 11, cellY: 12 }),
+    "an HQ one cell off the door is a tent, not a building");
+  assert.ok(!hqInBuilding({ buildings: [] }, { cellX: 10, cellY: 12 }),
+    "no buildings in the world means the tent fallback");
+  assert.ok(!hqInBuilding(view, null), "a missing HQ is never in a building");
+});

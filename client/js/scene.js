@@ -12,7 +12,7 @@
 
 import * as THREE from "three";
 import { buildGround, buildBlocks, buildClutter, setTerrainTokens } from "./terrain3d.js";
-import { siteRoles, objectiveCell, buildingRole, siteRole, burnedGuidance, pinnedCells } from "./models.js";
+import { siteRoles, objectiveCell, buildingRole, siteRole, burnedGuidance, pinnedCells, hqInBuilding } from "./models.js";
 import { buildProcedural, applyTint } from "./asset_factory.js";
 import { resolveVisual, tintFor, detectionMark } from "./asset_resolver.js";
 import { art } from "./assets.js";
@@ -318,14 +318,25 @@ export function createScene(canvas) {
     }
     for (const h of view.holdingSites) at(takeVisual("holding"), h.cellX + 0.5, h.cellY + 0.5);
     if (view.hq) {
-      at(takeVisual("ownHq"), view.hq.cellX + 0.5, view.hq.cellY + 0.5);
-      // The ring under the tent is the HQ's EMBLEM (playtest 3): the tent
-      // model alone read as one more dark structure, and a player two streets
-      // away had nothing on screen that said "home". Same HUD-affordance ring
-      // as the one under the operative, in the Firm's own mark.
+      // Playtest 4: the HQ lives in a building now. When its cell is a
+      // building entrance the safehouse IS the structure and the tent stays
+      // packed; the tent still ships for the no-safehouse fallback.
+      if (!hqInBuilding(view, view.hq)) {
+        at(takeVisual("ownHq"), view.hq.cellX + 0.5, view.hq.cellY + 0.5);
+      }
+      // The ring is the HQ's EMBLEM (playtest 3): a structure alone reads as
+      // one more dark building, and a player two streets away had nothing on
+      // screen that said "home". Same HUD-affordance ring as the one under
+      // the operative, in the Firm's own mark.
       at(takeRing(tokens.marks.ownHq), view.hq.cellX + 0.5, view.hq.cellY + 0.5, 0.12);
     }
-    for (const h of view.rivalHqs) at(takeVisual("rivalHq"), h.cellX + 0.5, h.cellY + 0.5);
+    for (const h of view.rivalHqs) {
+      if (hqInBuilding(view, h)) {
+        at(takeRing(tokens.marks.rivalHq), h.cellX + 0.5, h.cellY + 0.5, 0.12);
+      } else {
+        at(takeVisual("rivalHq"), h.cellX + 0.5, h.cellY + 0.5);
+      }
+    }
     for (const p of view.patrols) {
       at(takeVisual(p.alerted ? "patrolAlert" : "patrol"), p.x + 0.5, p.y + 0.5);
     }

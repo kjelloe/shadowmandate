@@ -18,14 +18,18 @@ import { recoveryContractFor } from "./contracts.js";
 import { cellToWorld, worldToCellFloor } from "../shared/fixedmath.js";
 import { isPassable } from "./terrain.js";
 import { tileAt } from "./state.js";
+import { BUILDING_SAFEHOUSE } from "./citygen.js";
 
 export const EVAC_NONE = 0;
 export const EVAC_RUNNING = 1;
 export const EVAC_EMERGENCY = 2;
 
-export function createHq(id, firmId, cellX, cellY) {
+export function createHq(id, firmId, cellX, cellY, buildingId = -1) {
   return {
     id, firmId, cellX, cellY,
+    // Playtest 4: the HQ establishes INSIDE a building — the safehouse the
+    // drop snapped to. -1 is the tent fallback for worlds without one.
+    buildingId,
     condition: 100,
     cacheResources: 0,
     evacActive: EVAC_NONE,
@@ -35,6 +39,34 @@ export function createHq(id, firmId, cellX, cellY) {
     lootTicks: 0,
     lootedBy: -1,
   };
+}
+
+// Where a drop request actually lands (playtest 4). The requested cell is a
+// neighbourhood pointer; the HQ establishes in the nearest SAFEHOUSE whose
+// door is free — not claimed by another Firm's HQ, and not inside a rival
+// HQ's clear radius. This function is the single home of that rule: the
+// reducer lands with it and anything scoring drop zones must read the same
+// function, because a landing rule the AI does not know is a rule nobody
+// follows (the 8f lesson). Falls back to the requested cell (tent in the
+// open) only when no safehouse qualifies.
+export function hqLandingFor(state, cellX, cellY, cfg) {
+  const claimed = new Set(state.hqs.map((h) => h.buildingId));
+  let best = null, bestD = Infinity;
+  for (const b of state.buildings) {
+    if (b.kind !== BUILDING_SAFEHOUSE || claimed.has(b.id)) continue;
+    let clear = true;
+    for (const h of state.hqs) {
+      if (Math.abs(h.cellX - b.entranceX) + Math.abs(h.cellY - b.entranceY)
+        < cfg.dropZoneMinClearRadius) { clear = false; break; }
+    }
+    if (!clear) continue;
+    const d = Math.abs(b.entranceX - cellX) + Math.abs(b.entranceY - cellY);
+    // Strict < resolves ties to the lowest building id — deterministic.
+    if (d < bestD) { bestD = d; best = b; }
+  }
+  return best
+    ? { cellX: best.entranceX, cellY: best.entranceY, buildingId: best.id }
+    : { cellX, cellY, buildingId: -1 };
 }
 
 export function hqOf(state, firmId) {
@@ -47,19 +79,27 @@ export function withinPerimeter(hq, cellX, cellY, cfg) {
 
 // Drop-in: place the HQ and the Firm's lead agent. The dropship animation is
 // presentation only — the engine registers the placement and moves on.
+// The requested cell is validated as the player's INTENT (a garbage request
+// must still be refused loudly), then the landing snaps to a safehouse via
+// hqLandingFor — the Field HQ lives in a building now (playtest 4).
 export function dropIn(state, firmId, cellX, cellY, cfg, agentsCfg, ledger = null) {
   const firm = state.firms[firmId];
   if (!firm) return "no_such_firm";
   if (firm.state !== FIRM_UNDEPLOYED) return "already_deployed";
   const t = tileAt(state.map, cellX, cellY);
   if (t < 0 || !isPassable(t)) return "unlandable";
+  const landing = hqLandingFor(state, cellX, cellY, cfg);
+  // The proximity check re-runs on the landing: hqLandingFor already filters
+  // safehouses, so this only ever fires on the tent fallback — but the
+  // fallback is exactly where the old failure lives.
   for (const h of state.hqs) {
-    if (Math.abs(h.cellX - cellX) + Math.abs(h.cellY - cellY) < cfg.dropZoneMinClearRadius) {
+    if (Math.abs(h.cellX - landing.cellX) + Math.abs(h.cellY - landing.cellY)
+      < cfg.dropZoneMinClearRadius) {
       return "too_close_to_rival_hq";
     }
   }
 
-  const hq = createHq(state.hqs.length, firmId, cellX, cellY);
+  const hq = createHq(state.hqs.length, firmId, landing.cellX, landing.cellY, landing.buildingId);
   state.hqs.push(hq);
   firm.hqId = hq.id;
   firm.state = FIRM_DEPLOYED;
@@ -77,8 +117,8 @@ export function dropIn(state, firmId, cellX, cellY, cfg, agentsCfg, ledger = nul
   if (agent) {
     agent.state = AGENT_ACTIVE;
     agent.firmId = firmId;
-    agent.x = cellToWorld(cellX);
-    agent.y = cellToWorld(cellY);
+    agent.x = cellToWorld(landing.cellX);
+    agent.y = cellToWorld(landing.cellY);
     agent.targetX = agent.x;
     agent.targetY = agent.y;
     agent.condition = agentsCfg.conditionMax;
@@ -88,7 +128,8 @@ export function dropIn(state, firmId, cellX, cellY, cfg, agentsCfg, ledger = nul
   // D51: anyone this Firm left in custody becomes a job waiting on arrival.
   offerRecoveries(state, firmId, state.rules?.contracts);
   state.events.push({
-    type: "firmDeployed", firmId, hqId: hq.id, cellX, cellY,
+    type: "firmDeployed", firmId, hqId: hq.id,
+    cellX: landing.cellX, cellY: landing.cellY, buildingId: landing.buildingId,
     agentId: agent ? agent.id : -1,
   });
   return null;

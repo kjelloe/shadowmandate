@@ -29,7 +29,8 @@ function raidWorld() {
   // range: undefined" the moment anything hashes the world — which is the
   // hasher being right, not the fixture being unlucky.
   s.hqs.push({
-    id: 0, firmId: 0, cellX: 20, cellY: 20, condition: 100, cacheResources: 100,
+    id: 0, firmId: 0, cellX: 20, cellY: 20, buildingId: -1,
+    condition: 100, cacheResources: 100,
     evacActive: 0, evacTicks: 0, evacPaused: 0,
     alarmTicks: 0, lootTicks: 0, lootedBy: -1,
   });
