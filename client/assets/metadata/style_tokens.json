@@ -107,8 +107,8 @@
       "10": "#152028"
     },
     "note_block": "Building mass tone ramp. A second seeded hash draw picks a point on it, so tone and height vary independently — keying both off one value makes every tall block the same shade, which reads as authored rather than grown.",
-    "blockLo": "#1A1E28",
-    "blockHi": "#2E3542",
+    "blockLo": "#20242F",
+    "blockHi": "#3A424F",
     "unknown": "#222222",
     "backdrop": "#0B0E14",
     "note_windows": "The lit windows are what make a dark tower read as a TOWER rather than a hole in the render (the reference image is mostly windows). Deterministic per seed; density is the fraction of sockets lit. Warm is interior sodium, cool is screen-glow — two temperatures is what makes a facade look inhabited rather than printed.",
@@ -137,16 +137,16 @@
     "marker": 100,
     "structure": 220
   },
-  "note_light": "Lighting IS art direction, not renderer plumbing. Retuned 2026-08-18 with the dystopian pass (finding 3): the warm evening key became a cold skyglow key — the city is NIGHT now, and warmth belongs to the windows and doorways, not the sky. Keeping it in tokens means a look candidate (Q41c) can change the mood without touching scene.js.",
+  "note_light": "Lighting IS art direction, not renderer plumbing. Retuned 2026-08-18 with the dystopian pass (finding 3): the warm evening key became a cold skyglow key — the city is NIGHT now, and warmth belongs to the windows and doorways, not the sky. Retuned again 2026-08-22 for the 45-degree camera (playtest 4): the camera now looks from the south-east, so the key moved to the CAMERA side — a key behind the buildings left every visible facade in raw ambient and the whole city read as black — and the teal bounce swapped to the north-west as a rim. Keeping it in tokens means a look candidate (Q41c) can change the mood without touching scene.js.",
   "lighting": {
     "clear": "#0B0E14",
     "key": {
       "color": "#C9D6E8",
       "intensity": 1.05,
       "position": [
-        -40,
+        35,
         60,
-        -30
+        45
       ]
     },
     "ambient": {
@@ -158,9 +158,9 @@
       "color": "#3E8E8C",
       "intensity": 0.24,
       "position": [
-        30,
+        -30,
         20,
-        40
+        -40
       ]
     }
   },

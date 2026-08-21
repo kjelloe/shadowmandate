@@ -1,9 +1,10 @@
 // client/js/scene.js — the 2.5D diorama (S12).
 //
-// A lightly tilted, mostly orthographic camera: the "tabletop" look the design
-// asks for. No rotation in the first slice — a fixed compass keeps a stealth
-// map readable, and a player who can spin the world loses their sense of where
-// the patrol was.
+// An orthographic camera at the classic 1993 isometric view (playtest 4): 45-degree
+// azimuth so every building shows two facades and a roof, pitched at 40
+// degrees, close enough to read doorways. STILL no player rotation — a fixed
+// compass keeps a stealth map readable, and a player who can spin the world
+// loses their sense of where the patrol was.
 //
 // The camera CLAMPS to the map. Without that, dropping near a corner leaves
 // half the screen showing nothing — which is exactly what playtest 2 saw and
@@ -41,6 +42,23 @@ export function octantToRadians(octant) {
 // source of truth for both surfaces (D46) — test/art_pipeline.test.js fails if
 // a colour creeps back into this file.
 
+// How far from the map edge the camera TARGET must be clamped so the thing
+// being followed stays on screen under a rotated view. The first cut clamped
+// the whole rotated view rectangle inside the map — which near a corner
+// pushed the camera 18 cells off the agent, and an off-screen operative is a
+// worse failure than dark backdrop past the map edge (the void is night; the
+// missing agent is a bug). A clamped target's worst per-axis offset is the
+// margin itself, and rotation stretches that offset by at most
+// |cos az| + |sin az| along either screen axis, so keeping
+// margin * (|cos| + |sin|) inside the tighter half-extent keeps the target
+// visible everywhere. Pure, because this is exactly the kind of maths that
+// renders "wrong but plausibly".
+export function clampMargin(halfX, halfY, pitch, azimuth) {
+  const halfYg = halfY / Math.sin(pitch);
+  const c = Math.abs(Math.cos(azimuth)), s = Math.abs(Math.sin(azimuth));
+  return Math.min(halfX, halfYg) / (c + s);
+}
+
 // Clamp so the visible frustum stays inside the map when the map is larger
 // than the view, and centre it when it is smaller.
 export function clampCamera(target, size, halfSpanX, halfSpanY) {
@@ -59,7 +77,7 @@ export function createScene(canvas) {
 
   const scene = new THREE.Scene();
   // NO FOG. The first version set Fog(colour, 40, 110) — but an orthographic
-  // camera pitched at 52 degrees from 90 units up sits ~114 units from the
+  // camera pitched from 90 units up sits well over 110 units from the
   // ground, so EVERY fragment fell beyond fog.far and rendered as 100% fog
   // colour. Fog colour equalled clear colour, so the scene drew perfectly and
   // was completely invisible: an empty-looking canvas with no error anywhere.
@@ -78,7 +96,9 @@ export function createScene(canvas) {
   scene.add(bounce);
 
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 500);
-  let zoomCells = 34;          // how many cells fit across the view
+  let zoomCells = 26;          // how many cells fit across the view — pulled
+                               // in for playtest 4: a city only reads as a
+                               // city when you are close enough to see facades
   let mapSize = 64;
   let terrain = null;
   const markers = new THREE.Group();
@@ -154,7 +174,14 @@ export function createScene(canvas) {
   function takeRing(colour) {
     let m = pool.find((x) => !x.inUse && x.role === "__ring");
     if (!m) {
-      const mesh = new THREE.Mesh(ringGeo, new THREE.MeshLambertMaterial({ color: colour }));
+      // Rings are HUD affordances, not things in the world — and the 40-degree
+      // camera lets a tower stand between you and your own operative. A HUD
+      // marker a building can hide is not a HUD marker, so rings ignore depth
+      // and draw after the world.
+      const mesh = new THREE.Mesh(ringGeo, new THREE.MeshLambertMaterial({
+        color: colour, depthTest: false,
+      }));
+      mesh.renderOrder = 5;
       mesh.rotation.x = -Math.PI / 2;
       m = { role: "__ring", group: mesh, inUse: false };
       pool.push(m);
@@ -201,10 +228,15 @@ export function createScene(canvas) {
       scene.add(dropship);
     }
     dropship.visible = true;
-    // Comes in along +x so the wing reads broadside to a camera that never
-    // rotates; the model's nose is +z, hence the quarter turn.
-    dropship.position.set(hqCell.x + 0.5 + flight.offsetCells, flight.height, hqCell.y + 0.5);
-    dropship.rotation.y = flight.offsetCells <= 0 ? Math.PI / 2 : -Math.PI / 2;
+    // Comes in along the SCREEN horizontal — the ground direction perpendicular
+    // to the view azimuth — so the wing reads broadside to a camera that never
+    // rotates; the model's nose is +z, hence atan2 of the axis.
+    const ax = Math.cos(AZIMUTH), az = -Math.sin(AZIMUTH);
+    dropship.position.set(
+      hqCell.x + 0.5 + ax * flight.offsetCells,
+      flight.height,
+      hqCell.y + 0.5 + az * flight.offsetCells);
+    dropship.rotation.y = flight.offsetCells <= 0 ? Math.atan2(ax, az) : Math.atan2(-ax, -az);
   }
 
   function setTerrain(tiles, size, seed) {
@@ -234,9 +266,15 @@ export function createScene(canvas) {
     return true;
   }
 
-  // The tilt. Orthographic + a modest pitch is what gives the diorama its
-  // tabletop feel without the parallax that makes a top-down map hard to read.
-  const PITCH = 52 * (Math.PI / 180);
+  // The tilt (playtest 4: "the city does not look like a city"). Pitch 45
+  // rather than the old 52 — low enough that facades carry the frame instead
+  // of roofs, high enough that the streets the player actually taps stay
+  // visible between the towers (40 was tried and buried them) — and a
+  // 45-degree azimuth so every building shows two faces, the classic genre
+  // read. The azimuth is a constant, not a control: the compass stays fixed
+  // on purpose (see the header note).
+  const PITCH = 45 * (Math.PI / 180);
+  const AZIMUTH = 45 * (Math.PI / 180);
   const HEIGHT = 90;
   // Exported so anything depth-related (fog, near/far) is derived from the
   // real distance instead of a constant somebody guessed.
@@ -246,8 +284,10 @@ export function createScene(canvas) {
     const aspect = (canvas.clientWidth || 1) / (canvas.clientHeight || 1);
     const halfX = zoomCells / 2;
     const halfY = halfX / aspect;
-    const c = clampCamera(target, mapSize, halfX, halfY / Math.sin(PITCH));
-    camera.position.set(c.x, HEIGHT, c.y + HEIGHT / Math.tan(PITCH));
+    const margin = clampMargin(halfX, halfY, PITCH, AZIMUTH);
+    const c = clampCamera(target, mapSize, margin, margin);
+    const back = HEIGHT / Math.tan(PITCH);
+    camera.position.set(c.x + back * Math.sin(AZIMUTH), HEIGHT, c.y + back * Math.cos(AZIMUTH));
     camera.lookAt(c.x, 0, c.y);
     return c;
   }

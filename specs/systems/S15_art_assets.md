@@ -216,3 +216,42 @@ sheet; this closes the two pieces recorded as deferred:
   duplicate — the first version checked placements against `CLUTTER_TILES`
   itself, which is self-referential: widening the set in code widened the
   check with it, found by mutation.
+
+## Playtest 4, finding 1 — the city view and block massing (2026-08-22)
+
+**The camera** (S12, recorded here with the rest of the look): orthographic,
+pitch 45°, azimuth 45° — the classic 1993 isometric read where every building
+shows two facades and a roof — default zoom pulled in from 34 to 26 cells.
+The compass stays FIXED (no player rotation, same doctrine as ever). Pitch 40
+was tried first and buried the streets behind the mass; 45 keeps the tap
+surface visible. Two consequences, both learned by screenshot:
+
+- **The clamp must protect the TARGET, not the frame.** Clamping the whole
+  rotated view rectangle inside the map pushed the camera 18 cells off an
+  agent dropped near a corner — the followed operative left the screen
+  entirely. `clampMargin` now bounds the clamped target's worst rotated
+  offset inside the view instead; the price is dark backdrop past the map
+  edge, and the void is night while the off-screen agent was a bug. The
+  promise is asserted over every map position in `test/massing.test.js`.
+- **The key light must live on the camera's side.** With the key in the NW
+  and the camera in the SE, every visible facade rendered in raw ambient and
+  the city read as pure black. Key and bounce swapped sides in the lighting
+  tokens (lighting is art direction, D46).
+- Rings (own agent, HQ, pinned, re-spray) are HUD affordances and now ignore
+  depth — a tower can stand between the camera and your operative, and a HUD
+  marker a building can hide is not a HUD marker.
+
+**Block massing** (`blockRegions` / `blockMassing` in terrain3d.js, pure):
+contiguous mass cells group into blocks; blocks over 9 cells carve into
+2–4-cell-pitch hashed PARCELS; each parcel draws one architectural character —
+tower, hut, slab, stepped terrace, courtyard, podium-and-tower, rows,
+industrial-with-stacks. Cells of a multi-cell block join at width 1.02
+(exactly-touching boxes z-fight; a visible seam splits the building back into
+the tower row the pass exists to kill). Tone anchors per parcel, drifts per
+cell. Height cap 3.8.
+
+Why parcels: measured on seed 4711, 59% of the map is mass and half the
+regions run 21–69 cells — one template across 69 cells is a monolith, which
+was the playtest's "wall of windows" verbatim. The honesty rule is untouched:
+the drawn footprint is exactly the block tiles, and height still implies
+nothing the simulation does not model.
