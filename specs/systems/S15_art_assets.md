@@ -293,3 +293,15 @@ state band over the gate. The radar keeps its state-role language
 
 Deferred deliberately: pure landmark buildings with no gameplay anchor (fire
 station et al) — the owner ruled anchors first; landmarks are a later slice.
+
+## Playtest 6 — street refinement and zoom (2026-08-22)
+
+- Every street cell is a full 4-lane carriageway (double solid centre + a
+  dash per outer lane); transit avenues add solid edge lines; SIDEWALK strips
+  hug every road edge that faces off the road, intersections included, so the
+  kerb line runs continuously around corners. Token: `terrain.road.sidewalk`.
+- Zoom is player control now: mouse wheel, two-finger pinch, and 44px +/−
+  buttons in the HUD (the mobile gate measures them). The renderer's existing
+  clamp (14–70 cells across) bounds it.
+- The destination pin (S02): a bobbing token-coloured cone plus ground ring
+  over the move order's actual endpoint, depth-free like the other HUD marks.

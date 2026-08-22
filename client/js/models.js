@@ -421,6 +421,18 @@ export function hqInBuilding(view, hq) {
     && (view.buildings ?? []).some((b) => b.cellX === hq.cellX && b.cellY === hq.cellY);
 }
 
+// Where the operative is HEADING, as a cell — or null when they are already
+// there (playtest 6). Pure, so "the pin means a live move order" is a tested
+// promise rather than renderer behaviour: a pin that lingers after arrival
+// reads as an order the game is ignoring.
+export function moveTarget(view) {
+  const a = ownAgent(view);
+  if (!a || a.targetX === undefined) return null;
+  const cellX = Math.floor(a.targetX / 256), cellY = Math.floor(a.targetY / 256);
+  if (cellX === Math.floor(a.x / 256) && cellY === Math.floor(a.y / 256)) return null;
+  return { cellX, cellY };
+}
+
 // ── Dropship choreography (S05) ────────────────────────────────────────────
 //
 // Presentation only: the dropship never exists in engine state, and the server

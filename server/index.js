@@ -12,6 +12,7 @@ import { loadRuleset } from "./ruleset.js";
 import { LedgerStore } from "./ledger.js";
 import { issueIdentity, claimWithCode, resolveToken } from "./identity.js";
 import { World } from "./world.js";
+import { CMD_PAY_BAIL, CMD_DIALOGUE_CHOICE, CMD_BUY_ITEM } from "../engine/commands.js";
 import { validate } from "../engine/commands.js";
 
 const ROOT = new URL("..", import.meta.url).pathname;
@@ -29,7 +30,10 @@ const MIME = {
 };
 
 const rules = loadRuleset();
-const ledger = new LedgerStore(join(ROOT, "reports", "ledger.json"),
+// LEDGER_PATH exists for the browser gates: the ui gate BUYS things through
+// the real socket (playtest 6), and against the shared ledger every run
+// would debit the same persisted firm until the gate went red from poverty.
+const ledger = new LedgerStore(process.env.LEDGER_PATH ?? join(ROOT, "reports", "ledger.json"),
   { startingBank: rules.hq.startingBank ?? 0 });
 const worlds = new Map();
 
@@ -179,8 +183,12 @@ wss.on("connection", (socket) => {
             return send({ type: "error", reason: "not_your_agent" });
           }
         }
-        // The bank is authoritative here, never taken from the client.
-        if (command.bank !== undefined) {
+        // The bank is authoritative here, never taken from the client — and
+        // it is attached by command TYPE, not by field presence. The first
+        // version injected only `if (command.bank !== undefined)`, and the
+        // client (correctly) never sends a bank field at all — so every buy
+        // was cannot_afford while the HUD honestly said 200 (playtest 6).
+        if ([CMD_PAY_BAIL, CMD_DIALOGUE_CHOICE, CMD_BUY_ITEM].includes(command.type)) {
           command.bank = ledger.get(world.id, firmId).bank | 0;
         }
         world.submit(command);

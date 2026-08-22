@@ -60,9 +60,9 @@ test("paint stays on road tiles and intersections stay clean", () => {
   }
 });
 
-test("a transit avenue is visibly 4-lane: more paint per cell than a street", () => {
+test("streets are 4-lane, avenues wider still, and sidewalks hug the kerbs (playtest 6)", () => {
   const { tiles, size } = roadMap();
-  const { markings } = roadFeatures(tiles, size, 4711, tokens.terrain.road);
+  const { markings, sidewalks } = roadFeatures(tiles, size, 4711, tokens.terrain.road);
   const perCell = new Map();
   for (const k of markings) {
     const key = `${k.x},${k.y}`;
@@ -76,11 +76,28 @@ test("a transit avenue is visibly 4-lane: more paint per cell than a street", ()
     assert.ok(cells.length > 0, `no painted cells of tile ${tile}`);
     return cells.reduce((a, [, n]) => a + n, 0) / cells.length;
   };
+  // A street cell is a full 4-lane carriageway: double centre + lane dashes.
+  assert.ok(count(STREET_TILE) >= 4,
+    "a street carries fewer than 4 markings per cell — the 4-lane read never happened");
+  // An avenue reads wider on top of that: solid edge lines.
   assert.ok(count(TRANSIT_TILE) > count(STREET_TILE),
-    "the avenue carries no more paint than a street — 4-lane never happened");
-  // And the avenue has solid centre lines, which streets never do.
-  assert.ok(markings.some((k) => k.solid && tiles[k.y * size + k.x] === TRANSIT_TILE));
-  assert.ok(!markings.some((k) => k.solid && tiles[k.y * size + k.x] === STREET_TILE));
+    "the avenue carries no more paint than a street");
+  assert.ok(markings.some((k) => k.solid && tiles[k.y * size + k.x] === STREET_TILE),
+    "streets lost their solid centre lines");
+
+  // Sidewalks: on road cells only, only on edges that face OFF the road, and
+  // hugging the kerb — never in the travel lanes or over a cell centre.
+  assert.ok(sidewalks.length > 0, "no sidewalks at all — the refinement silently did nothing");
+  const isRoadTile = (x, y) => {
+    if (x < 0 || y < 0 || x >= size || y >= size) return false;
+    return tiles[y * size + x] === STREET_TILE || tiles[y * size + x] === TRANSIT_TILE;
+  };
+  for (const s of sidewalks) {
+    assert.ok(isRoadTile(s.x, s.y), `sidewalk anchored off the road at ${s.x},${s.y}`);
+    assert.ok(!isRoadTile(s.x + s.dx, s.y + s.dy),
+      `sidewalk at ${s.x},${s.y} faces another road cell — a kerb in the middle of the street`);
+    assert.ok(Math.abs(s.dx) + Math.abs(s.dy) === 1, "a sidewalk must face exactly one edge");
+  }
 });
 
 test("lamps keep the kerb and every state actually occurs", () => {

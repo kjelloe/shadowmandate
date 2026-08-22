@@ -21,9 +21,9 @@ import {
 } from "./commands.js";
 import { AGENT_ACTIVE, AGENT_DOWNED } from "./state.js";
 import {
-  orderMove, stepAgent, stepPatrol, boardVehicle, exitVehicle, syncVehicles,
+  orderMove, snapMoveTarget, stepAgent, stepPatrol, boardVehicle, exitVehicle, syncVehicles,
 } from "./agents.js";
-import { stepDetection, stepHeat } from "./detection.js";
+import { stepDetection, stepHeat, agentCell } from "./detection.js";
 import { rescueAgent, captureAgent, useItem, stepArrests, payBail } from "./combat.js";
 import { dropIn, activateEvac, cancelEvac, extract, stepHqs, hqOf } from "./hq.js";
 import {
@@ -132,8 +132,19 @@ function applyMove(next, command) {
   if (!agent) return reject(next, command, "no_such_agent");
   if (agent.state !== AGENT_ACTIVE) return reject(next, command, "agent_not_active");
   if (agent.insideBuildingId >= 0) return reject(next, command, "agent_inside_building");
+  // Tapping the cell you stand on is a valid non-order, not a routing failure.
+  const here = agentCell(agent);
+  if (here.x === command.cellX && here.y === command.cellY) return next;
   const steps = orderMove(next, agent, command.cellX, command.cellY);
-  if (steps === 0) return reject(next, command, "no_route");
+  if (steps === 0) {
+    // Playtest 6: the tap landed on a building or other unroutable cell — go
+    // to the nearest cell a route reaches instead of refusing. The client's
+    // destination pin shows where the order actually went.
+    const snapped = snapMoveTarget(next, command.cellX, command.cellY);
+    if (!snapped || orderMove(next, agent, snapped.x, snapped.y) === 0) {
+      return reject(next, command, "no_route");
+    }
+  }
   return next;
 }
 

@@ -558,3 +558,22 @@ test("site visuals are typed, and the type order mirrors the engine (playtest 5)
   assert.equal(siteVisual(undefined, 99).role, "siteCache",
     "an unknown type must fall back to a valid model, never to nothing");
 });
+
+test("the destination pin means a LIVE move order (playtest 6)", async () => {
+  const { moveTarget } = await import("../client/js/models.js");
+  const moving = {
+    agents: [{ id: 0, state: 1, x: 10 * 256 + 128, y: 10 * 256 + 128,
+      targetX: 14 * 256 + 128, targetY: 12 * 256 + 128 }],
+  };
+  assert.deepEqual(moveTarget(moving), { cellX: 14, cellY: 12 });
+  const arrived = {
+    agents: [{ id: 0, state: 1, x: 14 * 256 + 128, y: 14 * 256 + 128,
+      targetX: 14 * 256 + 128, targetY: 14 * 256 + 128 }],
+  };
+  assert.equal(moveTarget(arrived), null,
+    "a pin that lingers after arrival reads as an order the game is ignoring");
+  assert.equal(moveTarget({ agents: [] }), null);
+  assert.equal(moveTarget(null), null);
+  // An old server without targetX must not draw a pin at 0,0.
+  assert.equal(moveTarget({ agents: [{ id: 0, state: 1, x: 100, y: 100 }] }), null);
+});

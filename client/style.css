@@ -35,6 +35,11 @@ button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal)
 #hud-right { align-items: flex-end; }
 .pill { background: rgba(29,32,38,.9); border: 1px solid var(--line);
   border-radius: 20px; padding: .3rem .8rem; font-size: .82rem; }
+/* Zoom (playtest 6). 44px minimum: the mobile gate measures thumb targets. */
+#zoom { display: flex; gap: .45rem; }
+#zoom button { min-width: 44px; min-height: 44px; border-radius: 10px;
+  background: rgba(29,32,38,.9); border: 1px solid var(--line);
+  color: inherit; font-size: 1.3rem; }
 .chips { display: flex; gap: .3rem; pointer-events: auto; }
 .chips button { min-width: 64px; font-size: .78rem; }
 .pill.unseen { color: var(--teal); } .pill.noticed { color: var(--amber); }

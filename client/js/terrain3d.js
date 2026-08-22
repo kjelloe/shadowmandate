@@ -729,12 +729,17 @@ const isRoad = (tiles, size, x, y) => {
   return t === STREET_TILE || t === TRANSIT_TILE;
 };
 
-// Pure: where the paint and the posts go. Markings carry an axis (0 = the
-// road runs east-west, 1 = north-south) and a lane offset; intersections get
-// no paint, which is also what real intersections do.
+// Pure: where the paint, the kerbs and the posts go. Markings carry an axis
+// (0 = the road runs east-west, 1 = north-south) and a lane offset;
+// intersections get no paint, which is also what real intersections do.
+// Playtest 6 ("streets need to be much more refined"): a street cell is a
+// full 4-lane carriageway now — double solid centre line plus a dash per
+// outer lane — a transit avenue adds solid edge lines on top, and every road
+// edge that borders non-road gets a SIDEWALK strip.
 export function roadFeatures(tiles, size, seed, road) {
   const markings = [];
   const lamps = [];
+  const sidewalks = [];
   const litShare = road?.litShare ?? 0.6;
   const blinkShare = road?.blinkShare ?? 0.15;
   const lampChance = road?.lampChance ?? 0.22;
@@ -745,19 +750,26 @@ export function roadFeatures(tiles, size, seed, road) {
       const ew = isRoad(tiles, size, x - 1, y) || isRoad(tiles, size, x + 1, y);
       const ns = isRoad(tiles, size, x, y - 1) || isRoad(tiles, size, x, y + 1);
       const axis = ew && !ns ? 0 : ns && !ew ? 1 : -1;
+      const yLift = t === TRANSIT_TILE ? 0.062 : 0.042;   // above the relief
+
+      // Sidewalks hug every edge that faces off the road — intersections
+      // included, which is what keeps the kerb line continuous around
+      // corners.
+      for (const [dx, dy] of FACES) {
+        if (isRoad(tiles, size, x + dx, y + dy)) continue;
+        sidewalks.push({ x, y, dx, dy, h: yLift - 0.006 });
+      }
 
       if (axis >= 0) {
-        const yLift = t === TRANSIT_TILE ? 0.062 : 0.042;   // above the relief
+        // 4-lane: double solid centre line + a dash per outer lane.
+        markings.push({ x, y, axis, lane: -0.03, len: 1.0, solid: 1, h: yLift });
+        markings.push({ x, y, axis, lane: 0.03, len: 1.0, solid: 1, h: yLift });
+        markings.push({ x, y, axis, lane: -0.21, len: 0.3, solid: 0, h: yLift });
+        markings.push({ x, y, axis, lane: 0.21, len: 0.3, solid: 0, h: yLift });
         if (t === TRANSIT_TILE) {
-          // 4-lane: double solid centre line + a dash per outer lane.
-          markings.push({ x, y, axis, lane: -0.035, len: 1.0, solid: 1, h: yLift });
-          markings.push({ x, y, axis, lane: 0.035, len: 1.0, solid: 1, h: yLift });
-          markings.push({ x, y, axis, lane: -0.25, len: 0.3, solid: 0, h: yLift });
-          markings.push({ x, y, axis, lane: 0.25, len: 0.3, solid: 0, h: yLift });
-        } else {
-          // 2-lane: two centre dashes per cell.
-          markings.push({ x, y, axis, lane: 0, len: 0.28, solid: 0, h: yLift, along: -0.25 });
-          markings.push({ x, y, axis, lane: 0, len: 0.28, solid: 0, h: yLift, along: 0.25 });
+          // An avenue reads wider: solid edge lines along the outer lanes.
+          markings.push({ x, y, axis, lane: -0.38, len: 1.0, solid: 1, h: yLift });
+          markings.push({ x, y, axis, lane: 0.38, len: 1.0, solid: 1, h: yLift });
         }
       }
 
@@ -778,7 +790,7 @@ export function roadFeatures(tiles, size, seed, road) {
       }
     }
   }
-  return { markings, lamps };
+  return { markings, lamps, sidewalks };
 }
 
 const LAMP_H = 0.56;
@@ -789,8 +801,8 @@ const LAMP_H = 0.56;
 // stage set.
 export function buildRoads(tiles, size, seed) {
   if (!ROAD) return null;
-  const { markings, lamps } = roadFeatures(tiles, size, seed, ROAD);
-  if (!markings.length && !lamps.length) return null;
+  const { markings, lamps, sidewalks } = roadFeatures(tiles, size, seed, ROAD);
+  if (!markings.length && !lamps.length && !sidewalks.length) return null;
   const group = new THREE.Group();
   const m = new THREE.Matrix4();
   const pos = new THREE.Vector3(), scl = new THREE.Vector3();
@@ -800,6 +812,23 @@ export function buildRoads(tiles, size, seed) {
     ...(opacity !== undefined
       ? { transparent: true, opacity, depthWrite: false } : {}),
   });
+
+  if (sidewalks.length && ROAD.sidewalk) {
+    const kerb = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(1, 0.012, 1),
+      new THREE.MeshLambertMaterial({ color: new THREE.Color().setRGB(...hexRgb(ROAD.sidewalk)) }),
+      sidewalks.length);
+    for (let i = 0; i < sidewalks.length; i++) {
+      const s = sidewalks[i];
+      pos.set(s.x + 0.5 + s.dx * 0.43, s.h, s.y + 0.5 + s.dy * 0.43);
+      scl.set(s.dx ? 0.14 : 1, 1, s.dy ? 0.14 : 1);
+      quat.identity();
+      m.compose(pos, quat, scl);
+      kerb.setMatrixAt(i, m);
+    }
+    kerb.instanceMatrix.needsUpdate = true;
+    group.add(kerb);
+  }
 
   if (markings.length) {
     const paint = new THREE.InstancedMesh(

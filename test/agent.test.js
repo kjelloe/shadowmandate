@@ -209,3 +209,59 @@ test("the whole M2 world stays deterministic under replay", () => {
   };
   assert.deepEqual(run(), run());
 });
+
+test("a move onto a building snaps to the nearest routable cell (playtest 6)", () => {
+  const s = makeWorld();
+  const start = quietCell(s) ?? { x: 4, y: 4 };
+  placeAgent(s, { agentId: 0, firmId: 0, cellX: start.x, cellY: start.y });
+  // A building-mass cell that HAS a routable neighbour within the snap radius.
+  let target = null;
+  outer: for (let y = 2; y < s.size - 2; y++) {
+    for (let x = 2; x < s.size - 2; x++) {
+      if (s.map.cells[y * s.size + x] !== 4) continue;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const t = s.map.cells[(y + dy) * s.size + x + dx];
+        if (t !== 4 && t !== 10 && s.reachable?.[(y + dy) * s.size + x + dx]) {
+          target = { x, y }; break outer;
+        }
+      }
+    }
+  }
+  assert.ok(target, "no building cell with a routable neighbour in the reference world");
+  const moved = apply(s, { type: CMD_MOVE, agentId: 0, cellX: target.x, cellY: target.y });
+  assert.ok(!moved.events.some((e) => e.type === "rejected"),
+    "tapping a building must snap, not toast no_route — the exact playtest-6 complaint");
+  const a = moved.agents[0];
+  assert.ok(a.route.length > 0, "the snap produced no route at all");
+  const end = a.route[a.route.length - 1];
+  const d = Math.abs(end.x - target.x) + Math.abs(end.y - target.y);
+  assert.ok(d >= 1 && d <= 3,
+    `the route ends ${d} cells from the tap — outside the snap promise (1..3)`);
+  assert.ok(s.map.cells[end.y * s.size + end.x] !== 4, "the snapped destination is itself a building");
+
+  // Tapping the cell you stand on is a quiet non-order, not a routing failure.
+  const still = apply(s, { type: CMD_MOVE, agentId: 0, cellX: start.x, cellY: start.y });
+  assert.ok(!still.events.some((e) => e.type === "rejected"),
+    "tapping your own cell must not reject");
+
+  // A tap in deep mass with no routable cell within the radius still refuses.
+  let deep = null;
+  outer2: for (let y = 3; y < s.size - 3; y++) {
+    for (let x = 3; x < s.size - 3; x++) {
+      let all = true;
+      for (let dy = -3; dy <= 3 && all; dy++) {
+        for (let dx = -3; dx <= 3; dx++) {
+          if (Math.abs(dx) + Math.abs(dy) > 3) continue;
+          const t = s.map.cells[(y + dy) * s.size + x + dx];
+          if (t !== 4 && t !== 10) { all = false; break; }
+        }
+      }
+      if (all) { deep = { x, y }; break outer2; }
+    }
+  }
+  if (deep) {
+    const refused = apply(s, { type: CMD_MOVE, agentId: 0, cellX: deep.x, cellY: deep.y });
+    assert.equal(refused.events[0]?.reason, "no_route",
+      "a tap with nothing routable within the radius must still refuse honestly");
+  }
+});

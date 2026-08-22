@@ -73,3 +73,18 @@ stepping with alert convergence, carry slowdown.
 `⚙ tune` all speeds/radii vs D11 pacing (15–20 min sortie on 64×64 —
 M6 battery is the verdict) · `❑ pin` whether Sneak drains a stamina-like
 resource (proposal: no — simplicity first).
+
+## Playtest 6 — taps snap to the nearest routable cell (2026-08-22)
+
+A tap on a building or any unroutable cell used to answer `no_route` — a
+rejection toast for what the player plainly meant as "go there". `applyMove`
+now: (a) treats tapping your own cell as a quiet non-order; (b) on a failed
+route, snaps the destination via `snapMoveTarget` (agents.js) — nearest
+passable cell in the main reachability component, searched outward by
+Manhattan ring within radius 3, deterministic (distance, then y, then x) —
+and routes there; (c) still refuses honestly when nothing within the radius
+is routable. Own agents' `targetX/targetY` ride on the view (own only — a
+rival's destination would leak intent), and the client draws a destination
+pin at the route's end, so the player SEES where the order actually went.
+Pinned in `test/agent.test.js` (snap, non-order, honest refusal) and
+`test/client.test.js` (the pin means a live order, gone on arrival).

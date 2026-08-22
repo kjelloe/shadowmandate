@@ -12,7 +12,7 @@
 
 import * as THREE from "three";
 import { buildGround, buildBlocks, buildClutter, buildRoads, setTerrainTokens } from "./terrain3d.js";
-import { siteRoles, objectiveCell, buildingRole, siteVisual, burnedGuidance, pinnedCells, hqInBuilding } from "./models.js";
+import { siteRoles, objectiveCell, buildingRole, siteVisual, burnedGuidance, pinnedCells, hqInBuilding, moveTarget } from "./models.js";
 import { buildProcedural, applyTint } from "./asset_factory.js";
 import { resolveVisual, tintFor, detectionMark } from "./asset_resolver.js";
 import { art } from "./assets.js";
@@ -122,6 +122,12 @@ export function createScene(canvas) {
   const beamGeo = new THREE.CylinderGeometry(0.16, 0.16, 9, 8);
   const haloGeo = new THREE.TorusGeometry(1.25, 0.1, 6, 24);
   let beacon = null, halo = null;
+  // The destination pin (playtest 6): where your move order is actually
+  // going — which, since taps snap to the nearest routable cell, is not
+  // always where you tapped. A HUD affordance like the rings: depth-free,
+  // token-coloured, gone the moment the operative arrives.
+  const pinGeo = new THREE.ConeGeometry(0.16, 0.34, 8);
+  let movePin = null, movePinRing = null;
 
   // Ask the resolver WHAT to show; the manifest and factory decide HOW. A role
   // the manifest does not know draws nothing and says so, rather than quietly
@@ -398,6 +404,34 @@ export function createScene(canvas) {
         ring.scale.setScalar(1 + 0.35 * (0.5 + 0.5 * Math.sin(view.tick / 3)));
       }
     }
+    // The destination pin: a bobbing cone over the cell the move order is
+    // heading for, with a small ground ring. Rendered through the ring pool's
+    // rules (depth-free) so a tower can never hide where you are going.
+    const dest = moveTarget(view);
+    if (dest) {
+      if (!movePin) {
+        movePin = new THREE.Mesh(pinGeo, new THREE.MeshBasicMaterial({
+          color: new THREE.Color(tokens.marks.dropZone), depthTest: false,
+        }));
+        movePin.renderOrder = 5;
+        movePin.rotation.x = Math.PI;      // apex down
+        scene.add(movePin);
+        movePinRing = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({
+          color: new THREE.Color(tokens.marks.dropZone), depthTest: false,
+        }));
+        movePinRing.renderOrder = 5;
+        movePinRing.rotation.x = -Math.PI / 2;
+        scene.add(movePinRing);
+      }
+      const bob = 0.06 * Math.sin(view.tick / 2);
+      movePin.visible = true; movePinRing.visible = true;
+      movePin.position.set(dest.cellX + 0.5, 0.75 + bob, dest.cellY + 0.5);
+      movePinRing.position.set(dest.cellX + 0.5, 0.1, dest.cellY + 0.5);
+      movePinRing.scale.setScalar(0.55);
+    } else if (movePin) {
+      movePin.visible = false; movePinRing.visible = false;
+    }
+
     // Faulty street lamps blink in two opposite phases off the world tick —
     // decorative, so it keys off the same clock as everything else animated.
     if (blinkGroups) {

@@ -52,6 +52,9 @@ export function buildView(state, firmId, detCfg) {
       stance: a.stance, condition: a.condition, detection: a.detection,
       carryKind: a.carryKind, insideBuildingId: a.insideBuildingId,
       disguiseId: a.disguiseId, vehicleId: a.vehicleId,
+      // Where this agent is heading (playtest 6): the client's destination
+      // pin. OWN agents only — a rival's destination would leak intent.
+      targetX: a.targetX, targetY: a.targetY,
       contractIds: a.contractIds.slice(),
     })),
 

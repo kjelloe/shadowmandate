@@ -120,6 +120,7 @@
     "note_road": "The street dressing (playtest 5): streets are 2-lane with centre dashes, transit avenues are 4-lane with a double centre line and lane dashes, and lamp posts stand at the kerb — some lit (warm sodium or cool halide), some dead, some blinking. All deterministic per seed, all decorative: markings are paint on the ground and lamps sit OFF the cell centres, so nothing covers an agent or implies an obstacle. lampChance is per road cell; litShare/blinkShare partition the lamps (the remainder are dead — this city does not maintain its streets).",
     "road": {
       "marking": "#787E86",
+      "sidewalk": "#5A616C",
       "lampPost": "#2C3138",
       "lampWarm": "#E4C87A",
       "lampCool": "#C9D6E8",

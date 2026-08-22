@@ -14,6 +14,9 @@
 
 import { spawn } from "node:child_process";
 import { setTimeout as sleep } from "node:timers/promises";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join as joinPath } from "node:path";
 
 const HEADED = process.env.HEADED === "1";
 const PORT = Number(process.env.UI_PORT ?? 8978);
@@ -27,7 +30,12 @@ function startServer() {
     // still reproduces the defects this gate exists for — a list that rebuilds
     // per view update rebuilds at any rate.
     env: { ...process.env, PORT: String(PORT), SEED: "4711", SIZE: "64",
-      TICK_MS: process.env.TICK_MS ?? "250" },
+      TICK_MS: process.env.TICK_MS ?? "250",
+      // A THROWAWAY ledger: this gate buys things through the real socket
+      // (playtest 6), and against the shared reports/ledger.json every run
+      // would debit the same persisted firm until the gate went red from
+      // accumulated poverty.
+      LEDGER_PATH: joinPath(mkdtempSync(joinPath(tmpdir(), "sm-uigate-")), "ledger.json") },
     stdio: ["ignore", "pipe", "pipe"],
   });
   const log = [];
@@ -142,6 +150,24 @@ async function main() {
       }
       check("entering opens the building overlay", inside);
       if (inside) {
+        // BUY something through the real socket (playtest 6): the unit tests
+        // passed `bank` on the command by hand, so the server's injection —
+        // keyed on a field the client never sends — was broken while every
+        // test was green. Only this path exercises the truth. Row 2 is heat
+        // intel (30), which always succeeds; row 1 (reveal rival) can
+        // legitimately fail with nobody deployed.
+        const bankBefore = await page.evaluate(() =>
+          Number(document.getElementById("bank").textContent.replace(/\D+/g, "")));
+        await evalT(() => document.querySelector(
+          "#building-options li:nth-child(2) button").click(), undefined, "click buy");
+        let bankAfter = bankBefore;
+        for (let i = 0; i < 20 && bankAfter === bankBefore; i++) {
+          await sleep(300);
+          bankAfter = await page.evaluate(() =>
+            Number(document.getElementById("bank").textContent.replace(/\D+/g, "")));
+        }
+        check("buying heat intel actually debits the visible bank", bankAfter < bankBefore,
+          `bank stayed at ${bankBefore} — the purchase was refused or free`);
         await evalT(() => document.querySelector("#building .close").click(), undefined, "click leave");
         let out = false;
         for (let i = 0; i < 20 && !out; i++) {

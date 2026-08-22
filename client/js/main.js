@@ -528,6 +528,9 @@ let lastTap = 0;
 $("#view").addEventListener("pointerdown", (ev) => {
   const agent = ownAgent(session.view);
   if (!agent || !renderer) return;
+  // Two fingers down is the start of a pinch, never a move order.
+  if (pinch.size >= 1 && ev.pointerType === "touch") { pinch.set(ev.pointerId, ev); return; }
+  if (ev.pointerType === "touch") pinch.set(ev.pointerId, ev);
   const rect = ev.target.getBoundingClientRect();
   const cell = renderer.screenToCell(ev.clientX - rect.left, ev.clientY - rect.top);
   const now = Date.now();
@@ -536,6 +539,35 @@ $("#view").addEventListener("pointerdown", (ev) => {
   if (isDouble) session.send({ type: 21, agentId: agent.id, stance: 2 });
   session.send({ type: 20, agentId: agent.id, cellX: cell.x, cellY: cell.y });
 });
+
+// ── Zoom (playtest 6): wheel on desktop, pinch on touch, buttons for both ──
+// The renderer clamps the range; this file only feeds it factors.
+$("#view").addEventListener("wheel", (ev) => {
+  if (!renderer) return;
+  ev.preventDefault();
+  renderer.zoomBy(ev.deltaY > 0 ? 1.12 : 1 / 1.12);
+}, { passive: false });
+$("#zoom-in").addEventListener("click", () => renderer?.zoomBy(1 / 1.25));
+$("#zoom-out").addEventListener("click", () => renderer?.zoomBy(1.25));
+
+const pinch = new Map();
+let pinchDist = 0;
+$("#view").addEventListener("pointermove", (ev) => {
+  if (!pinch.has(ev.pointerId)) return;
+  pinch.set(ev.pointerId, ev);
+  if (pinch.size === 2 && renderer) {
+    const [a, b] = [...pinch.values()];
+    const d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+    if (pinchDist > 0 && d > 0) renderer.zoomBy(pinchDist / d);
+    pinchDist = d;
+  }
+});
+for (const type of ["pointerup", "pointercancel", "pointerout"]) {
+  $("#view").addEventListener(type, (ev) => {
+    pinch.delete(ev.pointerId);
+    if (pinch.size < 2) pinchDist = 0;
+  });
+}
 
 // The drop-in flow. The first build sent cellX:-1 straight to the engine,
 // which is always "unlandable" — the button did nothing and said nothing

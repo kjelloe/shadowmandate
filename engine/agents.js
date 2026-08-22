@@ -7,7 +7,7 @@
 import {
   AGENT_ACTIVE, AGENT_DOWNED, STANCE_SNEAK, STANCE_MOVE, STANCE_HURRY,
 } from "./state.js";
-import { speedMultiplier } from "./terrain.js";
+import { speedMultiplier, isPassable } from "./terrain.js";
 import { tileAt } from "./state.js";
 import { findPath } from "./pathfind.js";
 import { cellToWorld, worldToCellFloor } from "../shared/fixedmath.js";
@@ -49,6 +49,32 @@ export function stepSpeed(cfg, map, agent) {
 // A downed agent crawls — slowly, and it cannot be redirected.
 export function crawlSpeed(cfg) {
   return Math.max(1, cfg.crawlSpeed | 0);
+}
+
+// Playtest 6: a tap on a building or any other unroutable cell used to
+// answer "no_route" — a rejection toast for what the player plainly meant as
+// "go there". The destination snaps to the nearest cell a route can actually
+// reach, searched outward by Manhattan ring (deterministic: distance, then
+// y, then x). Beyond the radius the tap really is nonsense and the rejection
+// stands. Passability plus the reachability grid is the cheap test — both
+// endpoints in the main component means a path exists — with the actual
+// pathfind still validating the snapped target afterwards.
+export const MOVE_SNAP_RADIUS = 3;
+export function snapMoveTarget(state, cellX, cellY) {
+  for (let r = 1; r <= MOVE_SNAP_RADIUS; r++) {
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        if (Math.abs(dx) + Math.abs(dy) !== r) continue;
+        const x = cellX + dx, y = cellY + dy;
+        if (x < 0 || y < 0 || x >= state.size || y >= state.size) continue;
+        const t = tileAt(state.map, x, y);
+        if (t < 0 || !isPassable(t)) continue;
+        if (state.reachable && !state.reachable[y * state.size + x]) continue;
+        return { x, y };
+      }
+    }
+  }
+  return null;
 }
 
 // Give an agent a destination. The path is stored as the agent's route; the
