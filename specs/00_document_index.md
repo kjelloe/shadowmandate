@@ -141,6 +141,14 @@ M7 in progress and playable in a browser (updated 2026-08-06)
 | D55 | Block character | **A visual massing pass over the existing maps**, not a citygen change. Blocks group and carve into parcels client-side; streets, routes, fixtures and batteries untouched. Citygen block-templates stay open as a possible later slice, after M8 balance settles |
 | D56 | HQ placement | **The Field HQ auto-establishes in the nearest free safehouse at drop-in.** The drop request is a neighbourhood pointer; the landing rule (`hqLandingFor`) lives engine-side so player and AI share it; rivals follow the same rule; the tent survives only as the no-safehouse fallback |
 
+## Thirteenth decision batch (2026-08-22, playtest 5)
+
+| # | Decision | Ruling |
+|---:|---|---|
+| D57 | Session economy | **A fresh identity banks 200** (`hq.startingBank`); season rotation resets TO it; purchases and bail genuinely debit the ledger (they never had); the bank is visible in the HUD and unaffordable rows grey out. Legacy ledgers are floored to the starting bank once (version-2 migration). **Leaving a building is the overlay's own Leave button** — dialogue exit rows are gone, and a quiet informant offers an empty list |
+| D58 | Streets | **2- and 4-lane streets are drawn on the existing grid** — streets get centre dashes, transit avenues the 4-lane treatment, plus kerbside lamps (lit/dead/blinking). No citygen widening: maps, routes, fixtures and batteries untouched |
+| D59 | Special buildings | **Dress the EXISTING gameplay anchors.** The Holding Site is the prison (walls, watchtowers, barred gate); the six site types have typed markers so a vault reads as a vault; pure landmarks with no gameplay anchor (fire station et al) are deferred to a later slice |
+
 **Open owner questions: Q44** (the HQ safehouse doubles as the informant
 building) in `../dev-questions.md`, which also holds the tracked gaps.
 

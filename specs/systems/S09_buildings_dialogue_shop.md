@@ -109,3 +109,25 @@ HQ. Consequences to keep straight:
 - An informant selling "reveal deployed rival HQ" is now literally pointing
   at another safehouse's door. Nothing breaks — the reveal already stores a
   cell — but any future copy should say "their safehouse", not "their tent".
+
+## Playtest 5 — one Leave, and it works (2026-08-22, D57)
+
+Leaving a building is `CMD_EXIT_BUILDING`, issued by the overlay's own Leave
+button — the only leave control. What changed and why:
+
+- The dialogue's leave row (`option.exit`) duplicated the overlay button and
+  was cut from content; the `exit` mechanism went with it, because a
+  mechanism no content can express is a feature that silently does nothing.
+- The overlay close button used to only HIDE the panel while the agent stayed
+  inside engine-side — and `renderBuilding` re-shows the panel every tick
+  while `view.inside` is set, so it was a no-op that flickered. Worse: a
+  market has no dialogue rows at all, so a market was a building you could
+  never leave. The button now sends the exit command; the panel hides when
+  the view agrees you are out.
+- A quiet informant (lockdown) offers an EMPTY options list — both the
+  engine's `payloadFor` and the client's `payloadForBuilding` mirror agree
+  (the duplicate-constants lesson: the client copy had to change too).
+- `tools/ui_acceptance.mjs` now walks the real flow — GO INSIDE at spawn,
+  overlay opens, Leave exits — and the check was mutation-tested by making
+  Leave a no-op (fails by name, with the downstream checks collapsing behind
+  it exactly as a trapped agent would).

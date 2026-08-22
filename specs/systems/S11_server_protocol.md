@@ -68,3 +68,13 @@ over a real socket, caps/limits, and the ops deploy.
 ## To pin
 
 `⚙` caps/limits · deploy runbook (M7 doc). (Reconnect grace ruled: D31, 120s.)
+
+## Playtest 5 additions (2026-08-22)
+
+- `view.bank` — the seat's ledger bank, attached server-side in `viewFor`
+  (the engine view stays bank-free; the ledger is not engine state). Per-seat
+  and own-firm only, like everything else in a view.
+- `welcome.districtMap` and `dropZones.districtMap` — `{owner, traits}`:
+  which cell belongs to which district and each district's trait, shipped
+  beside the tiles for the terrain's district-identity pass (S15).
+  Terrain-static and fog-free by nature, like the tiles themselves.

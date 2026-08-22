@@ -36,18 +36,34 @@ export class LedgerStore {
   }
 
   load() {
-    if (!existsSync(this.path)) return;
-    try {
-      this.data = JSON.parse(readFileSync(this.path, "utf8"));
-      // Ledgers written before 7d have no `worlds` section. Defaulted rather
-      // than migrated: an existing world is season 1 by definition, and a
-      // missing key must never read as season `undefined`.
-      if (!this.data.worlds) this.data.worlds = {};
-    } catch (err) {
-      // A corrupt ledger must be loud, not silently replaced with an empty one:
-      // silently starting fresh would erase every player's progression.
-      throw new Error(`ledger at ${this.path} is unreadable: ${err.message}`);
+    if (existsSync(this.path)) {
+      try {
+        this.data = JSON.parse(readFileSync(this.path, "utf8"));
+        // Ledgers written before 7d have no `worlds` section. Defaulted rather
+        // than migrated: an existing world is season 1 by definition, and a
+        // missing key must never read as season `undefined`.
+        if (!this.data.worlds) this.data.worlds = {};
+      } catch (err) {
+        // A corrupt ledger must be loud, not silently replaced with an empty
+        // one: silently starting fresh would erase every player's progression.
+        throw new Error(`ledger at ${this.path} is unreadable: ${err.message}`);
+      }
     }
+    // One-time remedy (playtest 5): before the starting bank existed, a firm
+    // entry persisted at bank 0 could never afford any action — and since
+    // purchases never debited back then, no legitimate entry can be below the
+    // floor for having SPENT. Floor once, stamp the version so spending below
+    // the floor sticks forever after.
+    if ((this.data.version | 0) < 2) {
+      let floored = false;
+      for (const led of Object.values(this.data.firms)) {
+        if ((led.bank | 0) < this.startingBank) { led.bank = this.startingBank; floored = true; }
+      }
+      if (floored) { this.data.version = 2; this.save(); }
+    }
+    // Every save from here on carries the version, so a fresh file can never
+    // be mistaken for a pre-floor legacy one and re-floored after spending.
+    this.data.version = 2;
   }
 
   save() {

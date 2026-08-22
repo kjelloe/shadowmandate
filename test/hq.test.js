@@ -6,7 +6,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { apply } from "../engine/reducer.js";
@@ -317,4 +317,32 @@ test("the landing prefers a patrol-clear safehouse door (playtest 5: burned duri
   const run = tickCollecting(s, apply, 80);
   assert.ok(!run.saw("agentBurned") && !run.saw("agentNoticed"),
     "the operative was seen during the drop cinematic — the landing gave back the patrol clearance");
+});
+
+test("legacy ledgers are floored to the starting bank ONCE, and spending below it sticks", () => {
+  const dir = mkdtempSync(join(tmpdir(), "sm-ledgerfloor-"));
+  const path = join(dir, "ledger.json");
+  try {
+    // A pre-floor file: a firm entry persisted at bank 0, no version stamp.
+    const legacy = new LedgerStore(path);   // startingBank 0 — the old world
+    legacy.applyDebrief("world-a", {
+      firmId: 0, banked: 0, reputationDelta: 1, recognition: 5,
+      tierUnlocked: 1, contractsCompleted: 0,
+    }, 100);
+    // Strip the version stamp so the file reads as genuinely pre-migration.
+    const raw = JSON.parse(readFileSync(path, "utf8"));
+    delete raw.version;
+    writeFileSync(path, JSON.stringify(raw));
+
+    const start = RULES.hq.startingBank;
+    const store = new LedgerStore(path, { startingBank: start });
+    assert.equal(store.get("world-a", 0).bank, start,
+      "a legacy bank below the floor must be raised — that player could afford nothing, forever");
+
+    // Spend below the floor, reopen: the floor must NOT re-apply.
+    assert.ok(store.spendBank("world-a", 0, start - 10));
+    const reopened = new LedgerStore(path, { startingBank: start });
+    assert.equal(reopened.get("world-a", 0).bank, 10,
+      "the migration re-ran on a stamped file and refunded the spend");
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });

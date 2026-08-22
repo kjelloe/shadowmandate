@@ -115,3 +115,14 @@ The AI needed NO change: the landing rule lives engine-side where the AI's
 drop command passes through it, and `debugging/dbg_ai_rejections.mjs` (kept)
 verifies zero AI rejections across seeds — the instrument itself checked by
 forcing a rejection through the same event path.
+
+## Playtest 5 addendum — the landing keeps the patrol clearance (2026-08-22)
+
+`hqLandingFor` runs two passes: prefer a safehouse door that is ALSO clear of
+patrols by `dropZoneMinClearRadius` — the guarantee `findDropZones` has always
+made for the request — and only if no door qualifies at this moment (patrols
+move) fall back to the nearest free door. Without it the snap could land an
+operative on a door with a patrol at distance 1, and they were BURNED during
+the drop cinematic before the player ever had control (reproduced: seed 42,
+district 0, noticed at tick 0, burned at tick 38). The exact scenario is
+pinned in `test/hq.test.js`, including 80 ticks unseen after landing.

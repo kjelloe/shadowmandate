@@ -112,3 +112,23 @@ end-to-end (V1 acceptance: cleared browser + code restores Firm).
 `⚙` recovery code format · headline-event selection for world news
 (proposal: burns, raids, lockdowns, season milestones — top 5 since last
 visit). (Token scope and season-end policy ruled: D32, D33.)
+
+## Playtest 5 — the bank works now (2026-08-22, D57)
+
+- `emptyLedger` seeds `bank` from `rules.hq.startingBank` (200); a season
+  rotation resets the bank TO the starting bank, not to zero — a fresh start
+  that cannot afford any action is the exact defect this closes.
+- **Purchases and bail debit the ledger.** The reducer stays pure and only
+  checks `command.bank` (D30 bank-only, injected at the socket layer); the
+  settlement lives in `world.tick()`, which spends every priced event
+  (`itemBought`, `dialogueChosen`, `coverBought`, `bailPaid`) against the
+  store. Until this batch nothing subtracted the money — every buy since M4
+  was silently free. A refused buy provably does not debit.
+- **The bank rides on the view** (`viewFor` attaches it) and renders as a HUD
+  pill; unaffordable overlay rows grey out and disable.
+- **Version-2 ledger migration**: on load, a file without the version stamp
+  has every firm bank floored to the starting bank, once. No pre-fix entry
+  can legitimately be below the floor for having SPENT (spending did not
+  work), so the floor is safe; every save carries the stamp so spending below
+  the floor sticks forever after. Pinned in `test/hq.test.js`, both
+  directions: legacy files floor, stamped files never re-floor.

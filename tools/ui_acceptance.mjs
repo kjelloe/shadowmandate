@@ -125,6 +125,34 @@ async function main() {
       check("dismissing the intro hides it and remembers", gone);
     }
 
+    // --- enter and LEAVE the HQ building (playtest 5) ----------------------
+    // The drop lands on the HQ safehouse door, so GO INSIDE is live at spawn —
+    // and the overlay's Leave button must actually EXIT the building. Before
+    // this check, the close button only hid the panel while the agent stayed
+    // inside engine-side, and a market (no dialogue rows) was a building you
+    // could never leave. No unit test can see that; only this flow can.
+    const enterVisible = await page.evaluate(() => !document.getElementById("enter-btn").hidden);
+    check("GO INSIDE is offered on the HQ door at spawn", enterVisible);
+    if (enterVisible) {
+      await evalT(() => document.getElementById("enter-btn").click(), undefined, "click enter");
+      let inside = false;
+      for (let i = 0; i < 20 && !inside; i++) {
+        await sleep(300);
+        inside = await page.evaluate(() => !document.getElementById("building").hidden);
+      }
+      check("entering opens the building overlay", inside);
+      if (inside) {
+        await evalT(() => document.querySelector("#building .close").click(), undefined, "click leave");
+        let out = false;
+        for (let i = 0; i < 20 && !out; i++) {
+          await sleep(300);
+          out = await page.evaluate(() => document.getElementById("building").hidden);
+        }
+        check("the overlay's Leave actually exits the building", out,
+          "the panel stayed up — the agent is still inside engine-side");
+      }
+    }
+
     // --- stance ------------------------------------------------------------
     // The stance buttons must change the stance the SERVER agrees we have, not
     // merely the button's own styling.
