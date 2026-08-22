@@ -25,20 +25,35 @@
     }
   },
   "markers": {
-    "siteScenery": {
-      "procedural": "siteMarker",
+    "siteCache": {
+      "procedural": "siteCache",
       "class": "marker",
-      "tint": "site"
+      "tint": "state"
     },
-    "siteOffered": {
-      "procedural": "siteMarker",
+    "siteVault": {
+      "procedural": "siteVault",
       "class": "marker",
-      "tint": "siteOffered"
+      "tint": "state"
     },
-    "siteActive": {
-      "procedural": "siteMarker",
+    "siteLab": {
+      "procedural": "siteLab",
       "class": "marker",
-      "tint": "siteActive"
+      "tint": "state"
+    },
+    "siteRelay": {
+      "procedural": "siteRelay",
+      "class": "marker",
+      "tint": "state"
+    },
+    "siteTransit": {
+      "procedural": "siteTransit",
+      "class": "marker",
+      "tint": "state"
+    },
+    "siteWarehouse": {
+      "procedural": "siteWarehouse",
+      "class": "marker",
+      "tint": "state"
     },
     "camera": {
       "procedural": "camera",
@@ -97,5 +112,6 @@
       "class": "structure",
       "tint": "dropship"
     }
-  }
+  },
+  "note_sites": "Playtest 5: site markers are TYPED - a vault reads as a vault, a relay as a dish - mapped from the engine's SITE_* order by models.siteVisual (guard-tested against the engine constants). tint is `state`: the caller passes the site/siteOffered/siteActive mark, so contract state still recolours the centrepiece."
 }

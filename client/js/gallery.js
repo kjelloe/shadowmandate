@@ -26,7 +26,8 @@ const fail = (where, err) => {
 // fewer things than the game can draw.
 const ROLES = [
   "agent", "rival", "patrol", "patrolAlert",
-  "siteScenery", "siteOffered", "siteActive", "camera", "cameraDisabled", "junction", "junctionCut",
+  "siteCache", "siteVault", "siteLab", "siteRelay", "siteTransit", "siteWarehouse",
+  "camera", "cameraDisabled", "junction", "junctionCut",
   "informant", "market", "coverShop", "holding", "ownHq", "rivalHq", "dropship",
 ];
 

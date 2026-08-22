@@ -28,7 +28,7 @@ import {
   buildClutter, clutterPlacements, WIN_TEX, ROOF_BAND, BLOCK_TILE,
   CLUTTER_TILES, CLUTTER_KINDS, CLUTTER_CLEARANCE,
 } from "../client/js/terrain3d.js";
-import { buildingRole, siteRole } from "../client/js/models.js";
+import { buildingRole, siteVisual } from "../client/js/models.js";
 import { TILE_COUNT } from "../engine/terrain.js";
 
 const root = new URL("../", import.meta.url);
@@ -169,7 +169,10 @@ test("every role the renderer's decision tables can produce is in the manifest",
   // guard has to walk the same tables rather than a list somebody kept by hand.
   const produced = [
     buildingRole(0), buildingRole(1), buildingRole(2), buildingRole(99),
-    siteRole("active"), siteRole("offered"), siteRole(undefined),
+    // Sites are typed since playtest 5: every role siteVisual can produce, for
+    // every engine type and every contract state, must resolve.
+    ...[0, 1, 2, 3, 4, 5, 99].flatMap((type) =>
+      ["active", "offered", undefined].map((state) => siteVisual(state, type).role)),
   ];
   for (const role of produced) {
     assert.ok(manifestEntry(manifest, role),

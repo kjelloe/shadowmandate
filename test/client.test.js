@@ -535,3 +535,26 @@ test("the HQ tent stays packed when the HQ lives in a building (playtest 4)", as
     "no buildings in the world means the tent fallback");
   assert.ok(!hqInBuilding(view, null), "a missing HQ is never in a building");
 });
+
+test("site visuals are typed, and the type order mirrors the engine (playtest 5)", async () => {
+  const { siteVisual, SITE_TYPE_ROLES } = await import("../client/js/models.js");
+  const engine = await import("../engine/citygen.js");
+  // The deliberate-duplicate guard: the client cannot import the engine at
+  // runtime, so this test is what keeps the two orders in step.
+  assert.equal(SITE_TYPE_ROLES.length, engine.SITE_TYPE_COUNT);
+  assert.equal(SITE_TYPE_ROLES[engine.SITE_CACHE], "siteCache");
+  assert.equal(SITE_TYPE_ROLES[engine.SITE_VAULT], "siteVault");
+  assert.equal(SITE_TYPE_ROLES[engine.SITE_LAB], "siteLab");
+  assert.equal(SITE_TYPE_ROLES[engine.SITE_RELAY], "siteRelay");
+  assert.equal(SITE_TYPE_ROLES[engine.SITE_TRANSIT_HUB], "siteTransit");
+  assert.equal(SITE_TYPE_ROLES[engine.SITE_WAREHOUSE], "siteWarehouse");
+
+  assert.deepEqual(siteVisual("active", engine.SITE_VAULT),
+    { role: "siteVault", mark: "siteActive" });
+  assert.deepEqual(siteVisual("offered", engine.SITE_RELAY),
+    { role: "siteRelay", mark: "siteOffered" });
+  assert.deepEqual(siteVisual(undefined, engine.SITE_LAB),
+    { role: "siteLab", mark: "site" });
+  assert.equal(siteVisual(undefined, 99).role, "siteCache",
+    "an unknown type must fall back to a valid model, never to nothing");
+});

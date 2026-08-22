@@ -329,6 +329,22 @@ export function siteRole(role) {
   return role === "active" ? "siteActive" : role === "offered" ? "siteOffered" : "siteScenery";
 }
 
+// The engine's SITE_* order (citygen.js), as a DELIBERATE mirror — the client
+// cannot import the engine, so a guard test keeps the two lists in step (the
+// same pattern as terrain3d's TRAIT_STYLES).
+export const SITE_TYPE_ROLES = ["siteCache", "siteVault", "siteLab", "siteRelay", "siteTransit", "siteWarehouse"];
+
+// What the diorama draws for a site (playtest 5): the TYPE picks the model —
+// a vault reads as a vault before you read any label — and the contract state
+// picks the mark the tint slot takes. The radar keeps the state-role language
+// (siteRole above); this is the 3D half of the same decision.
+export function siteVisual(state, type) {
+  return {
+    role: SITE_TYPE_ROLES[type] ?? SITE_TYPE_ROLES[0],
+    mark: state === "active" ? "siteActive" : state === "offered" ? "siteOffered" : "site",
+  };
+}
+
 // D50's disclosure, as a view-model decision so it is testable without a DOM.
 // A newcomer meeting Firms four tiers above them is only unfair if it was
 // unforeseeable, so "DAY 24 OF 28" and "RIVAL TIERS 1–4" belong on the screen

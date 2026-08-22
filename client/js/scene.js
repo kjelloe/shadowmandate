@@ -12,7 +12,7 @@
 
 import * as THREE from "three";
 import { buildGround, buildBlocks, buildClutter, buildRoads, setTerrainTokens } from "./terrain3d.js";
-import { siteRoles, objectiveCell, buildingRole, siteRole, burnedGuidance, pinnedCells, hqInBuilding } from "./models.js";
+import { siteRoles, objectiveCell, buildingRole, siteVisual, burnedGuidance, pinnedCells, hqInBuilding } from "./models.js";
 import { buildProcedural, applyTint } from "./asset_factory.js";
 import { resolveVisual, tintFor, detectionMark } from "./asset_resolver.js";
 import { art } from "./assets.js";
@@ -315,7 +315,9 @@ export function createScene(canvas) {
     // board, or scenery — is carried by shape and tint together (7a).
     const roles = siteRoles(view);
     for (const s of view.sites) {
-      at(takeVisual(siteRole(roles.get(s.id))), s.cellX + 0.5, s.cellY + 0.5);
+      // The type picks the model, the contract state picks the tint mark.
+      const sv = siteVisual(roles.get(s.id), s.type);
+      at(takeVisual(sv.role, sv.mark), s.cellX + 0.5, s.cellY + 0.5);
     }
     for (const b of view.buildings) {
       at(takeVisual(buildingRole(b.kind)), b.cellX + 0.5, b.cellY + 0.5);

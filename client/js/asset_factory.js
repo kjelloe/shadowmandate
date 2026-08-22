@@ -133,15 +133,82 @@ function buildPatrol() {
 }
 
 // ── Markers ────────────────────────────────────────────────────────────────
-// A site is a place something could happen: a floating octahedron in a slim
-// halo over a small plinth, so it reads as a marker rather than as an object
-// in the world.
-function buildSiteMarker() {
+// A site is a place something could happen. Since playtest 5 each SITE TYPE
+// has its own centrepiece — a vault reads as a vault before you read any
+// label — while the shared plinth-and-halo language keeps them all reading as
+// MARKERS rather than as objects the world would collide with, and the
+// centrepiece stays the tint slot so contract state still recolours it.
+function siteBase() {
   const g = new THREE.Group();
   const C = body();
   g.add(place(cyl(0.30, 0.36, 0.10, 8, C.plinth), 0, 0.05, 0));
   g.add(place(tilt(torus(0.34, 0.025, 6, 14, C.bars), Math.PI / 2), 0, 0.46, 0));
-  g.add(place(tintable(oct(0.28, "#ffffff", "signal")), 0, 0.46, 0));
+  return g;
+}
+
+// A cache: a field footlocker — lid ridge, two straps.
+function buildSiteCache() {
+  const g = siteBase();
+  const C = body();
+  g.add(place(tintable(box(0.42, 0.24, 0.30, "#ffffff", "signal")), 0, 0.24, 0));
+  g.add(place(box(0.44, 0.05, 0.32, C.visor), 0, 0.385, 0));
+  g.add(place(box(0.05, 0.30, 0.33, C.post), -0.12, 0.25, 0));
+  g.add(place(box(0.05, 0.30, 0.33, C.post), 0.12, 0.25, 0));
+  return g;
+}
+
+// A vault: a strongbox with a door ring and a dial.
+function buildSiteVault() {
+  const g = siteBase();
+  const C = body();
+  g.add(place(box(0.44, 0.44, 0.36, C.kiosk), 0, 0.32, 0));
+  g.add(place(tilt(torus(0.15, 0.03, 6, 12, C.bars)), 0, 0.34, 0.185));
+  g.add(place(tintable(cyl(0.07, 0.07, 0.05, 8, "#ffffff", "signal")), 0, 0.34, 0.20));
+  g.add(place(box(0.05, 0.05, 0.04, C.visor), 0.15, 0.15, 0.185));   // hinge
+  return g;
+}
+
+// A lab: a glass dome over benched flasks.
+function buildSiteLab() {
+  const g = siteBase();
+  const C = body();
+  g.add(place(box(0.46, 0.16, 0.40, C.kiosk), 0, 0.18, 0));
+  g.add(place(tintable(sphere(0.21, 10, 6, "#ffffff", "glass")), 0, 0.34, 0));
+  g.add(place(cyl(0.035, 0.045, 0.16, 6, C.canvas), -0.15, 0.34, 0.12));
+  g.add(place(cyl(0.03, 0.04, 0.22, 6, C.post), 0.16, 0.37, 0.10));
+  return g;
+}
+
+// A relay: a mast and a tipped dish, feed horn glowing.
+function buildSiteRelay() {
+  const g = siteBase();
+  const C = body();
+  g.add(place(cyl(0.025, 0.035, 0.62, 6, C.post), 0, 0.31, 0));
+  g.add(place(tilt(cyl(0.22, 0.05, 0.09, 10, C.bars), 0.7, 0, 0.3), 0.06, 0.62, 0.05));
+  g.add(place(tintable(sphere(0.06, 8, 6, "#ffffff", "signal")), 0.13, 0.72, 0.11));
+  g.add(place(box(0.16, 0.10, 0.12, C.kiosk), 0, 0.10, 0.14));       // relay hut
+  return g;
+}
+
+// A transit hub: a sign gantry with a hanging plate.
+function buildSiteTransit() {
+  const g = siteBase();
+  const C = body();
+  g.add(place(cyl(0.03, 0.035, 0.66, 6, C.post), -0.28, 0.33, 0));
+  g.add(place(cyl(0.03, 0.035, 0.66, 6, C.post), 0.28, 0.33, 0));
+  g.add(place(box(0.66, 0.05, 0.06, C.post), 0, 0.66, 0));
+  g.add(place(tintable(box(0.40, 0.18, 0.04, "#ffffff", "signal")), 0, 0.52, 0));
+  return g;
+}
+
+// A warehouse: stacked pallets under a tarp.
+function buildSiteWarehouse() {
+  const g = siteBase();
+  const C = body();
+  g.add(place(box(0.24, 0.20, 0.24, C.kiosk), -0.12, 0.20, 0.04));
+  g.add(place(box(0.22, 0.18, 0.22, C.post), 0.14, 0.19, -0.06));
+  g.add(place(box(0.20, 0.16, 0.20, C.kiosk), 0.0, 0.42, 0));
+  g.add(place(tintable(box(0.30, 0.06, 0.30, "#ffffff", "signal")), 0, 0.54, 0));
   return g;
 }
 
@@ -197,20 +264,38 @@ function buildKioskPeak() {
   });
 }
 
-// Where your people are held. Bars, so it is unmistakable.
+// Where your people are held: a PRISON BLOCK (playtest 5 — the anchors get
+// architecture). Perimeter walls, corner watchtowers, a barred gate, and the
+// tint band running over the gate so state still reads at a glance.
 function buildHoldingPen() {
   const g = new THREE.Group();
   const C = body();
-  g.add(place(box(0.90, 0.08, 0.90, C.plinth), 0, 0.04, 0));
-  // Eight bars, not four: a cage, not a table. The mid-wall bars are what make
-  // it read as barred from the diorama's low angle.
-  for (const [x, z] of [[-0.40, -0.40], [0.40, -0.40], [-0.40, 0.40], [0.40, 0.40],
-    [0, -0.40], [0, 0.40], [-0.40, 0], [0.40, 0]]) {
-    g.add(place(cyl(0.04, 0.04, 0.62, 6, C.bars), x, 0.39, z));
+  g.add(place(box(1.04, 0.06, 1.04, C.plinth), 0, 0.03, 0));
+  // Perimeter walls with a gate gap on the south face.
+  g.add(place(box(1.0, 0.34, 0.07, C.kiosk), 0, 0.20, -0.485));
+  g.add(place(box(0.07, 0.34, 1.0, C.kiosk), -0.485, 0.20, 0));
+  g.add(place(box(0.07, 0.34, 1.0, C.kiosk), 0.485, 0.20, 0));
+  g.add(place(box(0.34, 0.34, 0.07, C.kiosk), -0.33, 0.20, 0.485));
+  g.add(place(box(0.34, 0.34, 0.07, C.kiosk), 0.33, 0.20, 0.485));
+  // Wire coils along the wall tops: one lying along x, two along z.
+  g.add(place(tilt(cyl(0.03, 0.03, 0.96, 5, C.bars), 0, 0, Math.PI / 2), 0, 0.40, -0.485));
+  g.add(place(tilt(cyl(0.03, 0.03, 0.96, 5, C.bars), Math.PI / 2, 0, 0), -0.485, 0.40, 0));
+  g.add(place(tilt(cyl(0.03, 0.03, 0.96, 5, C.bars), Math.PI / 2, 0, 0), 0.485, 0.40, 0));
+  // The gate: bars in the south gap.
+  for (const x of [-0.10, 0, 0.10]) {
+    g.add(place(cyl(0.018, 0.018, 0.32, 5, C.bars), x, 0.19, 0.485));
   }
-  g.add(place(box(0.36, 0.44, 0.03, C.kiosk), 0, 0.30, 0.41));         // door panel
-  g.add(place(box(0.08, 0.03, 0.05, C.visor), 0.10, 0.32, 0.43));      // its lock
-  g.add(place(tintable(box(0.94, 0.09, 0.94, "#ffffff", "signal")), 0, 0.72, 0));
+  // The cell block inside, with a dark slit-window band.
+  g.add(place(box(0.56, 0.40, 0.44, C.plinth), -0.08, 0.23, -0.10));
+  g.add(place(box(0.58, 0.08, 0.46, C.visor), -0.08, 0.30, -0.10));
+  // Corner watchtowers: leg, cabin, cap.
+  for (const [x, z] of [[-0.47, -0.47], [0.47, -0.47], [-0.47, 0.47], [0.47, 0.47]]) {
+    g.add(place(cyl(0.035, 0.045, 0.52, 5, C.post), x, 0.26, z));
+    g.add(place(box(0.16, 0.12, 0.16, C.kiosk), x, 0.58, z));
+    g.add(place(cone(0.12, 0.09, 4, C.kioskRoof), x, 0.685, z));
+  }
+  // The state band, arched over the gate.
+  g.add(place(tintable(box(0.34, 0.08, 0.10, "#ffffff", "signal")), 0, 0.42, 0.485));
   return g;
 }
 
@@ -327,7 +412,12 @@ const BUILDERS = {
   agent: buildAgent,
   rival: buildRival,
   patrol: buildPatrol,
-  siteMarker: buildSiteMarker,
+  siteCache: buildSiteCache,
+  siteVault: buildSiteVault,
+  siteLab: buildSiteLab,
+  siteRelay: buildSiteRelay,
+  siteTransit: buildSiteTransit,
+  siteWarehouse: buildSiteWarehouse,
   kioskTall: buildKioskTall,
   kioskWide: buildKioskWide,
   kioskPeak: buildKioskPeak,

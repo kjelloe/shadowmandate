@@ -255,3 +255,41 @@ regions run 21–69 cells — one template across 69 cells is a monolith, which
 was the playtest's "wall of windows" verbatim. The honesty rule is untouched:
 the drawn footprint is exactly the block tiles, and height still implies
 nothing the simulation does not model.
+
+## Playtest 5 — the map-look pass (2026-08-22)
+
+Three staged slices, all client-side, all deterministic per seed, all colours
+in tokens (D46), honesty rule intact throughout (markings are paint; lamps
+and furniture sit off cell centres; nothing implies an obstacle the
+simulation does not model).
+
+**Streets** (`roadFeatures`/`buildRoads`): streets are 2-lane with centre
+dashes; transit avenues are 4-lane with a double centre line and lane dashes;
+intersections stay unpainted. Kerbside lamp posts (hash-picked ~22% of road
+cells) split lit / dead / blinking with warm/cool temperature, light cones
+and ground pools; the blinking lamps live in two opposite-phase groups the
+scene toggles off the world tick — a city whose faulty tubes blink in unison
+reads as a stage set.
+
+**District identity** (`districtStyles` tokens + massing): the server now
+ships `districtMap` ({owner, traits}) beside the tiles; `TRAIT_STYLES` in
+terrain3d mirrors the engine's TRAIT_* order (deliberate duplicate,
+guard-tested). Each trait styles its mass: ramp colours, window density /
+temperature / SIZE (windowScale — factory glazing is a wall of glass),
+height scale (industrial and port stay low), and template pools (industrial
+grows sheds and stacks, residential rows and courtyards). Residential also
+grows balconies on street-facing facades, rooftop gardens, and lit
+ground-floor shopfronts; commercial gets neon strips; towers get slimmer
+setback tops, antenna masts with red beacons, and water tanks. One
+window-sheeted mesh per style, so `buildBlocks` returns a GROUP now.
+
+**Anchors**: sites are TYPED — `models.siteVisual(state, type)` picks the
+model (cache/vault/lab/relay/transit/warehouse, mirroring the engine's
+SITE_* order, guard-tested) while contract state still picks the tint mark,
+so a vault reads as a vault before you read any label. The Holding Site is a
+prison block: perimeter walls, wire, barred gate, corner watchtowers, the
+state band over the gate. The radar keeps its state-role language
+(MARKER_SHAPES unchanged); the typed models are the diorama's half.
+
+Deferred deliberately: pure landmark buildings with no gameplay anchor (fire
+station et al) — the owner ruled anchors first; landmarks are a later slice.
