@@ -102,6 +102,7 @@ button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal)
 #building-options li { display: flex; justify-content: space-between; gap: .6rem;
   align-items: center; padding: .45rem 0; border-bottom: 1px solid var(--line); }
 #building-options .cost { color: var(--amber); font-size: .82rem; }
+#building-options li.unaffordable { opacity: .45; }
 
 #zone-layout { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap;
   justify-content: center; }

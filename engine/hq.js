@@ -51,22 +51,36 @@ export function createHq(id, firmId, cellX, cellY, buildingId = -1) {
 // open) only when no safehouse qualifies.
 export function hqLandingFor(state, cellX, cellY, cfg) {
   const claimed = new Set(state.hqs.map((h) => h.buildingId));
-  let best = null, bestD = Infinity;
-  for (const b of state.buildings) {
-    if (b.kind !== BUILDING_SAFEHOUSE || claimed.has(b.id)) continue;
-    let clear = true;
-    for (const h of state.hqs) {
-      if (Math.abs(h.cellX - b.entranceX) + Math.abs(h.cellY - b.entranceY)
-        < cfg.dropZoneMinClearRadius) { clear = false; break; }
+  // Two passes: prefer a door that is ALSO clear of patrols — findDropZones
+  // has always guaranteed that for the request, and the landing must not give
+  // it back. Playtest 5 reproduced the failure: the snap landed an agent on a
+  // door with a patrol at distance 1 and the operative was BURNED during the
+  // drop cinematic, before the player ever had control. If no door is
+  // patrol-clear this moment (patrols move), fall back to the nearest free
+  // door — landing near a patrol beats refusing to land.
+  for (const requirePatrolClear of [true, false]) {
+    let best = null, bestD = Infinity;
+    for (const b of state.buildings) {
+      if (b.kind !== BUILDING_SAFEHOUSE || claimed.has(b.id)) continue;
+      let clear = true;
+      for (const h of state.hqs) {
+        if (Math.abs(h.cellX - b.entranceX) + Math.abs(h.cellY - b.entranceY)
+          < cfg.dropZoneMinClearRadius) { clear = false; break; }
+      }
+      if (clear && requirePatrolClear) {
+        for (const p of state.patrols) {
+          if (Math.abs(p.x - b.entranceX) + Math.abs(p.y - b.entranceY)
+            < cfg.dropZoneMinClearRadius) { clear = false; break; }
+        }
+      }
+      if (!clear) continue;
+      const d = Math.abs(b.entranceX - cellX) + Math.abs(b.entranceY - cellY);
+      // Strict < resolves ties to the lowest building id — deterministic.
+      if (d < bestD) { bestD = d; best = b; }
     }
-    if (!clear) continue;
-    const d = Math.abs(b.entranceX - cellX) + Math.abs(b.entranceY - cellY);
-    // Strict < resolves ties to the lowest building id — deterministic.
-    if (d < bestD) { bestD = d; best = b; }
+    if (best) return { cellX: best.entranceX, cellY: best.entranceY, buildingId: best.id };
   }
-  return best
-    ? { cellX: best.entranceX, cellY: best.entranceY, buildingId: best.id }
-    : { cellX, cellY, buildingId: -1 };
+  return { cellX, cellY, buildingId: -1 };
 }
 
 export function hqOf(state, firmId) {

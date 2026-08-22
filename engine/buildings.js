@@ -61,8 +61,10 @@ export function payloadFor(building, payloads, districtHeat) {
   }
   if (building.kind === 1) return payloads.shops.find((s) => s.id === "vendor") ?? null;
   const dialogue = payloads.dialogues.find((d) => d.id === "informant") ?? null;
+  // A quiet informant offers NOTHING — the overlay's Leave button is the way
+  // out (playtest 5: the dialogue's own leave row duplicated it and was cut).
   if (dialogue && districtHeat >= (dialogue.quietAtHeat ?? 99)) {
-    return { ...dialogue, quiet: true, options: [dialogue.options[dialogue.options.length - 1]] };
+    return { ...dialogue, quiet: true, options: [] };
   }
   return dialogue;
 }
@@ -196,8 +198,8 @@ export function buyCover(state, agent, cfg, ledgerBank) {
 
   exitBuilding(state, agent, true);
   state.events.push({
-    type: "coverBought", agentId: agent.id, buildingId: building.id,
-    disguiseId: next, cost,
+    type: "coverBought", agentId: agent.id, firmId: agent.firmId,
+    buildingId: building.id, disguiseId: next, cost,
   });
   return { cost };
 }

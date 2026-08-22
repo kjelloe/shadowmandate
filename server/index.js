@@ -29,7 +29,8 @@ const MIME = {
 };
 
 const rules = loadRuleset();
-const ledger = new LedgerStore(join(ROOT, "reports", "ledger.json"));
+const ledger = new LedgerStore(join(ROOT, "reports", "ledger.json"),
+  { startingBank: rules.hq.startingBank ?? 0 });
 const worlds = new Map();
 
 function getWorld(id) {

@@ -187,6 +187,10 @@ function paint(s, events) {
     }
   }
   $("#cache").textContent = `${t("hud.cache")} ${view.hq?.cacheResources ?? 0}`;
+  // The bank is what the shops and the informant charge against (D30). A
+  // player who cannot see it reads "cannot afford" as "the game is broken"
+  // (playtest 5).
+  $("#bank").textContent = `${t("hud.bank")} ${view.bank ?? 0}`;
 
   renderStances();
   renderBoard(view);
@@ -434,7 +438,9 @@ function renderBuilding(view) {
   const district = view.districts.find((d) => d.id === view.inside.districtId);
   const payload = payloadForBuilding(session.content, view.inside, district?.heatBand ?? 0);
   const rows = overlayRows(payload);
-  const signature = `${view.inside.id}:${payload?.quiet ? 1 : 0}:${rows.length}:${agent?.disguiseId ?? 0}`;
+  // The bank is part of the signature: affordability greys rows, so a balance
+  // change must re-render the list (and only then — see boardSignature).
+  const signature = `${view.inside.id}:${payload?.quiet ? 1 : 0}:${rows.length}:${agent?.disguiseId ?? 0}:${view.bank ?? 0}`;
   panel.hidden = false;
   if (signature === buildingSignature) return;    // do not rebuild under the cursor
   buildingSignature = signature;
@@ -472,11 +478,16 @@ function renderBuilding(view) {
     }
     const go = document.createElement("button");
     go.textContent = t(row.kind === "buy" ? "board.accept" : "common.confirm");
+    // A row the bank cannot cover is visibly out of reach, not a button that
+    // silently does nothing (playtest 5: every refusal read as a dead click).
+    if ((row.cost ?? 0) > (view.bank ?? 0)) {
+      go.disabled = true;
+      li.classList.add("unaffordable");
+    }
     go.addEventListener("click", () => {
       const a = ownAgent(session.view);
       if (!a) return;
-      if (row.kind === "leave") session.send({ type: 35, agentId: a.id });
-      else if (row.kind === "buy") session.send({ type: 37, agentId: a.id, itemIdx: row.idx });
+      if (row.kind === "buy") session.send({ type: 37, agentId: a.id, itemIdx: row.idx });
       else session.send({ type: 36, agentId: a.id, optionIdx: row.idx });
     });
     li.appendChild(go);
@@ -654,7 +665,17 @@ for (const b of document.querySelectorAll("#standoff [data-choice]")) {
   });
 }
 for (const b of document.querySelectorAll(".overlay .close")) {
+  // The building overlay's Leave is a REAL action, not a dismissal: the agent
+  // is inside engine-side, and merely hiding the panel left them trapped in a
+  // building with no way out (renderBuilding re-shows it every tick while
+  // view.inside is set — the button was a no-op that flickered). It sends
+  // exitBuilding; the panel hides itself when the view agrees you are out.
+  if (b.closest("#building")) continue;
   b.addEventListener("click", () => { b.closest(".overlay").hidden = true; });
 }
+$("#building .close").addEventListener("click", () => {
+  const a = ownAgent(session.view);
+  if (a) session.send({ type: 35, agentId: a.id });
+});
 show("splash");
 $("#splash-terminal").textContent = splashText(null);

@@ -11,13 +11,15 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync } from "node:fs";
 import { dirname } from "node:path";
 
-export function emptyLedger(worldId, firmId) {
+export function emptyLedger(worldId, firmId, startingBank = 0) {
   return {
     worldId, firmId,
     reputation: 0,
     recognition: 0,        // lifetime honor — carries across seasons (D33)
     tierUnlocked: 1,
-    bank: 0,
+    // Playtest 5: a fresh identity with bank 0 could afford NO action at all —
+    // the cheapest informant option costs 30. Seeded from rules.hq.startingBank.
+    bank: startingBank | 0,
     contractsCompleted: 0,
     heldAgentIds: [],
     lastExtractTick: 0,
@@ -26,8 +28,9 @@ export function emptyLedger(worldId, firmId) {
 }
 
 export class LedgerStore {
-  constructor(path) {
+  constructor(path, opts = {}) {
     this.path = path;
+    this.startingBank = opts.startingBank | 0;
     this.data = { firms: {}, tokens: {}, worlds: {} };
     this.load();
   }
@@ -58,7 +61,8 @@ export class LedgerStore {
   key(worldId, firmId) { return `${worldId}:${firmId}`; }
 
   get(worldId, firmId) {
-    return this.data.firms[this.key(worldId, firmId)] ?? emptyLedger(worldId, firmId);
+    return this.data.firms[this.key(worldId, firmId)]
+      ?? emptyLedger(worldId, firmId, this.startingBank);
   }
 
   // Written only on extraction and bail (S10). The debrief is the engine's
@@ -102,7 +106,10 @@ export class LedgerStore {
   rotateSeason(worldId) {
     for (const [key, led] of Object.entries(this.data.firms)) {
       if (!key.startsWith(`${worldId}:`)) continue;
-      led.bank = 0;
+      // Reset to the STARTING bank, not zero — a rotated season is a fresh
+      // start, and a fresh start that cannot afford any action is the exact
+      // playtest-5 defect this seeds against.
+      led.bank = this.startingBank;
       led.tierUnlocked = 1;
       led.reputation = 0;
       led.seasonsPlayed = (led.seasonsPlayed | 0) + 1;

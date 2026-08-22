@@ -451,9 +451,13 @@ test("the informant visibly goes quiet in a lockdown, not just silently", async 
   const content = { payloads: CONTENT, disguises: DISGUISES };
   const hot = payloadForBuilding(content, { kind: BUILDING_KIND.SAFEHOUSE }, 2);
   assert.ok(hot.quiet, "the informant kept talking through a lockdown");
+  // Playtest 5: no leave ROW anywhere — leaving is the overlay's own Leave
+  // button. A quiet informant simply has nothing to sell.
   const rows = overlayRows(hot);
-  assert.equal(rows.length, 1, "only leaving should remain");
-  assert.equal(rows[0].kind, "leave");
+  assert.equal(rows.length, 0, "a quiet informant should offer nothing at all");
+  assert.ok(!overlayRows(payloadForBuilding(content, { kind: BUILDING_KIND.SAFEHOUSE }, 0))
+    .some((r) => r.kind === "leave"),
+    "a leave row crept back into the dialogue — the overlay button is the ONLY leave");
 });
 
 test("every disguise the engine can assign has a portrait the client can show", async () => {

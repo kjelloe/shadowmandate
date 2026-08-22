@@ -286,7 +286,9 @@ function applyDialogueChoice(next, command) {
   const option = payload.options[command.optionIdx];
   if (!option) return reject(next, command, "no_such_option");
 
-  if (option.exit) return applyExitBuilding(next, { agentId: agent.id });
+  // Leaving is CMD_EXIT_BUILDING, always — dialogue exit options were cut in
+  // playtest 5 (they duplicated the overlay's Leave button), and a mechanism
+  // no content can express is a feature that silently does nothing.
   if ((option.cost ?? 0) > (command.bank ?? 0)) return reject(next, command, "cannot_afford");
 
   const firm = next.firms[agent.firmId];

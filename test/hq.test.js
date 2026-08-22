@@ -266,3 +266,55 @@ test("the session loop stays deterministic under replay", () => {
   };
   assert.deepEqual(run(), run());
 });
+
+test("a fresh identity starts with the ruled bank, and a rotated season restores it (playtest 5)", () => {
+  const dir = mkdtempSync(join(tmpdir(), "sm-startbank-"));
+  const path = join(dir, "ledger.json");
+  try {
+    // A fresh player with bank 0 could afford NO action at all — the cheapest
+    // informant option costs 30. The starting bank is data (rules.hq).
+    assert.ok(RULES.hq.startingBank >= 30,
+      "the starting bank cannot afford the cheapest informant option — the exact playtest-5 defect");
+    const store = new LedgerStore(path, { startingBank: RULES.hq.startingBank });
+    assert.equal(store.get("world-a", 0).bank, RULES.hq.startingBank,
+      "a brand-new identity must start with the ruled bank");
+
+    // A season rotation is a fresh start too — resetting to ZERO would
+    // re-open the same defect every 28 days.
+    store.applyDebrief("world-a", {
+      firmId: 0, banked: 500, reputationDelta: 10, recognition: 340,
+      tierUnlocked: 3, contractsCompleted: 7,
+    }, 1000);
+    store.rotateSeason("world-a");
+    const led = store.get("world-a", 0);
+    assert.equal(led.bank, RULES.hq.startingBank, "rotation must restore the STARTING bank, not zero");
+    assert.equal(led.recognition, 340, "recognition still carries (D33)");
+
+    // Spending draws it down and persists.
+    assert.ok(store.spendBank("world-a", 0, 30));
+    assert.equal(new LedgerStore(path, { startingBank: RULES.hq.startingBank }).get("world-a", 0).bank,
+      RULES.hq.startingBank - 30);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("the landing prefers a patrol-clear safehouse door (playtest 5: burned during the cinematic)", () => {
+  // Reproduces the reported burn: seed 42, district 0 — the nearest safehouse
+  // door had a patrol at distance 1, and the operative was noticed at tick 0
+  // and burned at tick 38, before the player ever had control.
+  let s = makeWorld({ seed: 42 });
+  const zones = findDropZones(s, RULES.citygen).filter((z) => z.districtId === 0);
+  const z = zones[Math.floor(zones.length / 2)];
+  s = apply(s, { type: CMD_DROP_IN, firmId: 0, cellX: z.cellX, cellY: z.cellY });
+  const hq = s.hqs[0];
+  assert.ok(hq.buildingId >= 0, "the drop should still land at a safehouse");
+  const patrolDist = Math.min(...s.patrols.map((p) =>
+    Math.abs(p.x - hq.cellX) + Math.abs(p.y - hq.cellY)));
+  assert.ok(patrolDist >= RULES.hq.dropZoneMinClearRadius,
+    `landed with a patrol ${patrolDist} cells from the door — inside the clear radius the drop zones promise`);
+  // And the operative survives the cinematic unseen.
+  const run = tickCollecting(s, apply, 80);
+  assert.ok(!run.saw("agentBurned") && !run.saw("agentNoticed"),
+    "the operative was seen during the drop cinematic — the landing gave back the patrol clearance");
+});

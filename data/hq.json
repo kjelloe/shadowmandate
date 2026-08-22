@@ -1,18 +1,19 @@
 {
-  "note": "S05. Timers in ticks (10/second). Evac hold is 30s = 300 ticks (design doc).",
-  "perimeterRadius": 4,
-  "evacHoldTicks": 300,
-  "emergencyEvacTicks": 100,
-  "emergencyReachTicks": 600,
-  "beaconSignalRadius": 20,
-  "lootTicks": 120,
-  "alarmGraceTicks": 60,
-  "dropZoneMinClearRadius": 8,
-  "cacheStartResources": 0,
-  "reputation": {
-    "cleanExtract": 4,
-    "emergencyEvac": -3,
-    "hqLost": -6
-  },
-  "dropZoneEdgeMargin": 6
+    "note": "S05. Timers in ticks (10/second). Evac hold is 30s = 300 ticks (design doc). startingBank seeds a NEW identity's ledger bank and is what a season rotation resets the bank to (playtest 5: a fresh player could afford no action at all).",
+    "perimeterRadius": 4,
+    "evacHoldTicks": 300,
+    "emergencyEvacTicks": 100,
+    "emergencyReachTicks": 600,
+    "beaconSignalRadius": 20,
+    "lootTicks": 120,
+    "alarmGraceTicks": 60,
+    "dropZoneMinClearRadius": 8,
+    "cacheStartResources": 0,
+    "reputation": {
+        "cleanExtract": 4,
+        "emergencyEvac": -3,
+        "hqLost": -6
+    },
+    "dropZoneEdgeMargin": 6,
+    "startingBank": 200
 }

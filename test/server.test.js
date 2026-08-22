@@ -399,3 +399,48 @@ test("D51: folding with the only operative in custody COMPLETES, and the debt su
     "the abandoned operative must remain HELD under this Firm — that debt is the recovery contract");
   world.stop();
 });
+
+test("purchases and bail actually debit the ledger, and the view shows the bank (playtest 5)", () => {
+  const dir = mkdtempSync(join(tmpdir(), "sm-bankdebit-"));
+  try {
+    const store = new LedgerStore(join(dir, "ledger.json"),
+      { startingBank: RULES.hq.startingBank });
+    let clock = 1_000_000;
+    const world = new World({
+      id: "test-world", seed: 4711, size: 64, rules: RULES, ledger: store,
+      aiCount: 0, now: () => clock,
+    });
+    const start = RULES.hq.startingBank;
+    assert.equal(world.viewFor(0).bank, start,
+      "the view must carry the bank — an invisible balance reads as a broken game");
+
+    const zone = centralDropZone(world.state, findDropZones(world.state, RULES.citygen));
+    world.submit({ type: CMD_DROP_IN, firmId: 0, cellX: zone.cellX, cellY: zone.cellY });
+    world.tick();
+    // The drop lands on the HQ safehouse door: walk in and buy the cheapest
+    // informant option. The bank rides on the command the way index.js
+    // injects it at the socket layer.
+    const agent = world.state.agents.find((a) => a.firmId === 0 && a.state === 1);
+    world.submit({ type: 34, agentId: agent.id });                       // enter
+    world.tick();
+    // Heat intel always succeeds; askRival would be refused with no rival
+    // deployed, and a refused buy must NOT debit.
+    const option = RULES.payloads.dialogues[0].options.find((o) => o.effect?.type === "heatIntel");
+    const idx = RULES.payloads.dialogues[0].options.indexOf(option);
+    world.submit({ type: 36, agentId: agent.id, optionIdx: idx, bank: start });
+    world.tick();
+    assert.equal(store.get("test-world", 0).bank, start - option.cost,
+      "the purchase was free — the reducer checks the bank but the server never debited it");
+    assert.equal(world.viewFor(0).bank, start - option.cost,
+      "the view's bank must follow the debit");
+
+    // A REFUSED buy must not debit: askRival fails with no rival deployed.
+    const rivalIdx = RULES.payloads.dialogues[0].options.findIndex(
+      (o) => o.effect?.type === "revealRivalHq");
+    world.submit({ type: 36, agentId: agent.id, optionIdx: rivalIdx, bank: start - option.cost });
+    world.tick();
+    assert.equal(store.get("test-world", 0).bank, start - option.cost,
+      "a refused purchase took the money anyway");
+    world.stop();
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

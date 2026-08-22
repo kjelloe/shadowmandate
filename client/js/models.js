@@ -231,13 +231,17 @@ export function payloadForBuilding(content, building, heatBand) {
   const dialogue = payloads.dialogues.find((d) => d.id === "informant") ?? null;
   if (!dialogue) return null;
   // heatBand 2 is lockdown (D20 fuzz bands); the informant stops talking.
+  // Quiet means NOTHING to offer — the overlay's Leave button is the way out
+  // (playtest 5), matching engine payloadFor.
   if (heatBand >= 2) {
-    return { ...dialogue, quiet: true, options: [dialogue.options[dialogue.options.length - 1]] };
+    return { ...dialogue, quiet: true, options: [] };
   }
   return dialogue;
 }
 
 // The rows an overlay renders, whether it is a conversation or a shop.
+// No "leave" rows: leaving is the overlay's own Leave button (playtest 5 —
+// two Leave controls that did different things, and the dialogue one won).
 export function overlayRows(payload) {
   if (!payload) return [];
   if (payload.kind === "shop") {
@@ -246,7 +250,7 @@ export function overlayRows(payload) {
     }));
   }
   return payload.options.map((o, idx) => ({
-    idx, key: o.key, cost: o.cost ?? 0, kind: o.exit ? "leave" : "talk",
+    idx, key: o.key, cost: o.cost ?? 0, kind: "talk",
   }));
 }
 

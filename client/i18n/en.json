@@ -32,6 +32,7 @@
   "hud.heat.tense": "TENSE",
   "hud.heat.lockdown": "LOCKDOWN",
   "hud.cache": "CACHE",
+  "hud.bank": "BANK",
   "hud.centreOnAgent": "CENTRE ON AGENT",
   "board.title": "AVAILABLE CONTRACTS",
   "board.tier": "TIER",

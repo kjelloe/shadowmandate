@@ -8,7 +8,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { apply } from "../engine/reducer.js";
 import {
-  CMD_DROP_IN, CMD_ENTER_BUILDING, CMD_DIALOGUE_CHOICE, CMD_BUY_ITEM, CMD_ADVANCE_TICK,
+  CMD_DROP_IN, CMD_ENTER_BUILDING, CMD_EXIT_BUILDING, CMD_DIALOGUE_CHOICE, CMD_BUY_ITEM,
+  CMD_ADVANCE_TICK,
 } from "../engine/commands.js";
 import { AGENT_ACTIVE } from "../engine/state.js";
 import { findDropZones, BUILDING_SAFEHOUSE, BUILDING_MARKET } from "../engine/citygen.js";
@@ -92,8 +93,8 @@ test("the informant goes quiet in a locked-down district (S03)", () => {
 
   const hot = payloadFor(building, payloads, quietAt);
   assert.ok(hot.quiet, "the informant kept talking through a lockdown");
-  assert.equal(hot.options.length, 1, "only the exit should remain");
-  assert.ok(hot.options[0].exit, "the one remaining option must be 'leave'");
+  assert.equal(hot.options.length, 0,
+    "a quiet informant offers nothing — leaving is the overlay button, not a row (playtest 5)");
 });
 
 test("the vendor sells upgrades, and will not sell the same one twice", () => {
@@ -115,10 +116,18 @@ test("the medkit restores condition", () => {
   assert.ok(healed.events.some((e) => e.type === "agentTreated"));
 });
 
-test("leaving via dialogue puts the agent back on the street", () => {
+test("leaving is the exit command, and no dialogue smuggles a leave row (playtest 5)", () => {
+  // Content guard: the dialogue leave row duplicated the overlay's Leave
+  // button and was cut. If a content author adds one back, the client now
+  // renders it as a normal talk row that does nothing sensible — fail here
+  // instead.
+  for (const d of RULES.payloads.dialogues) {
+    for (const o of d.options) {
+      assert.ok(!o.exit, `dialogue ${d.id} option ${o.key} is an exit row — leaving is CMD_EXIT_BUILDING`);
+    }
+  }
   const { state, agentId } = atBuilding(BUILDING_SAFEHOUSE);
-  const leaveIdx = RULES.payloads.dialogues[0].options.length - 1;
-  const s = apply(state, { type: CMD_DIALOGUE_CHOICE, agentId, optionIdx: leaveIdx, bank: 0 });
+  const s = apply(state, { type: CMD_EXIT_BUILDING, agentId });
   assert.equal(s.agents[agentId].state, AGENT_ACTIVE);
   assert.equal(s.agents[agentId].insideBuildingId, -1);
 });

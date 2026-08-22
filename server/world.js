@@ -189,6 +189,14 @@ export class World {
   tick() {
     const events = this.drain();
     for (const e of events) {
+      // Settle every priced event against the ledger. The reducer only ever
+      // CHECKS command.bank (it stays pure, D30 bank-only); until playtest 5
+      // nothing on the server subtracted the money, so every purchase and
+      // every bail was silently free.
+      if ((e.cost | 0) > 0 && e.firmId !== undefined
+        && ["itemBought", "dialogueChosen", "coverBought", "bailPaid"].includes(e.type)) {
+        this.ledger?.spendBank(this.id, e.firmId, e.cost | 0);
+      }
       if (e.type === "firmExtracted") {
         this.sendDebrief(e.firmId, {
           firmId: e.firmId, banked: e.banked | 0, emergency: e.emergency | 0,
@@ -295,7 +303,11 @@ export class World {
   }
 
   viewFor(firmId) {
-    return buildView(this.state, firmId, this.rules.detection);
+    const view = buildView(this.state, firmId, this.rules.detection);
+    // The bank rides on the view (playtest 5): a player who cannot SEE their
+    // money reads every refused purchase as "cannot do any actions".
+    if (this.ledger) view.bank = this.ledger.get(this.id, firmId).bank | 0;
+    return view;
   }
 
   // A debrief is the payoff beat the whole session builds toward (S05). It is
