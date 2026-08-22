@@ -257,15 +257,23 @@ test("building mass carries the window sheet as an emissive map", () => {
   const tiles = new Uint8Array(size * size);
   tiles[2 * size + 3] = BLOCK_TILE;
   tiles[5 * size + 5] = BLOCK_TILE;
-  const mesh = buildBlocks(tiles, size, 4711);
-  assert.ok(mesh, "no mass built from block tiles");
-  assert.ok(mesh.material.emissiveMap, "the facade has no emissive map — windows would be painted on, not lit");
-  // The top face samples the reserved band: BoxGeometry verts 8..15 are the
-  // +y and -y faces.
-  const uv = mesh.geometry.attributes.uv;
-  for (let v = 8; v < 16; v++) {
-    assert.ok(uv.getY(v) * WIN_TEX < ROOF_BAND,
-      `roof/floor vertex ${v} samples outside the dark band`);
+  const group = buildBlocks(tiles, size, 4711);
+  assert.ok(group, "no mass built from block tiles");
+  // buildBlocks is a GROUP since the district pass (playtest 5): one
+  // window-sheeted mesh per style plus the decoration meshes. Every mesh
+  // whose material carries vertex colours is building mass and must carry
+  // the sheet.
+  const massMeshes = group.children.filter((c) => c.material?.vertexColors);
+  assert.ok(massMeshes.length > 0, "no building-mass mesh in the block group");
+  for (const mesh of massMeshes) {
+    assert.ok(mesh.material.emissiveMap, "a facade has no emissive map — windows would be painted on, not lit");
+    // The top face samples the reserved band: BoxGeometry verts 8..15 are the
+    // +y and -y faces.
+    const uv = mesh.geometry.attributes.uv;
+    for (let v = 8; v < 16; v++) {
+      assert.ok(uv.getY(v) * WIN_TEX < ROOF_BAND,
+        `roof/floor vertex ${v} samples outside the dark band`);
+    }
   }
 });
 

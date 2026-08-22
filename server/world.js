@@ -286,6 +286,16 @@ export class World {
     return Array.from(this.state.map.cells);
   }
 
+  // District identity for the terrain look (playtest 5). Terrain-static like
+  // the tiles: which cell belongs to which district, and each district's
+  // trait — nothing here is fog-gated or private.
+  clientDistricts() {
+    return {
+      owner: this.state.districtOwner ? Array.from(this.state.districtOwner) : null,
+      traits: this.state.districts.map((d) => d.trait),
+    };
+  }
+
   districtSummary(firmId) {
     const firm = this.state.firms[firmId];
     const tier = firm?.tierUnlocked ?? 1;

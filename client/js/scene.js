@@ -240,12 +240,12 @@ export function createScene(canvas) {
     dropship.rotation.y = flight.offsetCells <= 0 ? Math.atan2(ax, az) : Math.atan2(-ax, -az);
   }
 
-  function setTerrain(tiles, size, seed) {
+  function setTerrain(tiles, size, seed, districts = null) {
     if (terrain) { scene.remove(terrain); terrain = null; }
     mapSize = size;
     terrain = new THREE.Group();
     terrain.add(buildGround(tiles, size, seed));
-    const blocks = buildBlocks(tiles, size, seed);
+    const blocks = buildBlocks(tiles, size, seed, districts);
     if (blocks) terrain.add(blocks);
     const clutter = buildClutter(tiles, size, seed);
     if (clutter) terrain.add(clutter);

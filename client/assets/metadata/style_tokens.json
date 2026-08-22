@@ -135,6 +135,41 @@
       "vent": "#23272E",
       "tarp": "#4E3A30",
       "density": 0.55
+    },
+    "note_districts": "District identity (playtest 5): each engine district trait styles its building mass — ramp colours, window density/temperature/size, height scale, and which decorations grow on roofs and facades. Industrial is low with big factory glazing and stacks; residential is mid-rise with warm windows, balconies, rooftop gardens and lit ground-floor shopfronts; commercial keeps the highriser canyon; government is austere and dark; research runs cool screen-glow; port is low and utilitarian. windows.scale multiplies the socket size (a factory window is a WALL of glass); warmShare splits sodium interiors from screen glow.",
+    "districtStyles": {
+      "industrial": {
+        "blockLo": "#23261F", "blockHi": "#3B4030", "heightScale": 0.6,
+        "windows": { "density": 0.1, "scale": 2, "warmShare": 0.6 }
+      },
+      "residential": {
+        "blockLo": "#272430", "blockHi": "#403A48", "heightScale": 0.85,
+        "windows": { "density": 0.22, "scale": 1, "warmShare": 0.85 },
+        "shopfront": "#E4A85A", "garden": "#33472F", "balcony": "#1A1D22"
+      },
+      "commercial": {
+        "blockLo": "#20242F", "blockHi": "#3A424F", "heightScale": 1.0,
+        "windows": { "density": 0.16, "scale": 1, "warmShare": 0.72 },
+        "shopfront": "#C96A8A"
+      },
+      "government": {
+        "blockLo": "#2A2D33", "blockHi": "#4A4E55", "heightScale": 0.9,
+        "windows": { "density": 0.07, "scale": 1, "warmShare": 0.5 }
+      },
+      "research": {
+        "blockLo": "#212B2E", "blockHi": "#38474C", "heightScale": 0.95,
+        "windows": { "density": 0.2, "scale": 1, "warmShare": 0.3 }
+      },
+      "port": {
+        "blockLo": "#212827", "blockHi": "#37413E", "heightScale": 0.55,
+        "windows": { "density": 0.12, "scale": 2, "warmShare": 0.55 }
+      }
+    },
+    "note_roofdecor": "Roof furniture (playtest 5): antenna masts with red beacon tips on the tall towers, water tanks on the mid-rise, slimmer setback tops, gardens on residential flats. Colours here; placement is hashed in the massing.",
+    "roofDecor": {
+      "mast": "#33383F",
+      "beacon": "#C2452F",
+      "tank": "#3A4046"
     }
   },
   "note_budget": "Triangle budgets are a MOBILE constraint, not an aesthetic one. The client already runs on a phone (7b) and a busy street draws dozens of these. Raised 2026-08-18 for the detail pass (playtest 3, finding 3: 'many more vertices'). triFloor is the other half of the same promise: a builder that quietly regresses to boxes stays under budget and green, so the floor is what makes the detail pass assertable.",

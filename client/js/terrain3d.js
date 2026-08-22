@@ -20,6 +20,7 @@ import * as THREE from "three";
 // about the tile look, and it cannot be a token edit while the tiles are hard
 // wired into two renderers that can drift apart.
 let COLOUR = null, BLOCK_LO = null, BLOCK_SPAN = null, WINDOWS = null, CLUTTER = null, ROAD = null;
+let DISTRICT_STYLES = null, ROOF_DECOR = null;
 
 // Raw /255, deliberately NOT THREE.Color: these floats are written straight
 // into a vertex-colour buffer, and three's colour management would sRGB-decode
@@ -35,6 +36,7 @@ export function setTerrainTokens(terrain) {
   if (!terrain) {
     COLOUR = null; BLOCK_LO = null; BLOCK_SPAN = null;
     WINDOWS = null; CLUTTER = null; ROAD = null;
+    DISTRICT_STYLES = null; ROOF_DECOR = null;
     return;
   }
   COLOUR = {};
@@ -46,6 +48,8 @@ export function setTerrainTokens(terrain) {
   WINDOWS = terrain.windows ?? null;
   CLUTTER = terrain.clutter ?? null;
   ROAD = terrain.road ?? null;
+  DISTRICT_STYLES = terrain.districtStyles ?? null;
+  ROOF_DECOR = terrain.roofDecor ?? null;
 }
 
 // Purely cosmetic relief. Water sinks, yards and rough sit slightly proud.
@@ -134,21 +138,27 @@ export function buildGround(tiles, size, seed) {
 // probability `density`, warm or cool by a second draw.
 export const WIN_TEX = 64;
 export const ROOF_BAND = 5;
-export function buildWindowData(seed, windows) {
+// `scale` multiplies the socket size and pitch (playtest 5: a factory window
+// is a WALL of glass, not an apartment grid); `warmShare` splits sodium
+// interiors from screen glow, so a research district can read as monitors.
+export function buildWindowData(seed, windows, scale = 1) {
   const data = new Uint8Array(WIN_TEX * WIN_TEX * 4);
   const warm = hexRgb(windows.lit).map((c) => Math.round(c * 255));
   const cool = hexRgb(windows.cool).map((c) => Math.round(c * 255));
   const density = windows.density ?? 0.16;
-  for (let wy = 0; wy * 5 + ROOF_BAND + 3 < WIN_TEX; wy++) {
-    for (let wx = 0; wx * 4 + 3 <= WIN_TEX; wx++) {
+  const warmShare = windows.warmShare ?? 0.72;
+  const pw = 4 * scale, ph = 5 * scale;           // socket pitch
+  const sw = 2 * scale, sh = 3 * scale;           // lit pane size
+  for (let wy = 0; wy * ph + ROOF_BAND + sh < WIN_TEX; wy++) {
+    for (let wx = 0; wx * pw + sw + 1 <= WIN_TEX; wx++) {
       if (hash2(seed ^ 0x33b1, wx, wy) >= density) continue;
-      const c = hash2(seed ^ 0x77aa, wx, wy) < 0.72 ? warm : cool;
+      const c = hash2(seed ^ 0x77aa, wx, wy) < warmShare ? warm : cool;
       // A lit socket flickers in brightness a little between neighbours, so a
       // facade reads as many rooms rather than one printed pattern.
       const dim = 0.6 + hash2(seed ^ 0x1234, wx, wy) * 0.4;
-      for (let py = 0; py < 3; py++) {
-        for (let px = 0; px < 2; px++) {
-          const x = wx * 4 + 1 + px, y = ROOF_BAND + wy * 5 + 1 + py;
+      for (let py = 0; py < sh; py++) {
+        for (let px = 0; px < sw; px++) {
+          const x = wx * pw + 1 + px, y = ROOF_BAND + wy * ph + 1 + py;
           const i = (y * WIN_TEX + x) * 4;
           data[i] = Math.round(c[0] * dim);
           data[i + 1] = Math.round(c[1] * dim);
@@ -265,19 +275,44 @@ function parcelize(region, seed) {
   return parcels;
 }
 
+// District trait -> style key. A DELIBERATE mirror of the engine's TRAIT_*
+// constants in citygen.js (0..5) — the client cannot import the engine, so a
+// test asserts the two lists agree (the D46 duplicate-constants lesson).
+export const TRAIT_STYLES = ["industrial", "residential", "commercial", "government", "research", "port"];
+
+function styleAt(districts, size, x, y) {
+  if (!districts?.owner || !districts?.traits || !DISTRICT_STYLES) return null;
+  const trait = districts.traits[districts.owner[y * size + x]];
+  const key = TRAIT_STYLES[trait] ?? null;
+  return key && DISTRICT_STYLES[key] ? key : null;
+}
+
 // One character per parcel, keyed on the parcel anchor. Singles are towers or
 // huts; short strips are slabs or stepped terraces; anything with a genuine
 // interior can hollow into a courtyard; the rest split between podium-and-
-// tower, rows and industrial sheds. Weights are a look judgement, refined by
-// eye against the gallery — the tests only pin that the variety EXISTS.
-function pickTemplate(cells, interior, seed) {
+// tower, rows and industrial sheds. The district style biases the pool
+// (playtest 5): an industrial district grows sheds and stacks, a residential
+// one rows and courtyards — the trait look, not just a tint. Weights are a
+// look judgement, refined by eye against the gallery — the tests only pin
+// that the variety EXISTS.
+const STYLE_POOLS = {
+  industrial: ["industrial", "industrial", "podium", "slab"],
+  port: ["industrial", "industrial", "slab", "rows"],
+  residential: ["rows", "rows", "courtyard", "slab"],
+  government: ["slab", "courtyard", "podium", "slab"],
+  research: ["slab", "podium", "rows", "slab"],
+  commercial: ["podium", "rows", "industrial", "slab"],
+};
+
+function pickTemplate(cells, interior, seed, style) {
   const [ax, ay] = cells[0];
   const r = hash2(seed ^ 0xb10c, ax, ay);
   const n = cells.length;
-  if (n === 1) return r < 0.6 ? "tower" : "hut";
+  const lowRise = style === "industrial" || style === "port";
+  if (n === 1) return r < (lowRise ? 0.25 : 0.6) ? "tower" : "hut";
   if (n <= 3) return r < 0.55 ? "slab" : "steps";
-  if (interior.length && r < 0.30) return "courtyard";
-  const pool = ["podium", "rows", "industrial", "slab"];
+  if (interior.length && r < (style === "residential" ? 0.45 : 0.30)) return "courtyard";
+  const pool = STYLE_POOLS[style] ?? STYLE_POOLS.commercial;
   return pool[Math.floor(hash2(seed ^ 0x5ab5, ax, ay) * pool.length) % pool.length];
 }
 
@@ -288,13 +323,31 @@ const clamp01 = (v) => Math.max(0, Math.min(1, v));
 // the cell's own mass. Every height carries a per-cell jitter term — two
 // coplanar roofs in the overlap strip would z-fight, and a dead-flat block
 // reads as printed rather than built.
-export function blockMassing(tiles, size, seed) {
+// Streets a facade can address (for balconies and shopfronts).
+const FACES = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+const streetFace = (tiles, size, x, y) => {
+  for (const [dx, dy] of FACES) {
+    const nx = x + dx, ny = y + dy;
+    if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+    const t = tiles[ny * size + nx];
+    if (t === STREET_TILE || t === TRANSIT_TILE || t === 2) return [dx, dy];
+  }
+  return null;
+};
+
+export function blockMassing(tiles, size, seed, districts = null) {
   const regions = blockRegions(tiles, size);
   const instances = [];
+  const decor = [];
   for (const region of regions) {
     // Join width is a REGION property: parcels inside one block terrace
     // against each other, distinguished by height and paint, not by gaps.
     const joined = region.cells.length > 1;
+    const [rx, ry] = region.anchor;
+    const style = styleAt(districts, size, rx, ry);
+    region.style = style;
+    const styleCfg = style ? DISTRICT_STYLES[style] : null;
+    const hScale = styleCfg?.heightScale ?? 1;
     const parcels = parcelize(region, seed);
     region.parcels = [];
     for (const cells of parcels) {
@@ -303,7 +356,7 @@ export function blockMassing(tiles, size, seed) {
       const inParcel = new Set(cells.map(([x, y]) => y * size + x));
       const interior = cells.filter(([x, y]) =>
         [[1, 0], [-1, 0], [0, 1], [0, -1]].every(([dx, dy]) => inParcel.has((y + dy) * size + x + dx)));
-      const template = pickTemplate(cells, interior, seed);
+      const template = pickTemplate(cells, interior, seed, style);
       region.parcels.push({ cells, template });
       // Tone is anchored per PARCEL so each building on the block reads as one
       // paint, with a small per-cell drift for weathering.
@@ -325,13 +378,43 @@ export function blockMassing(tiles, size, seed) {
         } else if (template === "podium") h = 0.9 + j * 0.4;
         else if (template === "rows") h = ((x + y + phase) % 2 ? 1.25 : 0.8) + (j - 0.5) * 0.2;
         else h = 0.55 + j * 0.35;   // industrial sheds
-        instances.push({
-          x, y,
-          w: joined ? MASSING_JOIN_W : 0.86 + hash2(seed ^ 0x51ed, x, y) * 0.10,
-          h: Math.min(MASSING_MAX_H, h),
-          tone: clamp01(baseTone + (hash2(seed ^ 0x0b70, x, y) - 0.5) * 0.12),
-          sub: false,
-        });
+        // The district's height scale bends the whole skyline: industrial
+        // stays low even when its templates would not (playtest 5), but a
+        // scaled building never drops below a hut.
+        h = Math.min(MASSING_MAX_H, Math.max(0.5, h * hScale));
+        const w = joined ? MASSING_JOIN_W : 0.86 + hash2(seed ^ 0x51ed, x, y) * 0.10;
+        const tone = clamp01(baseTone + (hash2(seed ^ 0x0b70, x, y) - 0.5) * 0.12);
+        instances.push({ x, y, w, h, tone, style, sub: false });
+
+        // ── Roof and facade decoration (playtest 5) ──
+        // Slimmer setback tops on the tall buildings…
+        if (h >= 2.0 && hash2(seed ^ 0x5e7b, x, y) < 0.3) {
+          instances.push({
+            x, y, w: w * 0.55, h: 0.3 + j * 0.5, lift: h,
+            tone: clamp01(baseTone - 0.06), style, sub: true,
+          });
+        }
+        // …antenna masts on the towers, water tanks on the mid-rise…
+        if (h >= 2.4 && hash2(seed ^ 0x0a57, x, y) < 0.22) {
+          decor.push({ kind: "mast", x, y, top: h, h: 0.4 + j * 0.5 });
+        } else if (h >= 1.0 && h <= 2.4 && hash2(seed ^ 0x7a2c, x, y) < 0.14) {
+          decor.push({ kind: "tank", x, y, top: h });
+        }
+        // …gardens on residential flats, balconies and shopfronts on the
+        // street-facing residential/commercial facades.
+        if (styleCfg?.garden && h <= 1.8 && hash2(seed ^ 0x9a2d, x, y) < 0.13) {
+          decor.push({ kind: "garden", x, y, top: h });
+        }
+        const face = streetFace(tiles, size, x, y);
+        if (face && styleCfg?.balcony && h >= 1.1) {
+          decor.push({
+            kind: "balcony", x, y, dirX: face[0], dirZ: face[1],
+            floors: Math.max(1, Math.min(4, Math.floor(h / 0.38) - 1)),
+          });
+        }
+        if (face && styleCfg?.shopfront && hash2(seed ^ 0x5a0f, x, y) < 0.5) {
+          decor.push({ kind: "shopfront", x, y, dirX: face[0], dirZ: face[1], style });
+        }
       }
       // The vertical accents: towers out of a podium, stacks out of a works.
       if (template === "podium" || template === "industrial") {
@@ -344,8 +427,8 @@ export function blockMassing(tiles, size, seed) {
           const [x, y] = ranked[t];
           const j = hash2(seed ^ 0x7071, x, y);
           instances.push(template === "podium"
-            ? { x, y, w: 0.58, h: Math.min(MASSING_MAX_H, 2.4 + j * 1.6), tone: clamp01(baseTone - 0.1), sub: true }
-            : { x, y, w: 0.16, h: 2.2 + j * 0.8, tone: clamp01(baseTone - 0.15), sub: true });
+            ? { x, y, w: 0.58, h: Math.min(MASSING_MAX_H, (2.4 + j * 1.6) * Math.max(hScale, 0.75)), tone: clamp01(baseTone - 0.1), style, sub: true }
+            : { x, y, w: 0.16, h: 2.2 + j * 0.8, tone: clamp01(baseTone - 0.15), style, sub: true });
         }
       }
     }
@@ -353,23 +436,22 @@ export function blockMassing(tiles, size, seed) {
     // probe read; a carved block is honestly "mixed".
     region.template = region.parcels.length === 1 ? region.parcels[0].template : "mixed";
   }
-  return { regions, instances };
+  return { regions, instances, decor };
 }
 
-// Building mass, as one instanced box mesh over the massing descriptors.
-export function buildBlocks(tiles, size, seed) {
-  const { instances } = blockMassing(tiles, size, seed);
-  if (!instances.length) return null;
+// One window-sheeted box geometry + material pair per district style, so an
+// industrial facade can carry factory glazing while a research block glows
+// like a wall of monitors — the texture is per MATERIAL, so styles need their
+// own mesh each (there are at most seven: six traits plus unstyled).
+function blockMaterialFor(seed, styleKey, styleIdx) {
   const geo = new THREE.BoxGeometry(1, 1, 1);
-  if (!BLOCK_LO) throw new Error("terrain3d: setTerrainTokens() was never called");
-
-  // The dystopian pass (playtest 3, finding 3): every facade carries the lit
-  // window sheet as an EMISSIVE map, so windows glow out of the dark instead
-  // of being painted on. The box's top face is remapped into the sheet's
-  // reserved black band — roofs must not glow (see buildWindowData).
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
+  const styleCfg = styleKey ? DISTRICT_STYLES?.[styleKey] : null;
   if (WINDOWS) {
-    const tex = new THREE.DataTexture(buildWindowData(seed, WINDOWS), WIN_TEX, WIN_TEX);
+    const merged = { ...WINDOWS, ...(styleCfg?.windows ?? {}) };
+    const tex = new THREE.DataTexture(
+      buildWindowData(seed ^ (styleIdx * 0x0101), merged, merged.scale ?? 1),
+      WIN_TEX, WIN_TEX);
     tex.magFilter = THREE.NearestFilter;
     tex.minFilter = THREE.LinearFilter;
     tex.needsUpdate = true;
@@ -382,34 +464,165 @@ export function buildBlocks(tiles, size, seed) {
     for (let v = 8; v < 16; v++) uv.setXY(v, dead, dead);
     uv.needsUpdate = true;
   }
+  const lo = styleCfg?.blockLo ? hexRgb(styleCfg.blockLo) : BLOCK_LO;
+  const hi = styleCfg?.blockHi ? hexRgb(styleCfg.blockHi) : null;
+  const span = hi ? hi.map((c, i) => c - lo[i]) : BLOCK_SPAN;
+  return { geo, mat, lo, span };
+}
 
-  // Per-instance colour rides the massing's tone: anchored per block, drifted
-  // per cell, so a block reads as one painted building rather than a row of
-  // strangers — while two blocks still differ.
-  const mesh = new THREE.InstancedMesh(geo, mat, instances.length);
+// Building mass over the massing descriptors, plus the decoration meshes.
+export function buildBlocks(tiles, size, seed, districts = null) {
+  const { instances, decor } = blockMassing(tiles, size, seed, districts);
+  if (!instances.length) return null;
+  if (!BLOCK_LO) throw new Error("terrain3d: setTerrainTokens() was never called");
+  const group = new THREE.Group();
   const m = new THREE.Matrix4();
   const pos = new THREE.Vector3(), scl = new THREE.Vector3();
   const quat = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0);
   const colour = new THREE.Color();
-  for (let i = 0; i < instances.length; i++) {
-    const { x, y, w, h, tone } = instances[i];
-    // A quarter-turn per instance: four different facades from one window
-    // sheet, which breaks the repetition an instanced texture would otherwise
-    // print across the whole city.
-    quat.setFromAxisAngle(up, Math.floor(hash2(seed ^ 0x2b5f, x, y) * 4) * (Math.PI / 2));
-    pos.set(x + 0.5, h / 2, y + 0.5);
-    scl.set(w, h, w);
+
+  const byStyle = new Map();
+  for (const inst of instances) {
+    const key = inst.style ?? "";
+    if (!byStyle.has(key)) byStyle.set(key, []);
+    byStyle.get(key).push(inst);
+  }
+  let styleIdx = 0;
+  for (const [styleKey, list] of byStyle) {
+    const { geo, mat, lo, span } = blockMaterialFor(seed, styleKey || null, styleIdx++);
+    const mesh = new THREE.InstancedMesh(geo, mat, list.length);
+    for (let i = 0; i < list.length; i++) {
+      const { x, y, w, h, tone, lift } = list[i];
+      // A quarter-turn per instance: four different facades from one window
+      // sheet, which breaks the repetition an instanced texture would
+      // otherwise print across the whole city.
+      quat.setFromAxisAngle(up, Math.floor(hash2(seed ^ 0x2b5f, x, y) * 4) * (Math.PI / 2));
+      pos.set(x + 0.5, (lift ?? 0) + h / 2, y + 0.5);
+      scl.set(w, h, w);
+      m.compose(pos, quat, scl);
+      mesh.setMatrixAt(i, m);
+      colour.setRGB(lo[0] + tone * span[0], lo[1] + tone * span[1], lo[2] + tone * span[2]);
+      mesh.setColorAt(i, colour);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    mesh.castShadow = false;
+    group.add(mesh);
+  }
+
+  // ── The decoration meshes (playtest 5) ──
+  const lambert = (hex) => new THREE.MeshLambertMaterial({
+    color: new THREE.Color().setRGB(...hexRgb(hex)),
+  });
+  const put = (mesh, i, px, py, pz, sx = 1, sy = 1, sz = 1) => {
+    quat.identity();
+    pos.set(px, py, pz); scl.set(sx, sy, sz);
     m.compose(pos, quat, scl);
     mesh.setMatrixAt(i, m);
-    colour.setRGB(BLOCK_LO[0] + tone * BLOCK_SPAN[0],
-      BLOCK_LO[1] + tone * BLOCK_SPAN[1],
-      BLOCK_LO[2] + tone * BLOCK_SPAN[2]);
-    mesh.setColorAt(i, colour);
+  };
+  const kinds = new Map();
+  for (const d of decor) {
+    if (!kinds.has(d.kind)) kinds.set(d.kind, []);
+    kinds.get(d.kind).push(d);
   }
-  mesh.instanceMatrix.needsUpdate = true;
-  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-  mesh.castShadow = false;
-  return mesh;
+  // Balconies expand to one slab per floor before instancing.
+  const balconies = [];
+  for (const b of kinds.get("balcony") ?? []) {
+    for (let f = 1; f <= b.floors; f++) {
+      balconies.push({ x: b.x, y: b.y, dirX: b.dirX, dirZ: b.dirZ, fy: f * 0.38 });
+    }
+  }
+  const styleHex = (d, field, fallback) =>
+    (d.style && DISTRICT_STYLES?.[d.style]?.[field]) || fallback;
+
+  if (ROOF_DECOR) {
+    const masts = kinds.get("mast") ?? [];
+    if (masts.length) {
+      const mast = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(0.03, 1, 0.03), lambert(ROOF_DECOR.mast), masts.length);
+      const tip = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(0.05, 0.05, 0.05),
+        new THREE.MeshBasicMaterial({ color: new THREE.Color().setRGB(...hexRgb(ROOF_DECOR.beacon)) }),
+        masts.length);
+      for (let i = 0; i < masts.length; i++) {
+        const d = masts[i];
+        put(mast, i, d.x + 0.5 + 0.18, d.top + d.h / 2, d.y + 0.5 - 0.14, 1, d.h, 1);
+        put(tip, i, d.x + 0.5 + 0.18, d.top + d.h + 0.02, d.y + 0.5 - 0.14);
+      }
+      mast.instanceMatrix.needsUpdate = true; tip.instanceMatrix.needsUpdate = true;
+      group.add(mast, tip);
+    }
+    const tanks = kinds.get("tank") ?? [];
+    if (tanks.length) {
+      const tank = new THREE.InstancedMesh(
+        new THREE.CylinderGeometry(0.09, 0.09, 0.14, 7), lambert(ROOF_DECOR.tank), tanks.length);
+      for (let i = 0; i < tanks.length; i++) {
+        const d = tanks[i];
+        put(tank, i, d.x + 0.5 - 0.2, d.top + 0.07, d.y + 0.5 + 0.16);
+      }
+      tank.instanceMatrix.needsUpdate = true;
+      group.add(tank);
+    }
+  }
+  const gardens = kinds.get("garden") ?? [];
+  if (gardens.length) {
+    const hex = styleHex(gardens[0].style ? gardens[0] : { style: "residential" }, "garden", null)
+      ?? DISTRICT_STYLES?.residential?.garden;
+    if (hex) {
+      const garden = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(0.58, 0.05, 0.58), lambert(hex), gardens.length);
+      for (let i = 0; i < gardens.length; i++) {
+        const d = gardens[i];
+        put(garden, i, d.x + 0.5, d.top + 0.025, d.y + 0.5);
+      }
+      garden.instanceMatrix.needsUpdate = true;
+      group.add(garden);
+    }
+  }
+  if (balconies.length) {
+    const hex = DISTRICT_STYLES?.residential?.balcony;
+    if (hex) {
+      const slab = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(0.5, 0.035, 0.5), lambert(hex), balconies.length);
+      for (let i = 0; i < balconies.length; i++) {
+        const b = balconies[i];
+        put(slab, i,
+          b.x + 0.5 + b.dirX * 0.56, b.fy, b.y + 0.5 + b.dirZ * 0.56,
+          b.dirX ? 0.24 : 1, 1, b.dirZ ? 0.24 : 1);
+      }
+      slab.instanceMatrix.needsUpdate = true;
+      group.add(slab);
+    }
+  }
+  const shopfronts = kinds.get("shopfront") ?? [];
+  if (shopfronts.length) {
+    // Bucketed by style so a residential café strip and a commercial neon
+    // strip carry their own colour.
+    const byHex = new Map();
+    for (const d of shopfronts) {
+      const hex = styleHex(d, "shopfront", null);
+      if (!hex) continue;
+      if (!byHex.has(hex)) byHex.set(hex, []);
+      byHex.get(hex).push(d);
+    }
+    for (const [hex, list] of byHex) {
+      const strip = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(0.7, 0.16, 0.05),
+        new THREE.MeshBasicMaterial({ color: new THREE.Color().setRGB(...hexRgb(hex)) }),
+        list.length);
+      for (let i = 0; i < list.length; i++) {
+        const d = list[i];
+        // An x-facing strip swaps its long axis onto z (0.05/0.7 and back),
+        // so the glow always runs ALONG the facade, never into it.
+        put(strip, i,
+          d.x + 0.5 + d.dirX * 0.53, 0.16, d.y + 0.5 + d.dirZ * 0.53,
+          d.dirX ? 0.05 / 0.7 : 1, 1, d.dirX ? 0.7 / 0.05 : 1);
+      }
+      strip.instanceMatrix.needsUpdate = true;
+      group.add(strip);
+    }
+  }
+  return group;
 }
 
 // ── Street clutter (playtest 3, finding 3 — the deferred half) ─────────────

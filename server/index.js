@@ -151,6 +151,7 @@ wss.on("connection", (socket) => {
           // reply: a RECONNECTING player never asks for drop zones, so without
           // this their map would render blank forever.
           tiles: world.clientTiles(),
+          districtMap: world.clientDistricts(),
           // Dialogue and shop content, plus the disguise portraits. Static
           // content, so it ships once with the welcome rather than per tick.
           content: { payloads: rules.payloads, disguises: rules.disguises },
@@ -193,6 +194,7 @@ wss.on("connection", (socket) => {
         const auto = world.autoDropZone(firmId);
         return send({
           type: "dropZones", zones, auto, tiles: world.clientTiles(),
+          districtMap: world.clientDistricts(),
           // Districts with their trait, heat band and how much tier-appropriate
           // work is in them: a choice between 240 identical squares is not a
           // choice (D37 picks well, but the player should see WHY).

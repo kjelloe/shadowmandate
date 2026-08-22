@@ -20,8 +20,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
-  setTerrainTokens, blockRegions, blockMassing, buildBlocks,
-  BLOCK_TILE, MASSING_MAX_H, MASSING_JOIN_W, PARCEL_MAX,
+  setTerrainTokens, blockRegions, blockMassing, buildBlocks, buildWindowData,
+  BLOCK_TILE, MASSING_MAX_H, MASSING_JOIN_W, PARCEL_MAX, WIN_TEX,
 } from "../client/js/terrain3d.js";
 import { clampMargin, clampCamera } from "../client/js/scene.js";
 
@@ -204,10 +204,14 @@ test("buildBlocks draws one box per massing instance, windows intact", () => {
   setTerrainTokens(tokens.terrain);
   const { tiles, size } = varietyMap();
   const { instances } = blockMassing(tiles, size, 4711);
-  const mesh = buildBlocks(tiles, size, 4711);
-  assert.equal(mesh.count, instances.length,
-    "the mesh and the massing disagree about how many boxes the city has");
-  assert.ok(mesh.material.emissiveMap, "the massing pass lost the lit-window sheet");
+  const group = buildBlocks(tiles, size, 4711);
+  const massMeshes = group.children.filter((c) => c.material?.vertexColors);
+  const drawn = massMeshes.reduce((a, c) => a + c.count, 0);
+  assert.equal(drawn, instances.length,
+    "the meshes and the massing disagree about how many boxes the city has");
+  for (const mesh of massMeshes) {
+    assert.ok(mesh.material.emissiveMap, "the massing pass lost the lit-window sheet");
+  }
 });
 
 // ── The rotated-view clamp margin (the 45-degree camera) ───────────────────
@@ -234,4 +238,130 @@ test("clampMargin keeps a clamped target on screen at every map position", () =>
   }
   assert.ok(margin < halfX + halfYg,
     "the margin must be tighter than the full rotated footprint, or corners over-clamp again");
+});
+
+// ── District identity (playtest 5) ─────────────────────────────────────────
+
+test("TRAIT_STYLES mirrors the engine's trait constants — a deliberate duplicate", async () => {
+  const { TRAIT_STYLES } = await import("../client/js/terrain3d.js");
+  const engine = await import("../engine/citygen.js");
+  // The client cannot import the engine at runtime, so the mapping is a
+  // duplicate by design — and this is the guard that keeps the two in step.
+  assert.equal(TRAIT_STYLES.length, engine.TRAIT_COUNT);
+  assert.equal(TRAIT_STYLES[engine.TRAIT_INDUSTRIAL], "industrial");
+  assert.equal(TRAIT_STYLES[engine.TRAIT_RESIDENTIAL], "residential");
+  assert.equal(TRAIT_STYLES[engine.TRAIT_COMMERCIAL], "commercial");
+  assert.equal(TRAIT_STYLES[engine.TRAIT_GOVERNMENT], "government");
+  assert.equal(TRAIT_STYLES[engine.TRAIT_RESEARCH], "research");
+  assert.equal(TRAIT_STYLES[engine.TRAIT_PORT], "port");
+  // And every style the mapping names has tokens to back it.
+  for (const key of TRAIT_STYLES) {
+    assert.ok(tokens.terrain.districtStyles[key], `no districtStyles tokens for "${key}"`);
+  }
+});
+
+// A map split into two districts down the middle, with a street between the
+// blocks so facades have something to address.
+function districtMap(size = 24, traitA = 0, traitB = 2) {
+  const { tiles } = { tiles: new Uint8Array(size * size) };
+  const rects = [];
+  for (let y = 2; y + 3 < size; y += 5) {
+    for (let x = 2; x + 3 < size; x += 5) rects.push([x, y, 3, 3]);
+  }
+  for (const [x0, y0, w, h] of rects) {
+    for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) tiles[y * size + x] = BLOCK_TILE;
+  }
+  for (let x = 0; x < size; x++) tiles[(0) * size + x] = 1;   // a street row
+  const owner = new Array(size * size);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) owner[y * size + x] = x < size / 2 ? 0 : 1;
+  }
+  return { tiles, size, districts: { owner, traits: [traitA, traitB] } };
+}
+
+test("district styles bend the massing: industrial stays low, commercial keeps its towers", () => {
+  setTerrainTokens(tokens.terrain);
+  const { tiles, size, districts } = districtMap(24, 0, 2);   // industrial | commercial
+  const { regions, instances } = blockMassing(tiles, size, 4711, districts);
+  assert.deepEqual(a4(blockMassing(tiles, size, 4711, districts).instances),
+    a4(instances), "district massing must be deterministic");
+  const mean = (style) => {
+    const hs = instances.filter((i) => !i.sub && !i.lift && i.style === style).map((i) => i.h);
+    assert.ok(hs.length > 0, `no base instances styled ${style}`);
+    return hs.reduce((a, b) => a + b, 0) / hs.length;
+  };
+  assert.ok(mean("industrial") < mean("commercial") * 0.8,
+    "the industrial half is not visibly lower — heightScale never applied");
+  assert.ok(regions.every((r) => r.style === "industrial" || r.style === "commercial"),
+    "a region escaped both districts");
+  function a4(list) { return list.map((i) => `${i.x},${i.y},${i.h.toFixed(4)}`); }
+});
+
+test("residential districts grow balconies, gardens and shopfronts; industrial does not", () => {
+  setTerrainTokens(tokens.terrain);
+  const { tiles, size, districts } = districtMap(24, 1, 0);   // residential | industrial
+  // Give every block column a street to face, so balconies are possible.
+  for (let y = 0; y < size; y += 5) for (let x = 0; x < size; x++) tiles[y * size + x] = 1;
+  const { decor } = blockMassing(tiles, size, 4711, districts);
+  const kinds = new Set(decor.map((d) => d.kind));
+  assert.ok(kinds.has("balcony"), "no balconies in a residential district");
+  assert.ok(kinds.has("garden"), "no rooftop gardens in a residential district");
+  assert.ok(kinds.has("shopfront"), "no lit shopfronts in a residential district");
+  const half = size / 2;
+  for (const d of decor) {
+    if (["balcony", "garden", "shopfront"].includes(d.kind)) {
+      assert.ok(d.x < half, `${d.kind} at ${d.x},${d.y} grew on the industrial side`);
+    }
+    assert.ok(tiles[d.y * size + d.x] === BLOCK_TILE,
+      `${d.kind} anchored off the building mass at ${d.x},${d.y}`);
+  }
+});
+
+test("roof furniture exists and stays on the roofs it claims", () => {
+  setTerrainTokens(tokens.terrain);
+  const { tiles, size, districts } = districtMap(24, 2, 2);
+  const { instances, decor } = blockMassing(tiles, size, 4711, districts);
+  const baseAt = new Map(instances.filter((i) => !i.sub)
+    .map((i) => [`${i.x},${i.y}`, i.h]));
+  const masts = decor.filter((d) => d.kind === "mast");
+  const tanks = decor.filter((d) => d.kind === "tank");
+  assert.ok(masts.length + tanks.length > 0, "no roof furniture at all on a commercial map");
+  for (const d of [...masts, ...tanks]) {
+    assert.equal(d.top, baseAt.get(`${d.x},${d.y}`),
+      `${d.kind} at ${d.x},${d.y} floats at ${d.top}, roof is ${baseAt.get(`${d.x},${d.y}`)}`);
+  }
+  // Setback tops sit ON their building, never inside it.
+  for (const s of instances.filter((i) => i.lift)) {
+    assert.equal(s.lift, baseAt.get(`${s.x},${s.y}`), "a setback is not seated on its own roof");
+    assert.ok(s.w < 1, "a setback must be slimmer than its building");
+  }
+});
+
+test("bigger factory windows: scale actually widens the lit panes", () => {
+  const windows = tokens.terrain.windows;
+  const one = buildWindowData(4711, windows, 1);
+  const two = buildWindowData(4711, { ...windows, density: 0.3 }, 2);
+  const maxRun = (data) => {
+    let best = 0;
+    for (let y = 0; y < WIN_TEX; y++) {
+      let run = 0;
+      for (let x = 0; x < WIN_TEX; x++) {
+        const lit = data[(y * WIN_TEX + x) * 4 + 3] > 0;
+        run = lit ? run + 1 : 0;
+        best = Math.max(best, run);
+      }
+    }
+    return best;
+  };
+  assert.ok(maxRun(one) <= 2, "scale-1 panes should be 2 texels wide");
+  assert.ok(maxRun(two) >= 4, "scale-2 panes never got wider — factory glazing silently did nothing");
+});
+
+test("buildBlocks with districts yields one window sheet per style present", () => {
+  setTerrainTokens(tokens.terrain);
+  const { tiles, size, districts } = districtMap(24, 0, 2);
+  const group = buildBlocks(tiles, size, 4711, districts);
+  const massMeshes = group.children.filter((c) => c.material?.vertexColors);
+  assert.equal(massMeshes.length, 2,
+    "two districts with different traits must draw as two styled meshes");
 });

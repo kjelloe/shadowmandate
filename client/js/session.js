@@ -24,6 +24,7 @@ export function createRemoteSession({ url, token }) {
     dropZones: null,
     autoZone: null,
     tiles: null,
+    districtMap: null,   // {owner, traits} — the district identity pass (playtest 5)
 
     onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); },
 
@@ -64,6 +65,7 @@ export function createRemoteSession({ url, token }) {
           session.briefing = msg.briefing;
           session.view = msg.view;
           if (msg.tiles) session.tiles = msg.tiles;
+          if (msg.districtMap) session.districtMap = msg.districtMap;
           if (msg.content) session.content = msg.content;
           if (msg.token) localStorage.setItem("sm.token", msg.token);
           // Shown once, and only once — after this the server only has a hash.
@@ -83,6 +85,7 @@ export function createRemoteSession({ url, token }) {
           session.dropZones = msg.zones;
           session.autoZone = msg.auto;
           session.tiles = msg.tiles;
+          session.districtMap = msg.districtMap ?? session.districtMap;
           session.zoneDistricts = msg.districts ?? [];
           emit([{ type: "dropZonesReady" }]);
           break;
@@ -93,6 +96,7 @@ export function createRemoteSession({ url, token }) {
         case "seasonRotated":
           session.view = null;
           session.tiles = null;
+          session.districtMap = null;
           session.seasonRotated = { closed: msg.closed, opened: msg.opened };
           session.briefing = { ...(session.briefing ?? {}), standing: msg.opened };
           emit([{ type: "seasonRotated", closed: msg.closed, opened: msg.opened }]);

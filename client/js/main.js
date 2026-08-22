@@ -146,7 +146,7 @@ function paint(s, events) {
   // reply). Build the mesh the first time it turns up.
   try {
     if (session.tiles && !renderer.hasTerrain()) {
-      renderer.setTerrain(session.tiles, view.size, view.worldSeed ?? 1);
+      renderer.setTerrain(session.tiles, view.size, view.worldSeed ?? 1, session.districtMap);
       minimap.setTiles(session.tiles, view.size);
     }
     // Only draw the diorama when it is on screen. Until now it rendered at
