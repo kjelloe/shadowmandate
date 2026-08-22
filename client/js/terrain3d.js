@@ -19,7 +19,7 @@ import * as THREE from "three";
 // hex copy in minimap.js. They are style tokens now (D46) — Q41c is a judgement
 // about the tile look, and it cannot be a token edit while the tiles are hard
 // wired into two renderers that can drift apart.
-let COLOUR = null, BLOCK_LO = null, BLOCK_SPAN = null, WINDOWS = null, CLUTTER = null;
+let COLOUR = null, BLOCK_LO = null, BLOCK_SPAN = null, WINDOWS = null, CLUTTER = null, ROAD = null;
 
 // Raw /255, deliberately NOT THREE.Color: these floats are written straight
 // into a vertex-colour buffer, and three's colour management would sRGB-decode
@@ -32,7 +32,11 @@ export function hexRgb(hex) {
 }
 
 export function setTerrainTokens(terrain) {
-  if (!terrain) { COLOUR = null; BLOCK_LO = null; BLOCK_SPAN = null; WINDOWS = null; CLUTTER = null; return; }
+  if (!terrain) {
+    COLOUR = null; BLOCK_LO = null; BLOCK_SPAN = null;
+    WINDOWS = null; CLUTTER = null; ROAD = null;
+    return;
+  }
   COLOUR = {};
   for (const [id, hex] of Object.entries(terrain.tiles)) COLOUR[Number(id)] = hexRgb(hex);
   COLOUR.unknown = hexRgb(terrain.unknown);
@@ -41,6 +45,7 @@ export function setTerrainTokens(terrain) {
   BLOCK_SPAN = hi.map((c, i) => c - BLOCK_LO[i]);
   WINDOWS = terrain.windows ?? null;
   CLUTTER = terrain.clutter ?? null;
+  ROAD = terrain.road ?? null;
 }
 
 // Purely cosmetic relief. Water sinks, yards and rough sit slightly proud.
@@ -489,6 +494,190 @@ export function buildClutter(tiles, size, seed) {
     mesh.instanceMatrix.needsUpdate = true;
     mesh.castShadow = false;
     group.add(mesh);
+  }
+  return group;
+}
+
+// ── Road dressing (playtest 5) ─────────────────────────────────────────────
+// "The gray streets need to be proper streets": 2-lane streets with centre
+// dashes, 4-lane transit avenues with a double centre line and lane dashes,
+// and kerbside lamp posts — some lit, some dead, some blinking. Same honesty
+// contract as the clutter: markings are paint (flat), lamps stand OFF cell
+// centres, and none of it implies anything the simulation does not model.
+
+export const STREET_TILE = 1;
+export const TRANSIT_TILE = 6;
+export const LAMP_KERB = 0.38;       // perpendicular offset — outside the
+                                     // 0.2-cell clearance ring by construction
+
+const isRoad = (tiles, size, x, y) => {
+  if (x < 0 || y < 0 || x >= size || y >= size) return false;
+  const t = tiles[y * size + x];
+  return t === STREET_TILE || t === TRANSIT_TILE;
+};
+
+// Pure: where the paint and the posts go. Markings carry an axis (0 = the
+// road runs east-west, 1 = north-south) and a lane offset; intersections get
+// no paint, which is also what real intersections do.
+export function roadFeatures(tiles, size, seed, road) {
+  const markings = [];
+  const lamps = [];
+  const litShare = road?.litShare ?? 0.6;
+  const blinkShare = road?.blinkShare ?? 0.15;
+  const lampChance = road?.lampChance ?? 0.22;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const t = tiles[y * size + x];
+      if (t !== STREET_TILE && t !== TRANSIT_TILE) continue;
+      const ew = isRoad(tiles, size, x - 1, y) || isRoad(tiles, size, x + 1, y);
+      const ns = isRoad(tiles, size, x, y - 1) || isRoad(tiles, size, x, y + 1);
+      const axis = ew && !ns ? 0 : ns && !ew ? 1 : -1;
+
+      if (axis >= 0) {
+        const yLift = t === TRANSIT_TILE ? 0.062 : 0.042;   // above the relief
+        if (t === TRANSIT_TILE) {
+          // 4-lane: double solid centre line + a dash per outer lane.
+          markings.push({ x, y, axis, lane: -0.035, len: 1.0, solid: 1, h: yLift });
+          markings.push({ x, y, axis, lane: 0.035, len: 1.0, solid: 1, h: yLift });
+          markings.push({ x, y, axis, lane: -0.25, len: 0.3, solid: 0, h: yLift });
+          markings.push({ x, y, axis, lane: 0.25, len: 0.3, solid: 0, h: yLift });
+        } else {
+          // 2-lane: two centre dashes per cell.
+          markings.push({ x, y, axis, lane: 0, len: 0.28, solid: 0, h: yLift, along: -0.25 });
+          markings.push({ x, y, axis, lane: 0, len: 0.28, solid: 0, h: yLift, along: 0.25 });
+        }
+      }
+
+      if (hash2(seed ^ 0x1a90, x, y) < lampChance) {
+        const side = hash2(seed ^ 0x51de, x, y) < 0.5 ? -1 : 1;
+        const along = (hash2(seed ^ 0x0a10, x, y) - 0.5) * 0.5;
+        const r = hash2(seed ^ 0x57a7, x, y);
+        const state = r < litShare ? "lit"
+          : r < litShare + blinkShare
+            ? (hash2(seed ^ 0x0b1b, x, y) < 0.5 ? "blinkA" : "blinkB")
+            : "off";
+        const warm = hash2(seed ^ 0x3a3a, x, y) < 0.7;
+        // Perpendicular to the road axis; on an intersection (axis -1) pick a
+        // corner so the post never stands in either travel line.
+        const dx = axis === 0 ? along : side * LAMP_KERB;
+        const dz = axis === 0 ? side * LAMP_KERB : axis === 1 ? along : side * LAMP_KERB;
+        lamps.push({ x, y, dx, dz, state, warm });
+      }
+    }
+  }
+  return { markings, lamps };
+}
+
+const LAMP_H = 0.56;
+
+// The meshes. One instanced mesh per material; the blinking lamps' glowing
+// parts land in two groups (A and B, opposite phases) that the scene toggles
+// per frame — a city where every faulty tube blinks in unison reads as a
+// stage set.
+export function buildRoads(tiles, size, seed) {
+  if (!ROAD) return null;
+  const { markings, lamps } = roadFeatures(tiles, size, seed, ROAD);
+  if (!markings.length && !lamps.length) return null;
+  const group = new THREE.Group();
+  const m = new THREE.Matrix4();
+  const pos = new THREE.Vector3(), scl = new THREE.Vector3();
+  const quat = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0);
+  const basic = (hex, opacity) => new THREE.MeshBasicMaterial({
+    color: new THREE.Color().setRGB(...hexRgb(hex)),
+    ...(opacity !== undefined
+      ? { transparent: true, opacity, depthWrite: false } : {}),
+  });
+
+  if (markings.length) {
+    const paint = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(1, 0.008, 1),
+      new THREE.MeshLambertMaterial({ color: new THREE.Color().setRGB(...hexRgb(ROAD.marking)) }),
+      markings.length);
+    for (let i = 0; i < markings.length; i++) {
+      const k = markings[i];
+      const alongOff = k.along ?? 0;
+      pos.set(
+        k.x + 0.5 + (k.axis === 0 ? alongOff : k.lane),
+        k.h,
+        k.y + 0.5 + (k.axis === 0 ? k.lane : alongOff));
+      scl.set(k.axis === 0 ? k.len : 0.045, 1, k.axis === 0 ? 0.045 : k.len);
+      quat.identity();
+      m.compose(pos, quat, scl);
+      paint.setMatrixAt(i, m);
+    }
+    paint.instanceMatrix.needsUpdate = true;
+    group.add(paint);
+  }
+
+  if (lamps.length) {
+    const postGeo = new THREE.CylinderGeometry(0.016, 0.02, LAMP_H, 5);
+    const posts = new THREE.InstancedMesh(
+      postGeo,
+      new THREE.MeshLambertMaterial({ color: new THREE.Color().setRGB(...hexRgb(ROAD.lampPost)) }),
+      lamps.length);
+    for (let i = 0; i < lamps.length; i++) {
+      const l = lamps[i];
+      pos.set(l.x + 0.5 + l.dx, LAMP_H / 2, l.y + 0.5 + l.dz);
+      scl.set(1, 1, 1); quat.identity();
+      m.compose(pos, quat, scl);
+      posts.setMatrixAt(i, m);
+    }
+    posts.instanceMatrix.needsUpdate = true;
+    group.add(posts);
+
+    // Heads, cones and light pools, bucketed by (state, warmth).
+    const buckets = new Map();
+    for (const l of lamps) {
+      const key = l.state === "off" ? "off" : `${l.state}:${l.warm ? "warm" : "cool"}`;
+      if (!buckets.has(key)) buckets.set(key, []);
+      buckets.get(key).push(l);
+    }
+    const blink = { A: [], B: [] };
+    const headGeo = new THREE.BoxGeometry(0.055, 0.035, 0.055);
+    const coneGeo = new THREE.ConeGeometry(0.3, LAMP_H - 0.06, 8, 1, true);
+    const poolGeo = new THREE.CircleGeometry(0.34, 12);
+    for (const [key, list] of buckets) {
+      const off = key === "off";
+      const warm = key.endsWith("warm");
+      const headHex = off ? ROAD.lampOff : warm ? ROAD.lampWarm : ROAD.lampCool;
+      const head = new THREE.InstancedMesh(
+        headGeo,
+        off ? new THREE.MeshLambertMaterial({ color: new THREE.Color().setRGB(...hexRgb(headHex)) })
+          : basic(headHex),
+        list.length);
+      const parts = [head];
+      let cone = null, pool = null;
+      if (!off) {
+        cone = new THREE.InstancedMesh(coneGeo, basic(headHex, 0.1), list.length);
+        pool = new THREE.InstancedMesh(poolGeo, basic(headHex, 0.2), list.length);
+        parts.push(cone, pool);
+      }
+      for (let i = 0; i < list.length; i++) {
+        const l = list[i];
+        const cx = l.x + 0.5 + l.dx, cz = l.y + 0.5 + l.dz;
+        quat.identity(); scl.set(1, 1, 1);
+        pos.set(cx, LAMP_H, cz);
+        m.compose(pos, quat, scl);
+        head.setMatrixAt(i, m);
+        if (cone) {
+          pos.set(cx, (LAMP_H - 0.06) / 2 + 0.02, cz);
+          m.compose(pos, quat, scl);
+          cone.setMatrixAt(i, m);
+        }
+        if (pool) {
+          quat.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
+          pos.set(cx, 0.045, cz);
+          m.compose(pos, quat, scl);
+          pool.setMatrixAt(i, m);
+          quat.identity();
+        }
+      }
+      for (const p of parts) { p.instanceMatrix.needsUpdate = true; group.add(p); }
+      if (key.startsWith("blinkA")) blink.A.push(...parts.slice(0));
+      if (key.startsWith("blinkB")) blink.B.push(...parts.slice(0));
+    }
+    // The scene toggles these by tick phase; posts stay, only the glow blinks.
+    group.userData.blink = blink;
   }
   return group;
 }

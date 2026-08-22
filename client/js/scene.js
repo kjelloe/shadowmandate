@@ -11,7 +11,7 @@
 // reasonably read as "off centre".
 
 import * as THREE from "three";
-import { buildGround, buildBlocks, buildClutter, setTerrainTokens } from "./terrain3d.js";
+import { buildGround, buildBlocks, buildClutter, buildRoads, setTerrainTokens } from "./terrain3d.js";
 import { siteRoles, objectiveCell, buildingRole, siteRole, burnedGuidance, pinnedCells, hqInBuilding } from "./models.js";
 import { buildProcedural, applyTint } from "./asset_factory.js";
 import { resolveVisual, tintFor, detectionMark } from "./asset_resolver.js";
@@ -99,6 +99,7 @@ export function createScene(canvas) {
   let zoomCells = 26;          // how many cells fit across the view — pulled
                                // in for playtest 4: a city only reads as a
                                // city when you are close enough to see facades
+  let blinkGroups = null;      // faulty street lamps (playtest 5), toggled by tick
   let mapSize = 64;
   let terrain = null;
   const markers = new THREE.Group();
@@ -248,6 +249,9 @@ export function createScene(canvas) {
     if (blocks) terrain.add(blocks);
     const clutter = buildClutter(tiles, size, seed);
     if (clutter) terrain.add(clutter);
+    const roads = buildRoads(tiles, size, seed);
+    if (roads) { terrain.add(roads); blinkGroups = roads.userData.blink ?? null; }
+    else blinkGroups = null;
     scene.add(terrain);
   }
 
@@ -392,6 +396,14 @@ export function createScene(canvas) {
         ring.scale.setScalar(1 + 0.35 * (0.5 + 0.5 * Math.sin(view.tick / 3)));
       }
     }
+    // Faulty street lamps blink in two opposite phases off the world tick —
+    // decorative, so it keys off the same clock as everything else animated.
+    if (blinkGroups) {
+      const phase = Math.floor(view.tick / 6) % 2 === 0;
+      for (const p of blinkGroups.A) p.visible = phase;
+      for (const p of blinkGroups.B) p.visible = !phase;
+    }
+
     // The objective beacon, pulsing so it reads as live rather than painted on.
     const objective = objectiveCell(view);
     if (objective) {
