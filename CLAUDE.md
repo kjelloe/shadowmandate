@@ -4,7 +4,7 @@ Drop-in/drop-out covert-ops game. Sibling of Fireline Command
 (`~/GIT/firepower` — the fork source, never modified from here).
 
 **Status: M0–M6 complete; M7 done as far as it can go solo, and PLAYABLE in a
-browser. `npm test` = 313 green**, plus four browser gates (`smoke`, `ui`,
+browser. `npm test` = 423 green**, plus four browser gates (`smoke`, `ui`,
 `mobile`, `gallery`). Batch lane verified (`ops/BATCH_PC.md`). **Remaining in M7**:
 the VM deploy (7e) and native GPU perf (7f) — both need the owner's hardware.
 **M8 — opposition and site security — IS IN PROGRESS** (8a–8k done: alarms, cameras,
@@ -13,11 +13,16 @@ and the Defend contract). **8h re-run after 8k**: five of six contract types now
 read in a 0.75–1.21x preference band and extraction is no longer dominant.
 Credentials are still rare, pacing is still short, and one seed shows
 unexplained accept churn — all flagged in S16. It is what the contract balance is waiting
-on (D42/D43). All owner questions are answered (D1–D50).
+on (D42/D43). **Playtest 4 (2026-08-22, D54–D56)**: fixed 45°/45° dimetric
+camera, block massing with parcels (visual pass, D55), and the Field HQ now
+auto-establishes in the nearest free safehouse at drop-in (`hqLandingFor` in
+`engine/hq.js` — the single home of the landing rule). Owner questions
+answered through D56; **Q44 is open** (the HQ safehouse doubles as the
+informant building).
 
 ## Read first
 
-1. `specs/00_document_index.md` — document map, rulings D1–D50
+1. `specs/00_document_index.md` — document map, rulings D1–D56
 2. `plan-version1.md` — the operational plan (milestones M0–M7, gates)
 3. `plan-implementation-order.md` — slice-by-slice execution order, per-milestone
    STATUS markers (battery runbook: `ops/BATCH_PC.md`, private ops repo)
@@ -43,6 +48,8 @@ MIRROR=1 node tools/sm_worldday.mjs 300     # fairness instrument
 FIRMSWAP=1 node tools/sm_worldday.mjs 300   # personality vs seat
 node debugging/dbg_alarms.mjs 6 12000       # do S16 alarms actually FIRE?
 node debugging/dbg_choke.mjs 1548 64        # example one-off probe (kept)
+SEED=4711 node debugging/dbg_ai_rejections.mjs 12000  # AI rejected commands (0 = healthy)
+node debugging/dbg_look.mjs                 # drop in, photograph the live look
 node tools/repin_fixture.mjs "<reason>"     # deliberate fixture re-pin
 ```
 

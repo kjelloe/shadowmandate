@@ -91,8 +91,11 @@ DOM. Nothing on it is an input path, so it cannot become a cheat surface.
 Session seam, i18n, HUD, mission board, standoff panel, evac overlay,
 tap-to-move, drop-zone picker — and, from playtest 3, the **2.5D diorama**:
 three.js from `node_modules` via `/vendor` + importmap (the Fireline pattern),
-one vertex-coloured ground mesh, instanced building mass, a 52° orthographic
-camera with **no rotation** and clamping to the map.
+one vertex-coloured ground mesh, instanced building mass, and — since
+playtest 4 (D54) — a 45°/45° dimetric orthographic camera with **no
+rotation**, clamped so the followed TARGET stays on screen (`clampMargin`;
+the full-footprint clamp pushed a corner drop off-screen). Building mass is
+block-massed into parcels with per-block character (D55, detail in S15).
 
 The former full-screen 2D canvas is now the **minimap**, terrain baked once.
 
@@ -185,8 +188,11 @@ bounds, camera tilt copied from Fireline then adjusted.
 - **Burned guidance**: `burnedGuidance` in models points at the nearest cover
   shop only while burned; the radar pings it and the diorama rings it in the
   shop's mark colour.
-- **HQ emblem**: ring + core on the radar, HUD ring under the tent in the
-  world — a dot was invisible on the night ground.
+- **HQ emblem**: ring + core on the radar, HUD ring at the HQ in the world —
+  a dot was invisible on the night ground. Since playtest 4 (D56) the HQ
+  lives in a safehouse: when the HQ cell is a building entrance the tent
+  stays packed (`hqInBuilding` in models.js) and the ring marks the building;
+  rings ignore depth so a tower cannot hide them.
 - **The night look**: tile/lighting tokens retuned to the dystopian reference;
   building mass carries a deterministic emissive window sheet
   (`buildWindowData`, roof band reserved dark). All colour still lives in

@@ -94,3 +94,18 @@ Firm-level state added: `heatIntel` (expiring), `knownRivalHqs`, `upgrades`.
 
 `❑` vendor catalog & prices (M6) · `❑` dialogue persistence · portrait art
 list → S15. (Bank-only purchases ruled: D30.)
+
+## Playtest 4 note — the HQ moved in upstairs (2026-08-22, D56)
+
+The Field HQ now auto-establishes in a safehouse (S05), which makes the
+safehouse two things at once: the district's informant building AND somebody's
+HQ. Consequences to keep straight:
+
+- `hq.buildingId` claims the building for the deployment; a second Firm's
+  drop snaps to a different safehouse (`hqLandingFor`, S05). The informant
+  payload is unchanged — walk into your own HQ and the informant dialogue
+  opens, which currently reads as "your handler works out of your safehouse".
+  Owner verdict pending as **Q44**; implemented as proposed (keep it).
+- An informant selling "reveal deployed rival HQ" is now literally pointing
+  at another safehouse's door. Nothing breaks — the reveal already stores a
+  cell — but any future copy should say "their safehouse", not "their tent".

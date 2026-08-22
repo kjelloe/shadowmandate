@@ -133,8 +133,16 @@ M7 in progress and playable in a browser (updated 2026-08-06)
 | D52 | Pacing scoring | **Overlap now, measured humans later.** The 2–4x factor spans a wider ratio than the target bands, so "inside the band" was unsatisfiable at any tuning |
 | D53 | Contract pricing | **Level pay-per-effort by raising only**, and move `cacheEvacTarget` in the same edit — rewards and progression are one system |
 
-**All owner questions are answered.** The live queue in `../dev-questions.md`
-holds only tracked gaps.
+## Twelfth decision batch (2026-08-22, playtest 4)
+
+| # | Decision | Ruling |
+|---:|---|---|
+| D54 | The city view | **Fixed 45°/45° dimetric camera.** Azimuth 45 so every building shows two facades and a roof (the classic isometric read), pitch 45, closer default zoom. Still NO player rotation — the azimuth is a constant, not a control |
+| D55 | Block character | **A visual massing pass over the existing maps**, not a citygen change. Blocks group and carve into parcels client-side; streets, routes, fixtures and batteries untouched. Citygen block-templates stay open as a possible later slice, after M8 balance settles |
+| D56 | HQ placement | **The Field HQ auto-establishes in the nearest free safehouse at drop-in.** The drop request is a neighbourhood pointer; the landing rule (`hqLandingFor`) lives engine-side so player and AI share it; rivals follow the same rule; the tent survives only as the no-safehouse fallback |
+
+**Open owner questions: Q44** (the HQ safehouse doubles as the informant
+building) in `../dev-questions.md`, which also holds the tracked gaps.
 
 ## Sibling project references
 
