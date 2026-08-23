@@ -220,3 +220,22 @@ bounds, camera tilt copied from Fireline then adjusted.
   port, and the next run silently talks to the STALE server with old client
   code — if the ui gate times out at random checks, look for an orphaned
   `server/index.js` before suspecting the client.
+
+## Playtest 8 additions (2026-08-23, D61)
+
+- 16x world: `scale.figure` 0.0625, default zoom 6 (range 3–70); ALL HUD
+  rings scale with zoom (`ringZoom`), the agent's additionally with the
+  figure. Clutter/lamps/beams re-proportioned; dropship approach 8 cells,
+  cruise 3.5 — the drop-in flight is finally something you watch.
+- The four walking positions (`models.walkOffset`, pure, tested): nearest of
+  {left sidewalk, left lane, right lane, right sidewalk} to the line toward
+  the destination; the scene slews toward it. Render-only, in-cell — honest
+  at the cell granularity the engine plays at.
+- NPC refusals speak IN the dialogue: reject reasons for dialogue/shop
+  commands map to in-character lines shown in the greet slot for 5s
+  (`dialog.respond.*`); everything else keeps the technical toast.
+- Every voluntary overlay (board, building) closes from a top-right ✕ —
+  44px, so the mobile gate measures it; the standoff deliberately has none
+  (it is a forced choice). The building ✕ still SENDS exitBuilding.
+- Pavement pads under every lamp post (an intersection corner has no
+  sidewalk strip, and a lamp standing on asphalt read wrong).

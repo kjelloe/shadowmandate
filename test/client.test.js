@@ -596,3 +596,32 @@ test("the mission banner is the first active job, and silent when idle (playtest
   const risky = missionBanner({ active: [{ id: 3, kind: 0, stage: 1, graceTicks: 40 }] });
   assert.ok(risky.atRisk, "a contract in its capture grace must read as at risk");
 });
+
+test("D61: the four walking positions pick the one nearest the line to the destination", async () => {
+  const { walkOffset, WALK_POSITIONS } = await import("../client/js/models.js");
+  const size = 8;
+  const tiles = new Uint8Array(size * size);
+  for (let x = 0; x < size; x++) tiles[3 * size + x] = 1;   // an E-W street row
+  tiles[3 * size + 5] = 6;                                   // with a transit cell
+  const view = (ax, ay, tx, ty) => ({
+    agents: [{ id: 0, state: 1, x: ax * 256 + 128, y: ay * 256 + 128,
+      targetX: tx * 256 + 128, targetY: ty * 256 + 128 }],
+  });
+
+  // Destination far NORTH of the street: the near (north, -z) sidewalk.
+  assert.deepEqual(walkOffset(view(2, 3, 6, 0), tiles, size), { dx: 0, dz: -0.4 });
+  // Destination far SOUTH: the south sidewalk.
+  assert.deepEqual(walkOffset(view(2, 3, 6, 7), tiles, size), { dx: 0, dz: 0.4 });
+  // Destination straight down the street: the nearest LANE, not a sidewalk.
+  const straight = walkOffset(view(2, 3, 6, 3), tiles, size);
+  assert.ok(Math.abs(Math.abs(straight.dz) - 0.15) < 1e-9,
+    `straight-ahead travel should take a road lane, got ${JSON.stringify(straight)}`);
+  // Every offset it can produce is one of the four positions.
+  assert.ok(WALK_POSITIONS.includes(straight.dz));
+  // Off the road: no offset. Standing (no order): hold (null).
+  assert.deepEqual(walkOffset(view(2, 1, 6, 0), tiles, size), { dx: 0, dz: 0 });
+  const standing = { agents: [{ id: 0, state: 1, x: 2 * 256 + 128, y: 3 * 256 + 128,
+    targetX: 2 * 256 + 128, targetY: 3 * 256 + 128 }] };
+  assert.equal(walkOffset(standing, tiles, size), null,
+    "standing still must HOLD the current position, not snap to centre");
+});

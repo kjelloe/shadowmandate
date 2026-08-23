@@ -111,7 +111,7 @@
       "procedural": "dropship",
       "class": "structure",
       "tint": "dropship",
-      "scale": 0.3,
+      "scale": 0.2,
       "note_scale": "A vehicle, not a person: overrides the class scale (see tokens note_scale)."
     }
   },

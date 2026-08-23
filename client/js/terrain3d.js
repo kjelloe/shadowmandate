@@ -677,12 +677,12 @@ export function clutterPlacements(tiles, size, seed, density) {
 // figure-height, a drum is chest-high — props keep their human proportions
 // while the city towers over everyone.
 const CLUTTER_GEO = {
-  crate: () => new THREE.BoxGeometry(0.10, 0.10, 0.10),
-  barrel: () => new THREE.CylinderGeometry(0.032, 0.035, 0.095, 7),
-  vent: () => new THREE.BoxGeometry(0.15, 0.06, 0.11),
-  tarp: () => new THREE.BoxGeometry(0.18, 0.045, 0.15),
+  crate: () => new THREE.BoxGeometry(0.06, 0.06, 0.06),
+  barrel: () => new THREE.CylinderGeometry(0.019, 0.021, 0.055, 7),
+  vent: () => new THREE.BoxGeometry(0.09, 0.036, 0.065),
+  tarp: () => new THREE.BoxGeometry(0.1, 0.028, 0.09),
 };
-const CLUTTER_BASE_H = { crate: 0.10, barrel: 0.095, vent: 0.06, tarp: 0.045 };
+const CLUTTER_BASE_H = { crate: 0.06, barrel: 0.055, vent: 0.036, tarp: 0.028 };
 
 export function buildClutter(tiles, size, seed) {
   if (!CLUTTER) return null;
@@ -793,14 +793,16 @@ export function roadFeatures(tiles, size, seed, road) {
         // corner so the post never stands in either travel line.
         const dx = axis === 0 ? along : side * LAMP_KERB;
         const dz = axis === 0 ? side * LAMP_KERB : axis === 1 ? along : side * LAMP_KERB;
-        lamps.push({ x, y, dx, dz, state, warm });
+        lamps.push({ x, y, dx, dz, state, warm, h: yLift - 0.006 });
       }
     }
   }
   return { markings, lamps, sidewalks };
 }
 
-const LAMP_H = 0.56;
+// Re-proportioned for D61 (figures at 1/16 cell): a lamp is ~5 figure
+// heights, which is what a street light actually is.
+const LAMP_H = 0.34;
 
 // The meshes. One instanced mesh per material; the blinking lamps' glowing
 // parts land in two groups (A and B, opposite phases) that the scene toggles
@@ -860,7 +862,7 @@ export function buildRoads(tiles, size, seed) {
   }
 
   if (lamps.length) {
-    const postGeo = new THREE.CylinderGeometry(0.016, 0.02, LAMP_H, 5);
+    const postGeo = new THREE.CylinderGeometry(0.01, 0.013, LAMP_H, 5);
     const posts = new THREE.InstancedMesh(
       postGeo,
       new THREE.MeshLambertMaterial({ color: new THREE.Color().setRGB(...hexRgb(ROAD.lampPost)) }),
@@ -875,6 +877,25 @@ export function buildRoads(tiles, size, seed) {
     posts.instanceMatrix.needsUpdate = true;
     group.add(posts);
 
+    // A pavement pad under every post (playtest 8: "under lightposts, there
+    // needs to be pavement colour, not road colour") — intersection corners
+    // have no sidewalk strip, so the pad guarantees the kerb read everywhere.
+    if (ROAD.sidewalk) {
+      const pads = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(0.16, 0.012, 0.16),
+        new THREE.MeshLambertMaterial({ color: new THREE.Color().setRGB(...hexRgb(ROAD.sidewalk)) }),
+        lamps.length);
+      for (let i = 0; i < lamps.length; i++) {
+        const l = lamps[i];
+        pos.set(l.x + 0.5 + l.dx, l.h ?? 0.036, l.y + 0.5 + l.dz);
+        scl.set(1, 1, 1); quat.identity();
+        m.compose(pos, quat, scl);
+        pads.setMatrixAt(i, m);
+      }
+      pads.instanceMatrix.needsUpdate = true;
+      group.add(pads);
+    }
+
     // Heads, cones and light pools, bucketed by (state, warmth).
     const buckets = new Map();
     for (const l of lamps) {
@@ -883,9 +904,9 @@ export function buildRoads(tiles, size, seed) {
       buckets.get(key).push(l);
     }
     const blink = { A: [], B: [] };
-    const headGeo = new THREE.BoxGeometry(0.055, 0.035, 0.055);
-    const coneGeo = new THREE.ConeGeometry(0.3, LAMP_H - 0.06, 8, 1, true);
-    const poolGeo = new THREE.CircleGeometry(0.34, 12);
+    const headGeo = new THREE.BoxGeometry(0.04, 0.025, 0.04);
+    const coneGeo = new THREE.ConeGeometry(0.19, LAMP_H - 0.04, 8, 1, true);
+    const poolGeo = new THREE.CircleGeometry(0.21, 12);
     for (const [key, list] of buckets) {
       const off = key === "off";
       const warm = key.endsWith("warm");
@@ -910,7 +931,7 @@ export function buildRoads(tiles, size, seed) {
         m.compose(pos, quat, scl);
         head.setMatrixAt(i, m);
         if (cone) {
-          pos.set(cx, (LAMP_H - 0.06) / 2 + 0.02, cz);
+          pos.set(cx, (LAMP_H - 0.04) / 2 + 0.02, cz);
           m.compose(pos, quat, scl);
           cone.setMatrixAt(i, m);
         }

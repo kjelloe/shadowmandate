@@ -81,7 +81,19 @@ session.onChange((s, events) => {
   if ((events ?? []).some((e) => e.type === "dropZonesReady")) showZonePicker();
   if ((events ?? []).some((e) => e.type === "debriefReady")) { showDebrief(s); return; }
   for (const e of events ?? []) {
-    if (e.type === "rejected") addToast(`${e.command}: ${e.reason}`, true);
+    if (e.type === "rejected") {
+      // A refused purchase is the NPC saying no (playtest 8): it answers IN
+      // the dialogue, in character — the technical toast is for everything
+      // that has no face to speak through.
+      if (e.command === "dialogueChoice" || e.command === "buyItem") {
+        dialogResponse = {
+          key: DIALOG_RESPONSES[e.reason] ?? "dialog.respond.refuse",
+          until: Date.now() + 5000,
+        };
+      } else {
+        addToast(`${e.command}: ${e.reason}`, true);
+      }
+    }
     if (e.type === "serverError") addToast(e.reason, true);
   }
   if ($("#splash").hidden === false) {
@@ -227,6 +239,15 @@ function renderStances() {
 // did nothing, forever, with no error. Anything the player clicks must survive
 // long enough to be clicked: re-render ONLY when the content actually changes.
 let boardSignature = "";
+
+// The NPC's refusal lines (playtest 8): reducer reject reasons that have an
+// in-character voice. Anything unmapped gets the generic brush-off.
+const DIALOG_RESPONSES = {
+  nothing_to_reveal: "dialog.respond.nothingToReveal",
+  cannot_afford: "dialog.respond.cannotAfford",
+  already_owned: "dialog.respond.alreadyOwned",
+};
+let dialogResponse = null;
 
 // The mission banner (playtest 7): what am I doing RIGHT NOW, top-centre —
 // mission type, current stage, work progress. Completion and failure are
@@ -468,6 +489,7 @@ function renderBuilding(view) {
   if (!view.inside) {
     panel.hidden = true;
     buildingSignature = "";
+    dialogResponse = null;
     return;
   }
   const agent = ownAgent(view);
@@ -478,6 +500,15 @@ function renderBuilding(view) {
   // change must re-render the list (and only then — see boardSignature).
   const signature = `${view.inside.id}:${payload?.quiet ? 1 : 0}:${rows.length}:${agent?.disguiseId ?? 0}:${view.bank ?? 0}`;
   panel.hidden = false;
+  // The greeting line doubles as the NPC's mouth (playtest 8): for a few
+  // seconds after a refusal it carries the in-character answer, then falls
+  // back to the greeting. Runs every frame, BEFORE the rebuild early-return,
+  // because the response must appear without the list rebuilding.
+  $("#building-greet").textContent =
+    dialogResponse && Date.now() < dialogResponse.until
+      ? t(dialogResponse.key)
+      : (payload ? t(payload.quiet ? payload.quietKey : payload.greetKey) : "");
+  if (dialogResponse && Date.now() >= dialogResponse.until) dialogResponse = null;
   if (signature === buildingSignature) return;    // do not rebuild under the cursor
   buildingSignature = signature;
 
@@ -496,8 +527,6 @@ function renderBuilding(view) {
   $("#building-title").textContent = t(
     view.inside.kind === 0 ? "building.informant"
       : view.inside.kind === 1 ? "building.market" : "building.coverShop");
-  $("#building-greet").textContent = payload
-    ? t(payload.quiet ? payload.quietKey : payload.greetKey) : "";
 
   const list = $("#building-options");
   list.textContent = "";

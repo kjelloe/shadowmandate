@@ -72,6 +72,18 @@ export function hqLandingFor(state, cellX, cellY, cfg) {
           if (Math.abs(p.x - b.entranceX) + Math.abs(p.y - b.entranceY)
             < cfg.dropZoneMinClearRadius) { clear = false; break; }
         }
+        // Cameras feed detection just like patrols do (playtest 8: a camera
+        // six cells from the door noticed the operative at tick 80, while
+        // they stood at spawn reading the intro). A door inside an active
+        // camera's range is not a clear door. Chebyshev, matching how camera
+        // coverage itself is measured.
+        if (clear) {
+          for (const c of state.cameras ?? []) {
+            if (c.disabled) continue;
+            const dist = Math.max(Math.abs(c.cellX - b.entranceX), Math.abs(c.cellY - b.entranceY));
+            if (dist <= (c.range | 0)) { clear = false; break; }
+          }
+        }
       }
       if (!clear) continue;
       const d = Math.abs(b.entranceX - cellX) + Math.abs(b.entranceY - cellY);

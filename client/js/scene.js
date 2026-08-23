@@ -12,7 +12,7 @@
 
 import * as THREE from "three";
 import { buildGround, buildBlocks, buildClutter, buildRoads, setTerrainTokens } from "./terrain3d.js";
-import { siteRoles, objectiveCell, buildingRole, siteVisual, burnedGuidance, pinnedCells, hqInBuilding, moveTarget } from "./models.js";
+import { siteRoles, objectiveCell, buildingRole, siteVisual, burnedGuidance, pinnedCells, hqInBuilding, moveTarget, walkOffset } from "./models.js";
 import { buildProcedural, applyTint } from "./asset_factory.js";
 import { resolveVisual, tintFor, detectionMark } from "./asset_resolver.js";
 import { art } from "./assets.js";
@@ -96,10 +96,12 @@ export function createScene(canvas) {
   scene.add(bounce);
 
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 500);
-  let zoomCells = 10;          // how many cells fit across the view — street
-                               // level by default since D60: with figures at
-                               // 1/8 scale this is where the game is played;
-                               // overview is a zoom-out or the minimap
+  let zoomCells = 6;           // how many cells fit across the view — street
+                               // level by default since D60/D61: with figures
+                               // at 1/16 scale this is where the game is
+                               // played; overview is a zoom-out or the minimap
+  let terrainTiles = null;     // kept for the walking-position decision (D61)
+  const lane = { x: 0, z: 0 }; // the slewed lateral walk offset (D61)
   let blinkGroups = null;      // faulty street lamps (playtest 5), toggled by tick
   let mapSize = 64;
   let terrain = null;
@@ -259,6 +261,7 @@ export function createScene(canvas) {
   function setTerrain(tiles, size, seed, districts = null) {
     if (terrain) { scene.remove(terrain); terrain = null; }
     mapSize = size;
+    terrainTiles = tiles;
     terrain = new THREE.Group();
     terrain.add(buildGround(tiles, size, seed));
     const blocks = buildBlocks(tiles, size, seed, districts);
@@ -316,6 +319,9 @@ export function createScene(canvas) {
     if (!view || !resize()) return;
       for (const m of pool) { m.inUse = false; m.group.visible = false; }
 
+    // Every HUD ring breathes with the zoom (playtest 8): close in they
+    // shrink to neat markers, zoomed out they grow so they stay findable.
+    const ringZoom = Math.max(0.4, Math.min(2, zoomCells / 12));
     const own = view.agents?.find((a) => a.state === 1) ?? view.agents?.[0];
     const target = own
       ? { x: own.x / CELL, y: own.y / CELL }
@@ -350,11 +356,11 @@ export function createScene(canvas) {
       // one more dark building, and a player two streets away had nothing on
       // screen that said "home". Same HUD-affordance ring as the one under
       // the operative, in the Firm's own mark.
-      at(takeRing(tokens.marks.ownHq), view.hq.cellX + 0.5, view.hq.cellY + 0.5, 0.12);
+      at(takeRing(tokens.marks.ownHq, ringZoom), view.hq.cellX + 0.5, view.hq.cellY + 0.5, 0.12);
     }
     for (const h of view.rivalHqs) {
       if (hqInBuilding(view, h)) {
-        at(takeRing(tokens.marks.rivalHq), h.cellX + 0.5, h.cellY + 0.5, 0.12);
+        at(takeRing(tokens.marks.rivalHq, ringZoom), h.cellX + 0.5, h.cellY + 0.5, 0.12);
       } else {
         at(takeVisual("rivalHq"), h.cellX + 0.5, h.cellY + 0.5);
       }
@@ -370,11 +376,11 @@ export function createScene(canvas) {
       const bx = x.toX + 0.5, bz = x.toY + 0.5;
       const dx = bx - ax, dz = bz - az;
       const len = Math.hypot(dx, dz) || 1;
-      // Waist height against D60-scale figures — a beam over their heads
+      // Waist height against D61-scale figures — a beam over their heads
       // would read as sky decoration, not a line you must not stand in.
-      mesh.position.set((ax + bx) / 2, 0.09, (az + bz) / 2);
+      mesh.position.set((ax + bx) / 2, 0.045, (az + bz) / 2);
       mesh.rotation.y = -Math.atan2(dz, dx);
-      mesh.scale.set(len + 0.9, 0.04, 0.1);
+      mesh.scale.set(len + 0.9, 0.025, 0.06);
     }
     for (const j of view.junctions ?? []) {
       at(takeVisual(j.cut ? "junctionCut" : "junction"), j.cellX + 0.5, j.cellY + 0.5);
@@ -390,34 +396,43 @@ export function createScene(canvas) {
       obj.rotation.y = octantToRadians(c.facing);
     }
     for (const r of view.rivals) at(takeVisual("rival"), r.x / CELL, r.y / CELL);
-    // A figure's ring follows the figure scale (D60): a cell-sized halo under
-    // a 1/8-scale person reads as a searchlight, not a marker. Kept generous
-    // (2.6x the figure) because zoomed out the RING is how you find yourself.
-    const figureRing = (tokens.scale?.figure ?? 1) * 2.6;
+    // A figure's ring follows the figure scale (D60) AND the zoom (playtest
+    // 8): close in it shrinks to a neat halo, zoomed out it grows so the
+    // RING stays how you find yourself when the figure is pixels tall.
+    const figureRing = (tokens.scale?.figure ?? 1) * 2.6
+      * Math.max(0.6, Math.min(3, zoomCells / 10));
+    // The walking position (D61): slew the drawn offset toward the pure
+    // decision, so kerb-hops and street crossings are visible movement. A
+    // null decision means "standing — hold the position you have".
+    const laneTarget = walkOffset(view, terrainTiles, mapSize);
+    if (laneTarget) {
+      lane.x += (laneTarget.dx - lane.x) * 0.08;
+      lane.z += (laneTarget.dz - lane.z) * 0.08;
+    }
     for (const a of view.agents) {
       // The agent's tint is its DETECTION state — gameplay information, so it
       // comes from the resolver rather than being decided here.
       const stateMark = detectionMark(a.detection);
-      at(takeVisual("agent", stateMark), a.x / CELL, a.y / CELL);
+      at(takeVisual("agent", stateMark), a.x / CELL + lane.x, a.y / CELL + lane.z);
       // The ring is how you find your own operative in a busy street. It is a
       // HUD affordance rather than a thing in the world, so it is not a
       // manifest visual.
-      at(takeRing(tokens.marks[stateMark], figureRing), a.x / CELL, a.y / CELL, 0.04);
+      at(takeRing(tokens.marks[stateMark], figureRing), a.x / CELL + lane.x, a.y / CELL + lane.z, 0.04);
     }
     // Pinned contracts (playtest 3): a steady watched-ring at each pinned
     // objective, in the pinned mark — the pulse stays reserved for the
     // CURRENT objective below.
     for (const p of pinnedCells(view, pinnedIds)) {
-      at(takeRing(tokens.marks.pinned), p.cellX + 0.5, p.cellY + 0.5, 0.12);
+      at(takeRing(tokens.marks.pinned, ringZoom), p.cellX + 0.5, p.cellY + 0.5, 0.12);
     }
     // Burned (playtest 3): mark the nearest cover shop in the world with a
     // breathing ring in the shop's colour, matching the radar ping.
     const respray = burnedGuidance(view);
     if (respray) {
-      const ring = takeRing(tokens.marks.coverShop);
+      const ring = takeRing(tokens.marks.coverShop, ringZoom);
       if (ring) {
         at(ring, respray.cellX + 0.5, respray.cellY + 0.5, 0.12);
-        ring.scale.setScalar(1 + 0.35 * (0.5 + 0.5 * Math.sin(view.tick / 3)));
+        ring.scale.setScalar(ringZoom * (1 + 0.35 * (0.5 + 0.5 * Math.sin(view.tick / 3))));
       }
     }
     // The destination pin: a bobbing cone over the cell the move order is
@@ -465,7 +480,7 @@ export function createScene(canvas) {
       beacon.position.set(objective.cellX + 0.5, 4.5, objective.cellY + 0.5);
       beacon.material.opacity = 0.25 + 0.25 * pulse;
       halo.position.set(objective.cellX + 0.5, 0.08, objective.cellY + 0.5);
-      halo.scale.setScalar(0.85 + 0.3 * pulse);
+      halo.scale.setScalar(ringZoom * (0.85 + 0.3 * pulse));
       halo.material.opacity = 0.5 + 0.4 * pulse;
     } else if (beacon) {
       beacon.visible = false; halo.visible = false;
@@ -491,6 +506,6 @@ export function createScene(canvas) {
     draw, resize, setTerrain, screenToCell, drawDropship,
     cameraDistance: () => CAMERA_DISTANCE,
     hasTerrain: () => terrain !== null,
-    zoomBy(f) { zoomCells = Math.max(4, Math.min(70, zoomCells * f)); resize(); },
+    zoomBy(f) { zoomCells = Math.max(3, Math.min(70, zoomCells * f)); resize(); },
   };
 }

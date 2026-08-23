@@ -155,6 +155,12 @@ M7 in progress and playable in a browser (updated 2026-08-06)
 |---:|---|---|
 | D60 | World scale | **Figures render at 1/8 of a cell; the engine grid is untouched.** The city reads 8x bigger — the agent walks the sidewalk alongside three others of his size (sidewalk widened to 0.2 cells to fit four abreast). Default camera is STREET LEVEL (~10 cells across); zoom runs 4–70. Applied by manifest class from a scale token, so the number stays tunable |
 
+## Fifteenth decision batch (2026-08-23, playtest 8)
+
+| # | Decision | Ruling |
+|---:|---|---|
+| D61 | 16x world + walking positions | **Figures render at 1/16 of a cell** (up from D60's 1/8 — room for more agents on the sidewalks later); default camera 6 cells across, zoom 3–70. **The agent walks one of four positions on a road** — left sidewalk, left lane, right lane, right sidewalk — whichever lies nearest the straight line to the destination; render-only, always inside the simulated cell; agent only for now, rivals/patrols queued |
+
 **Open owner questions: Q44** (the HQ safehouse doubles as the informant
 building) in `../dev-questions.md`, which also holds the tracked gaps.
 

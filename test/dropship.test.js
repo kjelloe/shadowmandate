@@ -41,9 +41,13 @@ test("it approaches from far out and leaves the way it came", () => {
   const start = dropshipFlight(0, 1);
   const mid = dropshipFlight(DROPSHIP_MS / 2, 1);
   const end = dropshipFlight(DROPSHIP_MS - 1, 1);
-  assert.ok(start.offsetCells < -10, "it starts on top of the HQ instead of approaching");
+  // Retuned for the street-level camera (playtest 8): the approach shrank
+  // from 26 cells to 8 so the flight happens ON SCREEN — at the old distance
+  // the whole sequence played outside the visible frame and the drop read as
+  // the agent popping into existence.
+  assert.ok(start.offsetCells <= -6, "it starts on top of the HQ instead of approaching");
   assert.equal(Math.round(mid.offsetCells), 0, "it never actually arrives");
-  assert.ok(end.offsetCells > 10, "it never leaves");
+  assert.ok(end.offsetCells >= 6, "it never leaves");
   assert.ok(start.height > mid.height, "it does not descend on the way in");
   assert.ok(end.height > mid.height, "it does not climb on the way out");
 });

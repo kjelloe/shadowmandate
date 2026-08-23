@@ -64,7 +64,14 @@ button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal)
   padding: 1rem; pointer-events: auto; max-height: 70%; overflow-y: auto; }
 @media (min-width: 700px) { .overlay { inset: 50% 0 auto 0; transform: translateY(-50%);
   border-radius: 8px; } }
-.overlay h2 { margin: 0 0 .6rem; font-size: 1rem; letter-spacing: .08em; }
+.overlay h2 { margin: 0 0 .6rem; font-size: 1rem; letter-spacing: .08em;
+  padding-right: 52px; }
+/* The standard dismiss (playtest 8): every VOLUNTARY dialog closes from an X
+   in the top-right corner, like every other app the player has ever used.
+   Forced choices (the standoff) deliberately have none. */
+.overlay .close { position: absolute; top: .5rem; right: .5rem;
+  min-width: 44px; min-height: 44px; padding: 0; border-radius: 50%;
+  font-size: 1.05rem; line-height: 1; }
 .row { display: flex; gap: .5rem; flex-wrap: wrap; }
 #board-list { list-style: none; margin: 0 0 .8rem; padding: 0; }
 #board-list li { display: flex; justify-content: space-between; gap: .6rem;

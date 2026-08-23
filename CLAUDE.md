@@ -17,7 +17,7 @@ on (D42/D43). **Playtest 4 (2026-08-22, D54–D56)**: fixed 45°/45° dimetric
 camera, block massing with parcels (visual pass, D55), and the Field HQ now
 auto-establishes in the nearest free safehouse at drop-in (`hqLandingFor` in
 `engine/hq.js` — the single home of the landing rule). **Playtest 5
-(2026-08-22, D57–D59)**: the session economy actually works (starting bank
+(2026-08-22, D57–D61)**: the session economy actually works (starting bank
 200, purchases/bail genuinely debit, bank visible in the HUD, one-time
 ledger floor migration); one Leave button that really exits; patrol-clear
 landings; and the map-look pass — 2/4-lane streets with lamps, per-district
@@ -27,7 +27,7 @@ safehouse doubles as the informant building).
 
 ## Read first
 
-1. `specs/00_document_index.md` — document map, rulings D1–D59
+1. `specs/00_document_index.md` — document map, rulings D1–D61
 2. `plan-version1.md` — the operational plan (milestones M0–M7, gates)
 3. `plan-implementation-order.md` — slice-by-slice execution order, per-milestone
    STATUS markers (battery runbook: `ops/BATCH_PC.md`, private ops repo)

@@ -451,6 +451,44 @@ export function moveTarget(view) {
   return { cellX, cellY };
 }
 
+// ── The four walking positions (playtest 8, D61) ───────────────────────────
+// On a road, the agent renders at one of four lateral positions — left
+// sidewalk, left lane, right lane, right sidewalk — whichever lies NEAREST
+// the straight line toward the destination (the owner's rule). Pure decision;
+// the scene slews the drawn offset toward it, so stepping off a kerb and
+// crossing to the far sidewalk is something you literally watch happen.
+//
+// HONESTY: this is a render offset, always inside the agent's own simulated
+// cell (max 0.4 of a half-cell). Gameplay is cell-granular — detection,
+// beams and arrests read cells — so the figure never leaves the cell the
+// engine says it is in.
+export const WALK_POSITIONS = [-0.4, -0.15, 0.15, 0.4];
+
+export function walkOffset(view, tiles, size) {
+  const a = ownAgent(view);
+  if (!a || !tiles) return { dx: 0, dz: 0 };
+  const cellX = Math.floor(a.x / 256), cellY = Math.floor(a.y / 256);
+  const t = tiles[cellY * size + cellX];
+  if (t !== 1 && t !== 6) return { dx: 0, dz: 0 };
+  const road = (x, y) => {
+    if (x < 0 || y < 0 || x >= size || y >= size) return false;
+    const n = tiles[y * size + x];
+    return n === 1 || n === 6;
+  };
+  const ew = road(cellX - 1, cellY) || road(cellX + 1, cellY);
+  const ns = road(cellX, cellY - 1) || road(cellX, cellY + 1);
+  if (ew === ns) return { dx: 0, dz: 0 };        // intersection or orphan cell
+  const dest = moveTarget(view);
+  if (!dest) return null;                         // standing: hold position
+  const perp = ew
+    ? (dest.cellY + 0.5) - (a.y / 256)
+    : (dest.cellX + 0.5) - (a.x / 256);
+  const clamped = Math.max(-0.4, Math.min(0.4, perp));
+  const snapped = WALK_POSITIONS.reduce((best, p) =>
+    Math.abs(p - clamped) < Math.abs(best - clamped) ? p : best);
+  return ew ? { dx: 0, dz: snapped } : { dx: snapped, dz: 0 };
+}
+
 // ── Dropship choreography (S05) ────────────────────────────────────────────
 //
 // Presentation only: the dropship never exists in engine state, and the server
@@ -474,8 +512,11 @@ export function dropshipFlight(elapsed, dir = 1, cfg = {}) {
   const total = cfg.durationMs ?? DROPSHIP_MS;
   if (!(elapsed >= 0) || elapsed >= total) return null;
   const t = elapsed / total;                      // 0..1
-  const approach = cfg.approachCells ?? 26;       // how far out it starts
-  const cruise = cfg.cruiseHeight ?? 14;          // and how high
+  // Retuned for the street-level camera (playtest 8): at 26 cells out and 14
+  // high the whole flight happened OFF SCREEN and the drop read as the agent
+  // popping into existence. Now the ship crosses the visible frame.
+  const approach = cfg.approachCells ?? 8;        // how far out it starts
+  const cruise = cfg.cruiseHeight ?? 3.5;         // and how high
 
   // Three beats: run in (0-0.4), hold and drop (0.4-0.6), climb out (0.6-1).
   // Held at the HQ for a fifth of the sequence so the crate has a moment that

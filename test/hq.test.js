@@ -35,10 +35,16 @@ test("drop-in establishes the HQ in the nearest safehouse, and the agent lands w
   assert.equal(s.hqs.length, 1);
   const hq = s.hqs[0];
   // A DELIBERATE duplicate of the landing rule (fixture-twin style): the
-  // nearest safehouse to the requested cell, computed independently here so
-  // the engine's hqLandingFor cannot verify itself.
-  const safehouses = s.buildings.filter((b) => b.kind === 0);
-  assert.ok(safehouses.length, "the reference world generated no safehouse");
+  // nearest CLEAR safehouse to the requested cell — clear of patrols by the
+  // drop radius and outside every active camera's range (playtest 8) —
+  // computed independently here so the engine's hqLandingFor cannot verify
+  // itself.
+  const safehouses = s.buildings.filter((b) => b.kind === 0).filter((b) =>
+    s.patrols.every((p) =>
+      Math.abs(p.x - b.entranceX) + Math.abs(p.y - b.entranceY) >= RULES.hq.dropZoneMinClearRadius)
+    && (s.cameras ?? []).every((c) => c.disabled
+      || Math.max(Math.abs(c.cellX - b.entranceX), Math.abs(c.cellY - b.entranceY)) > (c.range | 0)));
+  assert.ok(safehouses.length, "no clear safehouse in the reference world");
   const dist = (b) => Math.abs(b.entranceX - zone.cellX) + Math.abs(b.entranceY - zone.cellY);
   const nearest = safehouses.reduce((a, b) => (dist(b) < dist(a) ? b : a));
   assert.equal(hq.buildingId, nearest.id, "the HQ did not claim the nearest safehouse");
@@ -313,10 +319,16 @@ test("the landing prefers a patrol-clear safehouse door (playtest 5: burned duri
     Math.abs(p.x - hq.cellX) + Math.abs(p.y - hq.cellY)));
   assert.ok(patrolDist >= RULES.hq.dropZoneMinClearRadius,
     `landed with a patrol ${patrolDist} cells from the door — inside the clear radius the drop zones promise`);
-  // And the operative survives the cinematic unseen.
-  const run = tickCollecting(s, apply, 80);
+  // Cameras feed detection too (playtest 8: a camera six cells from the door
+  // noticed the spawn at tick 80). The clear pass must keep them out of range.
+  const camDist = Math.min(...(s.cameras ?? []).filter((c) => !c.disabled).map((c) =>
+    Math.max(Math.abs(c.cellX - hq.cellX), Math.abs(c.cellY - hq.cellY)) - (c.range | 0)));
+  assert.ok(camDist > 0, "landed inside an active camera's range — the intro-reading burn returns");
+  // And the operative survives standing at spawn for a full 15 seconds —
+  // the time a new player spends reading the intro — unseen.
+  const run = tickCollecting(s, apply, 150);
   assert.ok(!run.saw("agentBurned") && !run.saw("agentNoticed"),
-    "the operative was seen during the drop cinematic — the landing gave back the patrol clearance");
+    "the operative was seen while standing at spawn — the landing gave back its clearance");
 });
 
 test("legacy ledgers are floored to the starting bank ONCE, and spending below it sticks", () => {

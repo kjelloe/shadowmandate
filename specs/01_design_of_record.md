@@ -162,6 +162,12 @@ These seven rulings resolve the open forks in the starter document and in `batch
 |---:|---|
 | **D60** | **World scale: figures render at 1/8 of a cell** (playtest 7: "the road and buildings have to be much bigger scale, 8 or 12 times"). The ENGINE GRID IS UNTOUCHED — cells, movement, detection and pathing are exactly what they were; this is render scale, applied by manifest class from `tokens.scale` at build time (per-entry override for the dropship, a vehicle). Consequences held together: the sidewalk widened to 0.2 cells so the agent walks it alongside three others of his size — four 8x-scaled figures abreast, guard-tested against the sidewalk constant the renderer actually builds with; clutter re-proportioned to human scale (a drum is chest-high); beams dropped to waist height; a figure's ring follows the figure while cell-anchored rings (HQ, pins, re-spray) stay cell-sized; the default camera moved to STREET LEVEL (~10 cells across, zoom 4–70) because at this scale that is where the game is played, with overview one zoom-out or the minimap away. |
 
+### Fifteenth decision batch (2026-08-23, playtest 8)
+
+| # | Ruling |
+|---:|---|
+| **D61** | **The world doubles again: figures at 1/16 of a cell** (playtest 8: "let's try 16x, so we have room to add more agents later"). Engine untouched, as with D60 — one token. Default camera 6 cells across (zoom 3–70); every HUD ring now breathes with the zoom (a cell-sized emblem at street zoom read as a stadium); clutter, lamps and beams re-proportioned to the new human scale; the dropship approach shrank from 26 cells to 8 so the drop-in flight happens ON SCREEN. **The four walking positions**: on a road the agent renders at left sidewalk / left lane / right lane / right sidewalk — whichever lies NEAREST the straight line to the destination (the owner's rule) — slewed smoothly so kerb-hops and crossings are visible movement. Render-only and always inside the agent's simulated cell: gameplay stays cell-granular, so the honesty rule holds at the granularity the engine actually plays at. Agent only for now; rivals and patrols are a queued slice. Also under this batch: the landing rule keeps doors outside active CAMERA range (a camera six cells from the door noticed a spawn at tick 80 — patrol clearance alone was not clearance), and a refused informant purchase answers IN the dialogue, in character, instead of a technical toast. |
+
 ---
 
 ## Terminology Contract (D8)
