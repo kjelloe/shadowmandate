@@ -33,6 +33,8 @@
   "hud.heat.lockdown": "PORTFORBUD",
   "hud.cache": "LAGER",
   "hud.bank": "BANK",
+  "banner.complete": "OPPDRAG FULLFØRT",
+  "banner.failed": "OPPDRAG MISLYKTES",
   "hud.centreOnAgent": "SENTRER PÅ AGENT",
   "board.title": "TILGJENGELIGE OPPDRAG",
   "board.tier": "NIVÅ",

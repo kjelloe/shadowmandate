@@ -33,6 +33,8 @@
   "hud.heat.lockdown": "LOCKDOWN",
   "hud.cache": "CACHE",
   "hud.bank": "BANK",
+  "banner.complete": "MISSION COMPLETE",
+  "banner.failed": "MISSION FAILED",
   "hud.centreOnAgent": "CENTRE ON AGENT",
   "board.title": "AVAILABLE CONTRACTS",
   "board.tier": "TIER",

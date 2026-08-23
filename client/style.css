@@ -35,6 +35,18 @@ button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal)
 #hud-right { align-items: flex-end; }
 .pill { background: rgba(29,32,38,.9); border: 1px solid var(--line);
   border-radius: 20px; padding: .3rem .8rem; font-size: .82rem; }
+/* The mission banner (playtest 7): what am I doing, top-centre, always. */
+#mission-banner { position: absolute; top: .6rem; left: 50%; transform: translateX(-50%);
+  display: flex; gap: .6rem; align-items: baseline; padding: .35rem 1rem;
+  background: rgba(29,32,38,.92); border: 1px solid var(--line); border-radius: 20px;
+  white-space: nowrap; }
+#mission-kind { font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+#mission-stage { color: var(--dim); font-size: .85rem; }
+#mission-banner.good { border-color: var(--teal); }
+#mission-banner.good #mission-kind { color: var(--teal); }
+#mission-banner.bad { border-color: var(--alarm); }
+#mission-banner.bad #mission-kind { color: var(--alarm); }
+
 /* Zoom (playtest 6). 44px minimum: the mobile gate measures thumb targets. */
 #zoom { display: flex; gap: .45rem; }
 #zoom button { min-width: 44px; min-height: 44px; border-radius: 10px;

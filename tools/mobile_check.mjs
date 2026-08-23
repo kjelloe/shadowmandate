@@ -13,6 +13,9 @@
 
 import { spawn } from "node:child_process";
 import { setTimeout as sleep } from "node:timers/promises";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join as joinPath } from "node:path";
 
 const HEADED = process.env.HEADED === "1";
 const PORT = Number(process.env.MOBILE_PORT ?? 8981);
@@ -29,6 +32,7 @@ const VIEWPORTS = [
 function startServer() {
   const proc = spawn(process.execPath, ["server/index.js"], {
     env: { ...process.env, PORT: String(PORT), SEED: "4711", SIZE: "64",
+      LEDGER_PATH: joinPath(mkdtempSync(joinPath(tmpdir(), "sm-mobile-")), "ledger.json"),
       TICK_MS: process.env.TICK_MS ?? "250" },
     stdio: ["ignore", "pipe", "pipe"],
   });

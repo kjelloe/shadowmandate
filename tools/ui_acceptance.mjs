@@ -269,6 +269,17 @@ async function main() {
     // fatal() must put errors ON THE PAGE. An error bar that only exists in the
     // console is the "silent client" this project has already paid for.
     const hasFatal = await page.evaluate(() => typeof window.__smDebug === "object");
+    // The mission banner (playtest 7): with a contract just accepted, the
+    // top-centre banner must say WHAT the mission is. A player should never
+    // have to open the board to remember what they are doing.
+    const banner = await page.evaluate(() => ({
+      hidden: document.getElementById("mission-banner").hidden,
+      kind: document.getElementById("mission-kind").textContent,
+      stage: document.getElementById("mission-stage").textContent,
+    }));
+    check("the mission banner names the accepted mission", !banner.hidden && banner.kind.length > 0,
+      JSON.stringify(banner));
+
     check("client exposes its state for inspection", hasFatal);
   } catch (e) {
     failures.push(`harness: ${e.message}`);

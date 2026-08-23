@@ -11,7 +11,7 @@ import {
   STANCES, DETECTION_KEYS, DETECTION_CLASS, HEAT_KEYS, HEAT_CLASS,
   ownAgent, heatDisplay, districtUnder, boardRows, activeRows, objectiveFor,
   objectiveBearing, evacDisplay, toastsFor, debriefRows, reputationBar,
-  payloadForBuilding, overlayRows, disguiseFor, districtChoices, standingRows,
+  payloadForBuilding, overlayRows, disguiseFor, districtChoices, standingRows, missionBanner,
   cuttableJunction, liftableGuard, dropshipFlight, DROPSHIP_MS, MAX_PINS,
   HEAT_CLASS as HEAT_CLASSES,
 } from "./models.js";
@@ -194,6 +194,7 @@ function paint(s, events) {
 
   renderStances();
   renderBoard(view);
+  renderBanner(view, events);
   renderActive(view);
   renderObjectiveArrow(view);
   renderBuilding(view);
@@ -226,6 +227,41 @@ function renderStances() {
 // did nothing, forever, with no error. Anything the player clicks must survive
 // long enough to be clicked: re-render ONLY when the content actually changes.
 let boardSignature = "";
+
+// The mission banner (playtest 7): what am I doing RIGHT NOW, top-centre —
+// mission type, current stage, work progress. Completion and failure are
+// EVENTS, not state (a finished contract leaves the active list the same
+// tick), so they flash for a few seconds before the banner moves on to the
+// next job or hides.
+let bannerFlash = null;
+function renderBanner(view, events) {
+  for (const e of events ?? []) {
+    if (e.type === "contractCompleted") {
+      bannerFlash = { key: "banner.complete", cls: "good", until: Date.now() + 4000 };
+    } else if (e.type === "contractFailed" || e.type === "contractExpired") {
+      bannerFlash = { key: "banner.failed", cls: "bad", until: Date.now() + 4000 };
+    }
+  }
+  const el = $("#mission-banner");
+  if (bannerFlash) {
+    if (Date.now() < bannerFlash.until) {
+      el.hidden = false;
+      el.className = bannerFlash.cls;
+      $("#mission-kind").textContent = t(bannerFlash.key);
+      $("#mission-stage").textContent = "";
+      return;
+    }
+    bannerFlash = null;
+  }
+  const b = missionBanner(view);
+  if (!b) { el.hidden = true; el.className = ""; return; }
+  el.hidden = false;
+  el.className = b.atRisk ? "bad" : "";
+  $("#mission-kind").textContent = t(b.kindKey);
+  const pct = b.progress !== null ? ` ${Math.round(b.progress * 100)}%` : "";
+  const more = b.others > 0 ? ` (+${b.others})` : "";
+  $("#mission-stage").textContent = `${t(b.stageKey)}${pct}${more}`;
+}
 
 function renderBoard(view) {
   const rows = boardRows(view);

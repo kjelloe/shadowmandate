@@ -14,6 +14,9 @@
 
 import { spawn } from "node:child_process";
 import { setTimeout as sleep } from "node:timers/promises";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join as joinPath } from "node:path";
 
 const HEADED = process.env.HEADED === "1";
 const PORT = Number(process.env.SMOKE_PORT ?? 8977);
@@ -30,6 +33,7 @@ function startServer() {
     // still reproduces the defects this gate exists for — a list that rebuilds
     // per view update rebuilds at any rate.
     env: { ...process.env, PORT: String(PORT), SEED: "4711",
+      LEDGER_PATH: joinPath(mkdtempSync(joinPath(tmpdir(), "sm-smoke-")), "ledger.json"),
       // D26: the render path must handle 128 as well as the 64 default.
       //   SIZE=128 node tools/client_smoke.mjs
       SIZE: process.env.SIZE ?? "64",

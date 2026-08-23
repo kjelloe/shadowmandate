@@ -173,6 +173,12 @@
       "tank": "#3A4046"
     }
   },
+  "note_scale": "World scale (playtest 7, D60): the engine grid is untouched — cells are cells — but FIGURES render at 1/8 of their old size so streets, sidewalks and buildings read 8x bigger (the owner's ruling: the agent walks the sidewalk alongside three others of his size). Applied by manifest CLASS at build time in the scene; a per-entry `scale` in the manifest overrides the class (the dropship is a vehicle, not a person). Rings that mark a CELL (HQ, pins, re-spray) stay cell-scale; the ring under a figure follows the figure.",
+  "scale": {
+    "figure": 0.125,
+    "marker": 0.5,
+    "structure": 1.0
+  },
   "note_budget": "Triangle budgets are a MOBILE constraint, not an aesthetic one. The client already runs on a phone (7b) and a busy street draws dozens of these. Raised 2026-08-18 for the detail pass (playtest 3, finding 3: 'many more vertices'). triFloor is the other half of the same promise: a builder that quietly regresses to boxes stays under budget and green, so the floor is what makes the detail pass assertable.",
   "triBudget": {
     "figure": 700,

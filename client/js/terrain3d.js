@@ -672,14 +672,17 @@ export function clutterPlacements(tiles, size, seed, density) {
   return out;
 }
 
-// Base geometry per kind: footprint and height in cell units, all knee-high.
+// Base geometry per kind: footprint and height in cell units. Re-sized for
+// the D60 world scale (figures at 1/8 of a cell): a crate is about one
+// figure-height, a drum is chest-high — props keep their human proportions
+// while the city towers over everyone.
 const CLUTTER_GEO = {
-  crate: () => new THREE.BoxGeometry(0.20, 0.20, 0.20),
-  barrel: () => new THREE.CylinderGeometry(0.095, 0.10, 0.26, 7),
-  vent: () => new THREE.BoxGeometry(0.28, 0.12, 0.20),
-  tarp: () => new THREE.BoxGeometry(0.32, 0.09, 0.26),
+  crate: () => new THREE.BoxGeometry(0.10, 0.10, 0.10),
+  barrel: () => new THREE.CylinderGeometry(0.032, 0.035, 0.095, 7),
+  vent: () => new THREE.BoxGeometry(0.15, 0.06, 0.11),
+  tarp: () => new THREE.BoxGeometry(0.18, 0.045, 0.15),
 };
-const CLUTTER_BASE_H = { crate: 0.20, barrel: 0.26, vent: 0.12, tarp: 0.09 };
+const CLUTTER_BASE_H = { crate: 0.10, barrel: 0.095, vent: 0.06, tarp: 0.045 };
 
 export function buildClutter(tiles, size, seed) {
   if (!CLUTTER) return null;
@@ -720,8 +723,12 @@ export function buildClutter(tiles, size, seed) {
 
 export const STREET_TILE = 1;
 export const TRANSIT_TILE = 6;
-export const LAMP_KERB = 0.38;       // perpendicular offset — outside the
-                                     // 0.2-cell clearance ring by construction
+// Sidewalk width in cell units. Sized by the D60 ruling: the agent walks it
+// alongside three OTHERS — four 8x-scaled figures abreast (4 x 0.4 x 0.125).
+export const SIDEWALK_W = 0.2;
+export const LAMP_KERB = 0.38;       // perpendicular offset — ON the sidewalk
+                                     // (0.30..0.50 from the centre line) and
+                                     // outside the clearance ring
 
 const isRoad = (tiles, size, x, y) => {
   if (x < 0 || y < 0 || x >= size || y >= size) return false;
@@ -820,8 +827,9 @@ export function buildRoads(tiles, size, seed) {
       sidewalks.length);
     for (let i = 0; i < sidewalks.length; i++) {
       const s = sidewalks[i];
-      pos.set(s.x + 0.5 + s.dx * 0.43, s.h, s.y + 0.5 + s.dy * 0.43);
-      scl.set(s.dx ? 0.14 : 1, 1, s.dy ? 0.14 : 1);
+      pos.set(s.x + 0.5 + s.dx * (0.5 - SIDEWALK_W / 2), s.h,
+        s.y + 0.5 + s.dy * (0.5 - SIDEWALK_W / 2));
+      scl.set(s.dx ? SIDEWALK_W : 1, 1, s.dy ? SIDEWALK_W : 1);
       quat.identity();
       m.compose(pos, quat, scl);
       kerb.setMatrixAt(i, m);

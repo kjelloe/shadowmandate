@@ -577,3 +577,22 @@ test("the destination pin means a LIVE move order (playtest 6)", async () => {
   // An old server without targetX must not draw a pin at 0,0.
   assert.equal(moveTarget({ agents: [{ id: 0, state: 1, x: 100, y: 100 }] }), null);
 });
+
+test("the mission banner is the first active job, and silent when idle (playtest 7)", async () => {
+  const { missionBanner } = await import("../client/js/models.js");
+  const view = {
+    active: [
+      { id: 1, kind: 1, tier: 1, reward: 90, stage: 2, stageTicks: 30, stageTarget: 60, graceTicks: 0 },
+      { id: 2, kind: 0, tier: 1, reward: 40, stage: 1, graceTicks: 0 },
+    ],
+  };
+  const b = missionBanner(view);
+  assert.equal(b.kindKey, "contract.surveillance");
+  assert.equal(b.stageKey, "stage.work");
+  assert.ok(b.progress > 0.4 && b.progress < 0.6, "work progress must ride the banner");
+  assert.equal(b.others, 1, "the banner should admit there is another job queued");
+  assert.equal(missionBanner({ active: [] }), null, "no active job, no banner");
+  assert.equal(missionBanner(null), null);
+  const risky = missionBanner({ active: [{ id: 3, kind: 0, stage: 1, graceTicks: 40 }] });
+  assert.ok(risky.atRisk, "a contract in its capture grace must read as at risk");
+});

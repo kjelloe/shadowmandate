@@ -96,9 +96,10 @@ export function createScene(canvas) {
   scene.add(bounce);
 
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 500);
-  let zoomCells = 26;          // how many cells fit across the view — pulled
-                               // in for playtest 4: a city only reads as a
-                               // city when you are close enough to see facades
+  let zoomCells = 10;          // how many cells fit across the view — street
+                               // level by default since D60: with figures at
+                               // 1/8 scale this is where the game is played;
+                               // overview is a zoom-out or the minimap
   let blinkGroups = null;      // faulty street lamps (playtest 5), toggled by tick
   let mapSize = 64;
   let terrain = null;
@@ -142,6 +143,10 @@ export function createScene(canvas) {
     if (!m) {
       const group = buildProcedural(resolved.key);
       if (!group) return null;
+      // World scale (playtest 7, D60): figures render at a fraction of a cell
+      // so the city reads 8x bigger. Class-scaled from tokens; a per-entry
+      // manifest scale overrides.
+      group.scale.setScalar(resolved.entry.scale ?? tokens.scale?.[resolved.entry.class] ?? 1);
       m = { role, group, inUse: false };
       pool.push(m);
       markers.add(group);
@@ -178,7 +183,7 @@ export function createScene(canvas) {
     return m.group;
   }
 
-  function takeRing(colour) {
+  function takeRing(colour, scalar = 1) {
     let m = pool.find((x) => !x.inUse && x.role === "__ring");
     if (!m) {
       // Rings are HUD affordances, not things in the world — and the 40-degree
@@ -198,9 +203,11 @@ export function createScene(canvas) {
     m.group.visible = true;
     m.group.material.color.set(colour);
     // Pooled rings are shared across users; the re-spray ping scales its ring
-    // per frame, so every take starts from neutral or the pulse leaks onto
-    // whatever ring happens to reuse this slot next frame.
-    m.group.scale.setScalar(1);
+    // per frame, so every take starts from its own scalar or the pulse leaks
+    // onto whatever ring happens to reuse this slot next frame. The scalar is
+    // how a figure's ring follows the figure scale (D60) while cell-anchored
+    // rings (HQ, pins, re-spray) stay cell-sized.
+    m.group.scale.setScalar(scalar);
     return m.group;
   }
 
@@ -230,6 +237,9 @@ export function createScene(canvas) {
       if (resolved.kind !== "procedural") return;
       dropship = buildProcedural(resolved.key);
       if (!dropship) return;
+      // D60 scale: the dropship carries its own manifest override — a
+      // vehicle, not a person.
+      dropship.scale.setScalar(resolved.entry.scale ?? tokens.scale?.[resolved.entry.class] ?? 1);
       const tint = tintFor(tokens, resolved.entry);
       if (tint) applyTint(dropship, tint);
       scene.add(dropship);
@@ -360,9 +370,11 @@ export function createScene(canvas) {
       const bx = x.toX + 0.5, bz = x.toY + 0.5;
       const dx = bx - ax, dz = bz - az;
       const len = Math.hypot(dx, dz) || 1;
-      mesh.position.set((ax + bx) / 2, 0.16, (az + bz) / 2);
+      // Waist height against D60-scale figures — a beam over their heads
+      // would read as sky decoration, not a line you must not stand in.
+      mesh.position.set((ax + bx) / 2, 0.09, (az + bz) / 2);
       mesh.rotation.y = -Math.atan2(dz, dx);
-      mesh.scale.set(len + 0.9, 0.06, 0.14);
+      mesh.scale.set(len + 0.9, 0.04, 0.1);
     }
     for (const j of view.junctions ?? []) {
       at(takeVisual(j.cut ? "junctionCut" : "junction"), j.cellX + 0.5, j.cellY + 0.5);
@@ -378,6 +390,10 @@ export function createScene(canvas) {
       obj.rotation.y = octantToRadians(c.facing);
     }
     for (const r of view.rivals) at(takeVisual("rival"), r.x / CELL, r.y / CELL);
+    // A figure's ring follows the figure scale (D60): a cell-sized halo under
+    // a 1/8-scale person reads as a searchlight, not a marker. Kept generous
+    // (2.6x the figure) because zoomed out the RING is how you find yourself.
+    const figureRing = (tokens.scale?.figure ?? 1) * 2.6;
     for (const a of view.agents) {
       // The agent's tint is its DETECTION state — gameplay information, so it
       // comes from the resolver rather than being decided here.
@@ -386,7 +402,7 @@ export function createScene(canvas) {
       // The ring is how you find your own operative in a busy street. It is a
       // HUD affordance rather than a thing in the world, so it is not a
       // manifest visual.
-      at(takeRing(tokens.marks[stateMark]), a.x / CELL, a.y / CELL, 0.12);
+      at(takeRing(tokens.marks[stateMark], figureRing), a.x / CELL, a.y / CELL, 0.04);
     }
     // Pinned contracts (playtest 3): a steady watched-ring at each pinned
     // objective, in the pinned mark — the pulse stays reserved for the
@@ -475,6 +491,6 @@ export function createScene(canvas) {
     draw, resize, setTerrain, screenToCell, drawDropship,
     cameraDistance: () => CAMERA_DISTANCE,
     hasTerrain: () => terrain !== null,
-    zoomBy(f) { zoomCells = Math.max(14, Math.min(70, zoomCells * f)); resize(); },
+    zoomBy(f) { zoomCells = Math.max(4, Math.min(70, zoomCells * f)); resize(); },
   };
 }

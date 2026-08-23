@@ -197,3 +197,26 @@ bounds, camera tilt copied from Fireline then adjusted.
   building mass carries a deterministic emissive window sheet
   (`buildWindowData`, roof band reserved dark). All colour still lives in
   `style_tokens.json`.
+
+## Playtest 7 additions (2026-08-23)
+
+- **The mission banner**: top-centre, always — mission type, current stage,
+  work progress, `(+n)` when more jobs are queued; red when the contract is
+  in its capture grace. Completion and failure are EVENTS (a finished
+  contract leaves the active list the same tick), so they FLASH for four
+  seconds — teal MISSION COMPLETE, red MISSION FAILED — before the banner
+  moves to the next job or hides. The banner reads the same first-active
+  contract the objective pill, beacon and edge arrow already point at, via
+  `models.missionBanner` (pure, tested); the ui gate asserts it names the
+  mission after accepting one.
+- **World scale (D60)**: the scene applies `tokens.scale[class]` (manifest
+  per-entry override) to every pooled visual at build time; figure rings
+  follow the figure, cell rings stay cell-sized; default zoom is street
+  level (10 cells), range 4–70.
+- **Gate hygiene**: every tool that spawns a server (`ui`, `smoke`, `mobile`,
+  `dbg_look`) now passes a throwaway `LEDGER_PATH` — `reports/ledger.json`
+  holds REAL player progression since the economy went live, and the ui gate
+  BUYS things. Also learned the hard way: a hung gate run holds the fixed
+  port, and the next run silently talks to the STALE server with old client
+  code — if the ui gate times out at random checks, look for an orphaned
+  `server/index.js` before suspecting the client.

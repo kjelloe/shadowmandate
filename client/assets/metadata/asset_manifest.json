@@ -110,7 +110,9 @@
     "dropship": {
       "procedural": "dropship",
       "class": "structure",
-      "tint": "dropship"
+      "tint": "dropship",
+      "scale": 0.3,
+      "note_scale": "A vehicle, not a person: overrides the class scale (see tokens note_scale)."
     }
   },
   "note_sites": "Playtest 5: site markers are TYPED - a vault reads as a vault, a relay as a dish - mapped from the engine's SITE_* order by models.siteVisual (guard-tested against the engine constants). tint is `state`: the caller passes the site/siteOffered/siteActive mark, so contract state still recolours the centrepiece."

@@ -26,7 +26,7 @@ import {
 import {
   setTerrainTokens, hexRgb, buildGround, buildBlocks, buildWindowData,
   buildClutter, clutterPlacements, WIN_TEX, ROOF_BAND, BLOCK_TILE,
-  CLUTTER_TILES, CLUTTER_KINDS, CLUTTER_CLEARANCE,
+  CLUTTER_TILES, CLUTTER_KINDS, CLUTTER_CLEARANCE, SIDEWALK_W,
 } from "../client/js/terrain3d.js";
 import { buildingRole, siteVisual } from "../client/js/models.js";
 import { TILE_COUNT } from "../engine/terrain.js";
@@ -397,6 +397,32 @@ test("no portrait layer is silently unrenderable", () => {
     for (const layer of portraitLayers(id).layers) {
       assert.ok(drawable.has(layer.id),
         `disguise ${id} stacks layer "${layer.id}", which has no draw routine`);
+    }
+  }
+});
+
+test("D60: the world scale tokens exist, cover every class, and honour the 8x ruling", () => {
+  const scale = tokens.scale;
+  assert.ok(scale, "no scale tokens — the D60 world-scale pass would silently not apply");
+  const classes = new Set(ROLES.map((role) => manifestEntry(manifest, role).class));
+  for (const cls of classes) {
+    const s = manifestEntry(manifest, [...ROLES].find((r) => manifestEntry(manifest, r).class === cls)) && scale[cls];
+    assert.ok(typeof s === "number" && s > 0 && s <= 1,
+      `class "${cls}" has no sane scale token (${s})`);
+  }
+  // The ruling, verbatim: the agent walks the sidewalk alongside at least
+  // THREE OTHER figures of his size — four abreast. Figure width is ~0.4
+  // cells pre-scale; the sidewalk width is the shared constant the renderer
+  // actually builds with, so this cannot drift into a second copy.
+  assert.ok(scale.figure <= 0.14,
+    `figure scale ${scale.figure} breaks the 8x ruling`);
+  assert.ok(0.4 * scale.figure * 4 <= SIDEWALK_W + 1e-9,
+    "the agent plus three others no longer fit the sidewalk abreast — the exact playtest-7 ask");
+  // Per-entry overrides must stay sane too (the dropship).
+  for (const role of ROLES) {
+    const entry = manifestEntry(manifest, role);
+    if (entry.scale !== undefined) {
+      assert.ok(entry.scale > 0 && entry.scale <= 1, `role ${role} has a wild scale override`);
     }
   }
 });

@@ -1,6 +1,9 @@
 // debugging/dbg_look.mjs — drop in and photograph the live look (kept: playtest 3 art pass).
 // Drop in and photograph the new look, twice: wide and street level.
 import { chromium } from "playwright";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join as joinPath } from "node:path";
 import { spawn } from "node:child_process";
 import { setTimeout as sleep } from "node:timers/promises";
 
@@ -9,7 +12,8 @@ const PORT = 8991;
 // 10Hz 1280x800 diorama and service automation at once, and the detail pass
 // made frames heavier. A still photograph does not care about pacing.
 const server = spawn("node", ["server/index.js"], {
-  env: { ...process.env, PORT: String(PORT), SEED: "4711", SIZE: "64", TICK_MS: "250" },
+  env: { ...process.env, PORT: String(PORT), SEED: "4711", SIZE: "64", TICK_MS: "250",
+    LEDGER_PATH: joinPath(mkdtempSync(joinPath(tmpdir(), "sm-look-")), "ledger.json") },
   stdio: "ignore",
 });
 try {

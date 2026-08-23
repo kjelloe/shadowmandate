@@ -156,6 +156,12 @@ These seven rulings resolve the open forks in the starter document and in `batch
 | **D58** | **Proper streets are a VISUAL treatment of the existing grid** (playtest 5). Street tiles draw as 2-lane with centre dashes, transit tiles as 4-lane avenues with a double centre line and lane dashes; intersections stay unpainted; kerbside lamps split lit / dead / blinking (two opposite phases). Widening streets in citygen was declined for the same reason as D55: it would invalidate fixtures, batteries and the M8 balance readings for a look goal the paint achieves. Same honesty contract as all set dressing: paint is flat, lamps stand off cell centres, nothing implies an obstacle the simulation does not model. |
 | **D59** | **Special-purpose buildings DRESS the existing gameplay anchors** (playtest 5). The Holding Site is the prison — perimeter walls, wire, corner watchtowers, barred gate, the state band over the gate. The six site types carry typed markers (cache / vault / lab / relay / transit hub / warehouse, mirroring the engine's SITE_* order with a guard test) so a mission target is recognisable at a glance, while contract state still recolours the tint slot. New engine building kinds and pure landmarks with no gameplay anchor (fire station et al) are deferred — scenery that looks clickable but is not would be an ambush. |
 
+### Fourteenth decision batch (2026-08-23, playtest 7)
+
+| # | Ruling |
+|---:|---|
+| **D60** | **World scale: figures render at 1/8 of a cell** (playtest 7: "the road and buildings have to be much bigger scale, 8 or 12 times"). The ENGINE GRID IS UNTOUCHED — cells, movement, detection and pathing are exactly what they were; this is render scale, applied by manifest class from `tokens.scale` at build time (per-entry override for the dropship, a vehicle). Consequences held together: the sidewalk widened to 0.2 cells so the agent walks it alongside three others of his size — four 8x-scaled figures abreast, guard-tested against the sidewalk constant the renderer actually builds with; clutter re-proportioned to human scale (a drum is chest-high); beams dropped to waist height; a figure's ring follows the figure while cell-anchored rings (HQ, pins, re-spray) stay cell-sized; the default camera moved to STREET LEVEL (~10 cells across, zoom 4–70) because at this scale that is where the game is played, with overview one zoom-out or the minimap away. |
+
 ---
 
 ## Terminology Contract (D8)

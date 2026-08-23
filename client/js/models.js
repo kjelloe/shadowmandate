@@ -421,6 +421,24 @@ export function hqInBuilding(view, hq) {
     && (view.buildings ?? []).some((b) => b.cellX === hq.cellX && b.cellY === hq.cellY);
 }
 
+// The mission banner (playtest 7): what am I doing RIGHT NOW, top-centre.
+// The first active contract carries it — the one the objective pill, beacon
+// and edge arrow already point at, so every "current mission" surface agrees.
+// Null when nothing is active (the completion flash is the caller's, because
+// "finished" is an EVENT and this function only sees state).
+export function missionBanner(view) {
+  const rows = activeRows(view);
+  if (!rows.length) return null;
+  const r = rows[0];
+  return {
+    kindKey: r.kindKey,
+    stageKey: r.stageKey,
+    progress: r.working ? r.progress : null,
+    atRisk: r.atRisk,
+    others: rows.length - 1,
+  };
+}
+
 // Where the operative is HEADING, as a cell — or null when they are already
 // there (playtest 6). Pure, so "the pin means a live move order" is a tested
 // promise rather than renderer behaviour: a pin that lingers after arrival
