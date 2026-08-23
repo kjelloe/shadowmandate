@@ -67,6 +67,9 @@ function splashText(b) {
     pad(t("splash.activeFirms"), b?.activeFirms ?? 0),
     pad(t("splash.contracts"), b?.contracts ?? 0),
     pad(t("splash.yourFirm"), session.firmId ?? "—"),
+    // Your money, before you commit to a drop (playtest 9): the bank rides on
+    // the view from the welcome, so it is known before any deployment.
+    pad(t("splash.bank"), session.view?.bank ?? 0),
     pad(t("splash.fieldStatus"), t("splash.undeployed")),
   ].join("\n");
 }
@@ -598,10 +601,15 @@ $("#view").addEventListener("pointerdown", (ev) => {
   if (ev.pointerType === "touch") pinch.set(ev.pointerId, ev);
   const rect = ev.target.getBoundingClientRect();
   const cell = renderer.screenToCell(ev.clientX - rect.left, ev.clientY - rect.top);
+  if (!cell) return;
   const now = Date.now();
   const isDouble = now - lastTap < 300;
   lastTap = now;
   if (isDouble) session.send({ type: 21, agentId: agent.id, stance: 2 });
+  // The tap's sub-cell position picks the walking position (playtest 9):
+  // tap by the kerb and the operative takes that sidewalk. The engine still
+  // receives only the cell — it is cell-granular by doctrine.
+  renderer.setMoveHint({ dx: cell.fx - 0.5, dz: cell.fz - 0.5 });
   session.send({ type: 20, agentId: agent.id, cellX: cell.x, cellY: cell.y });
 });
 

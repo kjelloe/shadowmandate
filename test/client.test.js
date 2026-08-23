@@ -618,6 +618,12 @@ test("D61: the four walking positions pick the one nearest the line to the desti
     `straight-ahead travel should take a road lane, got ${JSON.stringify(straight)}`);
   // Every offset it can produce is one of the four positions.
   assert.ok(WALK_POSITIONS.includes(straight.dz));
+  // The tap HINT wins over the line rule (playtest 9): tap by the north
+  // kerb and the operative walks that sidewalk even toward a southern goal.
+  assert.deepEqual(walkOffset(view(2, 3, 6, 7), tiles, size, { dx: 0.1, dz: -0.45 }),
+    { dx: 0, dz: -0.4 }, "the tapped kerb must win over the destination line");
+  assert.deepEqual(walkOffset(view(2, 3, 6, 3), tiles, size, { dx: 0, dz: 0.12 }),
+    { dx: 0, dz: 0.15 }, "a tap just right of centre reads as the right lane");
   // Off the road: no offset. Standing (no order): hold (null).
   assert.deepEqual(walkOffset(view(2, 1, 6, 0), tiles, size), { dx: 0, dz: 0 });
   const standing = { agents: [{ id: 0, state: 1, x: 2 * 256 + 128, y: 3 * 256 + 128,

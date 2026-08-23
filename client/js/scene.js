@@ -135,7 +135,7 @@ export function createScene(canvas) {
   // Ask the resolver WHAT to show; the manifest and factory decide HOW. A role
   // the manifest does not know draws nothing and says so, rather than quietly
   // rendering as something else.
-  function takeVisual(role, stateMark = null) {
+  function takeVisual(role, stateMark = null, zoomScale = 1) {
     const resolved = resolveVisual(manifest, role);
     if (resolved.kind !== "procedural") {
       if (!warned.has(role)) { warned.add(role); console.warn(`no visual for role "${role}"`); }
@@ -148,13 +148,17 @@ export function createScene(canvas) {
       // World scale (playtest 7, D60): figures render at a fraction of a cell
       // so the city reads 8x bigger. Class-scaled from tokens; a per-entry
       // manifest scale overrides.
-      group.scale.setScalar(resolved.entry.scale ?? tokens.scale?.[resolved.entry.class] ?? 1);
-      m = { role, group, inUse: false };
+      const baseScale = resolved.entry.scale ?? tokens.scale?.[resolved.entry.class] ?? 1;
+      group.scale.setScalar(baseScale);
+      m = { role, group, inUse: false, baseScale };
       pool.push(m);
       markers.add(group);
     }
     m.inUse = true;
     m.group.visible = true;
+    // Markers that are INFORMATION (sites, the pin) shrink as you close in
+    // (playtest 9: "4 times too big at max zoom"); world objects pass 1.
+    m.group.scale.setScalar(m.baseScale * zoomScale);
     const tint = tintFor(tokens, resolved.entry, stateMark);
     if (tint) applyTint(m.group, tint);
     return m.group;
@@ -329,6 +333,8 @@ export function createScene(canvas) {
     // NPC rings are deliberately smaller than your own: findable, not
     // shouting — YOUR ring is how you find yourself.
     const npcRing = figureRing * 0.7;
+    // Information markers shrink to a quarter at full close-up (playtest 9).
+    const markerZoom = Math.max(0.25, Math.min(1, zoomCells / 12));
     const own = view.agents?.find((a) => a.state === 1) ?? view.agents?.[0];
     const target = own
       ? { x: own.x / CELL, y: own.y / CELL }
@@ -346,7 +352,7 @@ export function createScene(canvas) {
     for (const s of view.sites) {
       // The type picks the model, the contract state picks the tint mark.
       const sv = siteVisual(roles.get(s.id), s.type);
-      at(takeVisual(sv.role, sv.mark), s.cellX + 0.5, s.cellY + 0.5);
+      at(takeVisual(sv.role, sv.mark, markerZoom), s.cellX + 0.5, s.cellY + 0.5);
     }
     for (const b of view.buildings) {
       at(takeVisual(buildingRole(b.kind)), b.cellX + 0.5, b.cellY + 0.5);
@@ -414,7 +420,7 @@ export function createScene(canvas) {
     // The walking position (D61): slew the drawn offset toward the pure
     // decision, so kerb-hops and street crossings are visible movement. A
     // null decision means "standing — hold the position you have".
-    const laneTarget = walkOffset(view, terrainTiles, mapSize);
+    const laneTarget = walkOffset(view, terrainTiles, mapSize, moveHint);
     if (laneTarget) {
       lane.x += (laneTarget.dx - lane.x) * 0.08;
       lane.z += (laneTarget.dz - lane.z) * 0.08;
@@ -466,9 +472,10 @@ export function createScene(canvas) {
       }
       const bob = 0.06 * Math.sin(view.tick / 2);
       movePin.visible = true; movePinRing.visible = true;
-      movePin.position.set(dest.cellX + 0.5, 0.75 + bob, dest.cellY + 0.5);
+      movePin.scale.setScalar(markerZoom);
+      movePin.position.set(dest.cellX + 0.5, 0.45 * markerZoom + 0.3 + bob, dest.cellY + 0.5);
       movePinRing.position.set(dest.cellX + 0.5, 0.1, dest.cellY + 0.5);
-      movePinRing.scale.setScalar(0.55);
+      movePinRing.scale.setScalar(0.55 * Math.max(markerZoom, 0.4));
     } else if (movePin) {
       movePin.visible = false; movePinRing.visible = false;
     }
@@ -487,6 +494,7 @@ export function createScene(canvas) {
       ensureBeacon();
       const pulse = 0.5 + 0.35 * Math.sin(view.tick / 4);
       beacon.visible = true; halo.visible = true;
+      beacon.scale.set(markerZoom, 1, markerZoom);
       beacon.position.set(objective.cellX + 0.5, 4.5, objective.cellY + 0.5);
       beacon.material.opacity = 0.25 + 0.25 * pulse;
       halo.position.set(objective.cellX + 0.5, 0.08, objective.cellY + 0.5);
@@ -509,11 +517,19 @@ export function createScene(canvas) {
     raycaster.setFromCamera(ndc, camera);
     const hit = new THREE.Vector3();
     if (!raycaster.ray.intersectPlane(plane, hit)) return null;
-    return { x: Math.floor(hit.x), y: Math.floor(hit.z) };
+    // fx/fz: WHERE in the cell the tap landed (playtest 9). The engine is
+    // cell-granular and only ever receives the cell — the fraction feeds the
+    // walking-position choice, so tapping near a kerb walks that sidewalk.
+    const x = Math.floor(hit.x), y = Math.floor(hit.z);
+    return { x, y, fx: hit.x - x, fz: hit.z - y };
   }
 
+  // The lateral the player ASKED for, remembered per move order (D61).
+  let moveHint = null;
+  function setMoveHint(hint) { moveHint = hint; }
+
   return {
-    draw, resize, setTerrain, screenToCell, drawDropship,
+    draw, resize, setTerrain, screenToCell, setMoveHint, drawDropship,
     cameraDistance: () => CAMERA_DISTANCE,
     hasTerrain: () => terrain !== null,
     zoomBy(f) { zoomCells = Math.max(3, Math.min(70, zoomCells * f)); resize(); },

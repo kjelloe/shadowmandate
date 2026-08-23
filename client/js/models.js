@@ -464,7 +464,11 @@ export function moveTarget(view) {
 // engine says it is in.
 export const WALK_POSITIONS = [-0.4, -0.15, 0.15, 0.4];
 
-export function walkOffset(view, tiles, size) {
+// `hint` is where IN the cell the player's tap landed ({dx, dz} from the
+// cell centre, playtest 9): tapping beside a kerb walks that sidewalk, the
+// whole way. Without a hint (or an old client) the line-to-destination rule
+// decides. Either way the offset snaps to one of the four positions.
+export function walkOffset(view, tiles, size, hint = null) {
   const a = ownAgent(view);
   if (!a || !tiles) return { dx: 0, dz: 0 };
   const cellX = Math.floor(a.x / 256), cellY = Math.floor(a.y / 256);
@@ -480,9 +484,10 @@ export function walkOffset(view, tiles, size) {
   if (ew === ns) return { dx: 0, dz: 0 };        // intersection or orphan cell
   const dest = moveTarget(view);
   if (!dest) return null;                         // standing: hold position
-  const perp = ew
-    ? (dest.cellY + 0.5) - (a.y / 256)
-    : (dest.cellX + 0.5) - (a.x / 256);
+  const perp = hint
+    ? (ew ? hint.dz : hint.dx)
+    : (ew ? (dest.cellY + 0.5) - (a.y / 256)
+          : (dest.cellX + 0.5) - (a.x / 256));
   const clamped = Math.max(-0.4, Math.min(0.4, perp));
   const snapped = WALK_POSITIONS.reduce((best, p) =>
     Math.abs(p - clamped) < Math.abs(best - clamped) ? p : best);
