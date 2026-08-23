@@ -13,17 +13,21 @@ and the Defend contract). **8h re-run after 8k**: five of six contract types now
 read in a 0.75–1.21x preference band and extraction is no longer dominant.
 Credentials are still rare, pacing is still short, and one seed shows
 unexplained accept churn — all flagged in S16. It is what the contract balance is waiting
-on (D42/D43). **Playtest 4 (2026-08-22, D54–D56)**: fixed 45°/45° dimetric
-camera, block massing with parcels (visual pass, D55), and the Field HQ now
-auto-establishes in the nearest free safehouse at drop-in (`hqLandingFor` in
-`engine/hq.js` — the single home of the landing rule). **Playtest 5
-(2026-08-22, D57–D61)**: the session economy actually works (starting bank
-200, purchases/bail genuinely debit, bank visible in the HUD, one-time
-ledger floor migration); one Leave button that really exits; patrol-clear
-landings; and the map-look pass — 2/4-lane streets with lamps, per-district
-building identity (`districtMap` on the wire), typed site markers and the
-prison block. Owner questions answered through D59; **Q44 is open** (the HQ
-safehouse doubles as the informant building).
+on (D42/D43). **Playtests 4–9 (2026-08-22/23, D54–D61)**: fixed 45°/45°
+dimetric camera with block massing (D54/D55); the HQ auto-establishes in the
+nearest CLEAR safehouse — clear of patrols AND cameras (`hqLandingFor`, the
+single home of the rule); the session economy works end to end (starting
+bank 200, real debits keyed on command TYPE at the socket layer, bank in the
+HUD and splash, throwaway `LEDGER_PATH` for every gate — `reports/ledger.json`
+holds REAL progression); streets are 4-lane with sidewalks, lamps and
+per-district identity (`districtMap` on the wire); typed site markers and
+the prison block; the mission banner; **D61: figures render at 1/16 of a
+cell** (engine grid untouched), street-level default zoom, zoom-adaptive HUD
+rings, taps snap to routable cells with a destination pin, and the tap's
+sub-cell fraction picks one of the FOUR walking positions (sidewalks/lanes).
+**Open: Q44** (HQ safehouse doubles as the informant building) and **Q45**
+(day-night cycle, weather, deeper district character, patrol density — all
+owner-directed backlog).
 
 ## Read first
 

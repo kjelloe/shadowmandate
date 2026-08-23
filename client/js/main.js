@@ -16,6 +16,8 @@ import {
   HEAT_CLASS as HEAT_CLASSES,
 } from "./models.js";
 
+import { createAttract } from "./attract.js";
+
 const $ = (sel) => document.querySelector(sel);
 
 // Surface failures ON THE PAGE. A silent client cost three playtest rounds of
@@ -37,6 +39,9 @@ window.addEventListener("error", (e) => fatal("uncaught", e.error ?? e.message))
 window.addEventListener("unhandledrejection", (e) => fatal("promise", e.reason));
 const show = (id) => {
   for (const s of document.querySelectorAll(".screen")) s.hidden = s.id !== id;
+  // The title diorama runs ONLY while the splash is up — the same battery
+  // rule that stopped the main diorama drawing behind hidden screens.
+  if (id === "splash") attract?.start(); else attract?.stop();
 };
 
 await loadLocale();
@@ -782,5 +787,13 @@ $("#building .close").addEventListener("click", () => {
   const a = ownAgent(session.view);
   if (a) session.send({ type: 35, agentId: a.id });
 });
+// The title diorama (playtest 10): built after loadArt so it has tokens, and
+// wrapped in try — a broken splash decoration must never block DROP IN.
+let attract = null;
+try {
+  attract = createAttract($("#attract"));
+} catch (err) {
+  fatal("attract", err);
+}
 show("splash");
 $("#splash-terminal").textContent = splashText(null);

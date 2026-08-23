@@ -14,8 +14,12 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
 [hidden] { display: none !important; }
 .screen { position: absolute; inset: 0; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 1rem; padding: 1rem; }
+/* The title diorama (playtest 10): the dark city lives BEHIND the terminal.
+   Everything over it needs a stacking context, or the canvas eats clicks. */
+#attract { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+#splash > :not(#attract) { position: relative; z-index: 1; }
 #splash-terminal { font-size: clamp(11px, 2.6vw, 15px); line-height: 1.6;
-  color: var(--ink); background: var(--panel); border: 1px solid var(--line);
+  color: var(--ink); background: rgba(29,32,38,.88); border: 1px solid var(--line);
   padding: 1.2rem 1.6rem; border-radius: 6px; white-space: pre; }
 button { font: inherit; min-height: 44px; padding: 0 1.1rem; cursor: pointer;
   background: var(--panel); color: var(--ink); border: 1px solid var(--line);

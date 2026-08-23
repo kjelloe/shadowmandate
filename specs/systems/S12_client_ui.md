@@ -247,3 +247,27 @@ Patrols and rivals carry zoom-adaptive rings in their radar mark colours
 tall, and a patrol you cannot see is an ambush — the opposition doctrine
 applied to the renderer. Both surfaces (diorama, radar) speak the same mark
 tokens, so they cannot disagree about what a colour means.
+
+## Playtest 10 — the title diorama (2026-08-23)
+
+The splash carries a living attract scene (`client/js/attract.js`): the dark
+city at street level and a 24-second vignette — an operative sneaks the
+sidewalk, ducks behind crates while a patrol's cone sweeps past, captures a
+rival (red flash) and walks the captive off. Rules it lives under:
+
+- **Pure theatre.** Wall-clock driven, no server, no engine; the world's
+  honesty rules do not apply. Theatre may cheat SCALE (actors play at twice
+  the world figure scale so the story reads from across the room) — never
+  colour: every material comes from the tokens and the models from the
+  manifest, and `attract.js` is inside the D46 colour guard's scan list, so
+  the splash can never advertise a look the game does not have.
+- **The choreography is a pure function** (`attractScript(t)`), so the STORY
+  is unit-tested without WebGL (`test/attract.test.js`): the hide really
+  overlaps the sweep, the capture really happens, the loop seam is clean.
+- **The stage is authored for the camera**: mass NORTH of the street only —
+  the first cut put towers south and they stood between the camera and the
+  entire vignette. The action strip sits low-left, clear of the terminal.
+- **Battery rule**: starts only while the splash is visible, stopped by
+  `show()` the moment any other screen takes over — same rule that stopped
+  the main diorama drawing behind hidden screens. A broken attract must
+  never block DROP IN (wrapped, surfaces via `fatal`).

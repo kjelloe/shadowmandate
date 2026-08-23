@@ -147,7 +147,7 @@ test("no world renderer carries colours of its own — tokens are the source of 
   // copy of the tile palette, in main.js's drop-zone map preview — so the
   // guard was green while the defect it exists to prevent was still present in
   // a file it did not read. A guard only protects what it reads.
-  for (const file of ["scene.js", "minimap.js", "terrain3d.js", "main.js", "portraits.js"]) {
+  for (const file of ["scene.js", "minimap.js", "terrain3d.js", "main.js", "portraits.js", "attract.js"]) {
     const hexes = code(file).match(/\b0x[0-9A-Fa-f]{6}\b|#[0-9A-Fa-f]{6}\b/g) ?? [];
     assert.deepEqual(hexes, [],
       `${file} still hardcodes colours (${hexes.join(", ")}) — they belong in style_tokens.json`);
