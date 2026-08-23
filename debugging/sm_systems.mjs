@@ -23,19 +23,26 @@ const record = (state) => {
 };
 
 // Walk the agent between district cores so it meets patrols, cover and heat.
-let leg = 0;
+// Re-order ON ARRIVAL, with a slow fallback cadence for stuck routes. The
+// original fixed 400-tick cadence made the arrival count depend on a leg
+// happening to complete inside its window — at patrol density 4 the walker
+// is noticed sooner, patrols converge, and it was downed before any window
+// closed, so the census cried MISSING for a system that fires fine (an
+// independent probe walked three legs uncaptured at the same seed). The
+// instrument's assumption broke, not the world.
+let leg = 0, lastOrder = 0;
+const order = (t) => {
+  const core = s.districts[leg % s.districts.length];
+  leg++;
+  lastOrder = t;
+  s = apply(s, { type: CMD_MOVE, agentId: 0, cellX: core.coreX, cellY: core.coreY });
+  record(s);
+};
+order(0);
 for (let t = 0; t < TICKS; t++) {
-  if (t % 400 === 0) {
-    const here = {
-      x: Math.floor(s.agents[0].x / 256), y: Math.floor(s.agents[0].y / 256),
-    };
-    const core = s.districts[leg % s.districts.length];
-    leg++;
-    s = apply(s, { type: CMD_MOVE, agentId: 0, cellX: core.coreX, cellY: core.coreY });
-    record(s);
-  }
   s = apply(s, { type: CMD_ADVANCE_TICK });
   record(s);
+  if (s.events.some((e) => e.type === "agentArrived") || t - lastOrder > 900) order(t);
 }
 
 console.log(`# systems census — seed ${SEED}, ${TICKS} ticks, ruleset ${s.rules.version}`);

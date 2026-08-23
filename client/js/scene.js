@@ -90,10 +90,22 @@ export function createScene(canvas) {
   const key = new THREE.DirectionalLight(new THREE.Color(L.key.color), L.key.intensity);
   key.position.set(...L.key.position);
   scene.add(key);
-  scene.add(new THREE.AmbientLight(new THREE.Color(L.ambient.color), L.ambient.intensity));
+  const ambient = new THREE.AmbientLight(new THREE.Color(L.ambient.color), L.ambient.intensity);
+  scene.add(ambient);
   const bounce = new THREE.DirectionalLight(new THREE.Color(L.bounce.color), L.bounce.intensity);
   bounce.position.set(...L.bounce.position);
   scene.add(bounce);
+  // D63a: the base tokens are the NIGHT look; lightingDay is what the cycle
+  // eases toward. Both ends precomputed; the mix slews so dawn is a fade, not
+  // a light switch.
+  const DAY = tokens.lightingDay ?? null;
+  const lightEnds = DAY ? {
+    key: [new THREE.Color(L.key.color), new THREE.Color(DAY.key.color), L.key.intensity, DAY.key.intensity],
+    ambient: [new THREE.Color(L.ambient.color), new THREE.Color(DAY.ambient.color), L.ambient.intensity, DAY.ambient.intensity],
+    bounce: [new THREE.Color(L.bounce.color), new THREE.Color(DAY.bounce.color), L.bounce.intensity, DAY.bounce.intensity],
+    clear: [new THREE.Color(L.clear), new THREE.Color(DAY.clear)],
+  } : null;
+  let dayMix = 0;   // 0 = night look, 1 = day look
 
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 500);
   let zoomCells = 3.5;         // how many cells fit across the view — the
@@ -487,6 +499,21 @@ export function createScene(canvas) {
       movePinRing.scale.setScalar(0.55 * Math.max(markerZoom, 0.4));
     } else if (movePin) {
       movePin.visible = false; movePinRing.visible = false;
+    }
+
+    // D63a: ease the lights toward the phase the VIEW reports (engine truth,
+    // no client cycle maths). Slew rate gives a ~2s dawn/dusk fade at 10Hz.
+    if (lightEnds) {
+      const target = view.night ? 0 : 1;
+      dayMix += (target - dayMix) * 0.05;
+      const m = Math.max(0, Math.min(1, dayMix));
+      key.color.lerpColors(lightEnds.key[0], lightEnds.key[1], m);
+      key.intensity = lightEnds.key[2] + (lightEnds.key[3] - lightEnds.key[2]) * m;
+      ambient.color.lerpColors(lightEnds.ambient[0], lightEnds.ambient[1], m);
+      ambient.intensity = lightEnds.ambient[2] + (lightEnds.ambient[3] - lightEnds.ambient[2]) * m;
+      bounce.color.lerpColors(lightEnds.bounce[0], lightEnds.bounce[1], m);
+      bounce.intensity = lightEnds.bounce[2] + (lightEnds.bounce[3] - lightEnds.bounce[2]) * m;
+      renderer.setClearColor(new THREE.Color().lerpColors(lightEnds.clear[0], lightEnds.clear[1], m));
     }
 
     // Faulty street lamps blink in two opposite phases off the world tick —

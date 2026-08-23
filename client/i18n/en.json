@@ -34,6 +34,8 @@
   "hud.heat.lockdown": "LOCKDOWN",
   "hud.cache": "CACHE",
   "hud.bank": "BANK",
+  "hud.phase.day": "DAY",
+  "hud.phase.night": "NIGHT",
   "banner.complete": "MISSION COMPLETE",
   "banner.failed": "MISSION FAILED",
   "hud.centreOnAgent": "CENTRE ON AGENT",

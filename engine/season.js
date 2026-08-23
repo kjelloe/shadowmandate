@@ -56,3 +56,26 @@ export function seasonStanding(state, cfg) {
     firms: state.firms.length,
   };
 }
+
+// ── The light cycle (D63a) ────────────────────────────────────────────────
+// Derived from the tick like everything calendar-shaped here — never stored,
+// so the four-places rule and dormancy jumps need no special handling. The
+// cycle is COMPRESSED game time (see data/season.json note): a deployment
+// must see both phases or waiting for dark can never be a decision.
+export function lightPhase(tick, dn) {
+  if (!dn) return { night: 0, phaseMille: 0 };
+  const day = Math.max(1, dn.dayTicks | 0);
+  const nightLen = Math.max(1, dn.nightTicks | 0);
+  const pos = ((tick | 0) % (day + nightLen) + (day + nightLen)) % (day + nightLen);
+  return pos < day
+    ? { night: 0, phaseMille: Math.trunc((pos * 1000) / day) }
+    : { night: 1, phaseMille: Math.trunc(((pos - day) * 1000) / nightLen) };
+}
+
+// The watcher-side sight percentage for this tick: 100 by day, the ruled
+// nightSightPct after dark. ONE home — detection and cameras both read this,
+// so the two watcher classes can never disagree about what night means.
+export function sightPctAt(tick, dn) {
+  if (!dn) return 100;
+  return lightPhase(tick, dn).night ? (dn.nightSightPct | 0) || 100 : 100;
+}

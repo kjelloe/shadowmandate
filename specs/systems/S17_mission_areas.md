@@ -76,11 +76,25 @@ has so far refused). Proposed: ENGINE-side lightweight ambient agents with
 no detection participation except flee-from-alarms — visible to everyone,
 never watchers. Needs its own slice and a Q ruling on density/perf.
 
-## Open questions for the owner (before AR-a code)
+## Answered (D64, 2026-08-24)
 
-1. Area size/feel: cramped interiors (~12x8 rooms) or compound-scale
-   (~24x16 with outdoor courtyards)?
-2. Failure: being burned inside — mission failed and ejected, or play on
-   under lockdown pressure (proposed: play on, D44's "worsening situation")?
-3. Takedown counter-play for OTHER PLAYERS inside (can a rival take YOU
-   down and leave you for the guards? proposed: yes — that IS sabotage).
+1. **Compound scale**: ~24x16 areas with outdoor courtyards between wings.
+2. **Burned inside: play on** — detection inside escalates the area's alarm
+   stages (lockdown pressure), never a fail-and-eject.
+3. **PvP takedowns inside: YES** — a rival can put you down and leave you
+   for the guards. That is what sabotage means.
+
+## Ambient city life — proposed numbers (D64 delegated)
+
+- **Civilians**: engine-side ambient walkers, `perDistrict: 8` (24 on a
+  64-map — twice the patrol count, so streets read peopled), roaming street
+  and plaza tiles on short seeded routes; they FLEE (hurry away from) any
+  cell with an active alarm stage or a burn event within `fleeRadius: 6`;
+  they are visible to everyone, never watchers, and never targets (D6 has
+  nothing to say to them). Perf: one instanced figure class, same movement
+  stepper as patrols; step every 2nd tick to halve cost.
+- **Hover cars**: 2 per district, transit avenues only, pure spline-riders
+  at kerb-flying height with a headlight cone; despawn/respawn at map edges.
+  Client-side theatre is ACCEPTABLE here (unlike civilians they never react
+  to the sim) — deterministic from seed, drawn by the road layer.
+- Both wait behind the mission-area slices unless the owner reorders.

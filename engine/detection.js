@@ -10,6 +10,7 @@ import { lineCells } from "./pathfind.js";
 import { worldToCellFloor } from "../shared/fixedmath.js";
 // Acyclic: cameras.js imports only agents.js, which imports no detection code.
 import { cameraCoversCell } from "./cameras.js";
+import { sightPctAt } from "./season.js";
 
 export const HEAT_MAX = 5;
 
@@ -32,8 +33,11 @@ export function hasLineOfSight(map, x0, y0, x1, y1) {
 
 // The effective distance at which this patrol can make this agent out, given
 // the agent's stance and the cover it is standing in.
-export function effectiveSightRadius(cfg, map, agent, heat) {
-  let radius = cfg.patrolSightRadius;
+export function effectiveSightRadius(cfg, map, agent, heat, sightPct = 100) {
+  // D63a: at night the WATCHER's base sight shortens (the ruled 30%); the
+  // stance and cover adjustments still apply on top, so cover matters in the
+  // dark exactly as it does by day.
+  let radius = Math.trunc((cfg.patrolSightRadius * (sightPct | 0)) / 100);
   if (heat >= cfg.heat.extraPatrolsAt) {
     radius = Math.trunc((radius * cfg.heat.sensorRadiusMulAt2) / 256);
   }
@@ -74,7 +78,8 @@ function manhattan(ax, ay, bx, by) {
 // Does any patrol currently perceive this agent?
 export function perceivedBy(state, cfg, agentsCfg, agent, heat) {
   const cell = agentCell(agent);
-  const sight = effectiveSightRadius(cfg, state.map, agent, heat);
+  const pct = sightPctAt(state.tick, state.rules?.season?.dayNight);
+  const sight = effectiveSightRadius(cfg, state.map, agent, heat, pct);
   const vehicleSpec = (agent.vehicleId >= 0 && state.rules)
     ? vehicleSpecFor(state, agent) : null;
   const noise = noiseRadiusFor(cfg, agentsCfg, agent, vehicleSpec);
@@ -93,7 +98,7 @@ export function perceivedBy(state, cfg, agentsCfg, agent, heat) {
   // both can see you: "who saw me" drives the converge-on-last-known-position
   // behaviour, and a camera has nowhere to converge from.
   for (const cam of state.cameras ?? []) {
-    if (!cameraCoversCell(cam, cell.x, cell.y, state.tick)) continue;
+    if (!cameraCoversCell(cam, cell.x, cell.y, state.tick, pct)) continue;
     if (hasLineOfSight(state.map, cam.cellX, cam.cellY, cell.x, cell.y)) return cam;
   }
   return null;

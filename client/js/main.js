@@ -225,6 +225,10 @@ function paint(s, events) {
   // player who cannot see it reads "cannot afford" as "the game is broken"
   // (playtest 5).
   $("#bank").textContent = `${t("hud.bank")} ${view.bank ?? 0}`;
+  // D63a: which half of the light cycle we are in — night is when the
+  // watchers see 30% shorter, so the phase is tactical information.
+  $("#phase").textContent = t(view.night ? "hud.phase.night" : "hud.phase.day");
+  $("#phase").className = view.night ? "pill night" : "pill";
 
   renderStances();
   renderBoard(view);

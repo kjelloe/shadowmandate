@@ -3,8 +3,21 @@
   "days": 28,
   "slots": 16,
   "worldSize": 64,
-  "carriesAcrossSeasons": ["recognition"],
+  "carriesAcrossSeasons": [
+    "recognition"
+  ],
   "note_reset": "D50 puts `upgrades` on this side of the line deliberately. The full upgrade tree is allowed BECAUSE the season bounds it: a veteran's advantage expires with the world instead of compounding across seasons, so craft persists (recognition) and power does not. The key is listed before upgrades exist so the rule is recorded where the tuning lives, not only in a spec.",
-  "resetsWithWorld": ["bank", "tierUnlocked", "reputation", "upgrades"],
-  "reconnectGraceTicks": 1200
+  "resetsWithWorld": [
+    "bank",
+    "tierUnlocked",
+    "reputation",
+    "upgrades"
+  ],
+  "reconnectGraceTicks": 1200,
+  "note_dayNight": "D63a. The LIGHT cycle is compressed game time, separate from the calendar day (TICKS_PER_DAY) the seasons count: a 40-60 min deployment (D11) must SEE both phases or 'wait for dark' can never be a decision. 30 min full cycle: 18 day / 12 night. nightSightPct is the ruled 30%: at night, WATCHERS (patrol sight, camera range) see at 70% \u2014 the agent's own senses are untouched, night helps the sneak without blinding the player.",
+  "dayNight": {
+    "dayTicks": 10800,
+    "nightTicks": 7200,
+    "nightSightPct": 70
+  }
 }

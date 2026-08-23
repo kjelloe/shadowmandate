@@ -34,6 +34,8 @@
   "hud.heat.lockdown": "PORTFORBUD",
   "hud.cache": "LAGER",
   "hud.bank": "BANK",
+  "hud.phase.day": "DAG",
+  "hud.phase.night": "NATT",
   "banner.complete": "OPPDRAG FULLFØRT",
   "banner.failed": "OPPDRAG MISLYKTES",
   "hud.centreOnAgent": "SENTRER PÅ AGENT",

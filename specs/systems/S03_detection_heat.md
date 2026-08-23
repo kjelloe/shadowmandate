@@ -130,3 +130,18 @@ lighting is art direction, D46: a `lightingNight` token set beside the
 existing one); window density rises at night. The HUD shows the phase the
 same way it shows the season day — derived, never sent (the client computes
 phaseOf from view.tick and the ruleset it already has).
+
+### AS BUILT — the clock and the watcher factor (DN-1, 2026-08-24)
+
+`lightPhase`/`sightPctAt` in engine/season.js (derived from the tick, wraps
+under dormancy); `data/season.json dayNight` = 18 min day / 12 min night
+(compressed game time — a D11 deployment must see both phases), nightSightPct
+70 (the ruled 30%). Applied in the TWO watcher seams and nowhere else:
+`effectiveSightRadius` (base radius scaled before stance/cover adjustments)
+and `cameraCoversCell` (range) — both read the one `sightPctAt`. The view
+carries `night` + `phaseMille`; the client eases lighting between the night
+tokens and the new `lightingDay` set and shows a DAY/NIGHT chip.
+test/daynight.test.js pins the real promise: a patrol that sees you by day
+MISSES you at night at the same distance. Still open from the draft: the
+night-aware AI scorer (a battery question — night changes burn probability,
+not any rule the AI must obey), and the S09 waiting actions.

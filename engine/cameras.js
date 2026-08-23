@@ -67,7 +67,7 @@ export function isDisabled(cam, tick) {
 //
 // Chebyshev range, matching how movement works: an 8-connected world measured
 // with a circle would lie about the corners.
-export function cameraCoversCell(cam, cellX, cellY, tick) {
+export function cameraCoversCell(cam, cellX, cellY, tick, sightPct = 100) {
   if (isDisabled(cam, tick)) return false;
   const dx = (cellX | 0) - (cam.cellX | 0);
   const dy = (cellY | 0) - (cam.cellY | 0);
@@ -76,7 +76,9 @@ export function cameraCoversCell(cam, cellX, cellY, tick) {
   // at zero distance, and "hide on the camera's own cell" would be a silly
   // exploit to leave open.
   if (dist === 0) return true;
-  if (dist > (cam.range | 0)) return false;
+  // D63a: night shortens a camera's reach exactly as it shortens a patrol's —
+  // the caller passes the same sightPctAt() both watchers read.
+  if (dist > Math.trunc(((cam.range | 0) * (sightPct | 0)) / 100)) return false;
   const oct = octantFor(Math.sign(dx), Math.sign(dy));
   return octantDistance(oct, cameraFacingAt(cam, tick)) <= (cam.arc | 0);
 }

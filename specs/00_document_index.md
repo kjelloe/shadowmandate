@@ -173,6 +173,12 @@ M7 in progress and playable in a browser (updated 2026-08-06)
 |---:|---|---|
 | D63 | Night + scale + mission areas | **Night sneak factor: 30%** (watchers see 30% shorter at night — unblocks the S03/S09 day-night build). **World scale**: figures at 1/8 of a cell with a much closer camera (default 3.5 cells, min 1.5 — the full 8x-taller figure at closest zoom); clutter/lamps/beams re-proportioned to match. **Mission areas (revises D45)**: live SHARED 3D spaces on the same world tick — "Begin extraction/surveillance" enters a guarded interior; sneak, bloodless takedowns, hackable terminals; other players may enter to help or sabotage; long goal: multi-team HQ assault. Spec: S17; first slices build extraction AND surveillance areas together. **City life**: patrols to 4/district (battery-verified); civilians and hover cars specced in S17 as engine-side ambient life, own slice |
 
+## Eighteenth decision batch (2026-08-24, Q46 answers)
+
+| # | Decision | Ruling |
+|---:|---|---|
+| D64 | Mission-area shape | **Compound scale** (~24x16 with courtyards). **Burned inside: play on** under escalating lockdown (D44's worsening-situation doctrine, indoors). **PvP takedowns inside: yes** — a rival can put you down and leave you for the guards; that IS sabotage. Ambient city-life numbers delegated (proposals in S17) |
+
 **Open owner questions: Q45 remainders** (the night sneak percentage; the
 patrol-density verdict once the batteries read) in `../dev-questions.md`.
 

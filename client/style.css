@@ -75,6 +75,7 @@ button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal)
 .pill.burned { color: var(--burn); border-color: var(--burn); }
 .pill.calm { color: var(--teal); } .pill.tense { color: var(--amber); }
 .pill.lockdown { color: var(--alarm); border-color: var(--alarm); }
+#phase.night { color: var(--slate); }
 
 .overlay { position: absolute; inset: auto 0 0 0; margin: auto; max-width: 34rem;
   background: var(--panel); border: 1px solid var(--line); border-radius: 8px 8px 0 0;

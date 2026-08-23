@@ -18,6 +18,7 @@ import { alarmStageOf } from "./security.js";
 import { cameraFacingAt, isDisabled } from "./cameras.js";
 import { beamLiveAt } from "./sensors.js";
 import { worldToCellFloor } from "../shared/fixedmath.js";
+import { lightPhase } from "./season.js";
 
 const SIGHT = 10;          // what your own agent can make out, in cells
 
@@ -35,10 +36,17 @@ export function buildView(state, firmId, detCfg) {
 
   const visible = (cx, cy) => eyes.some((e) => within(e.x, e.y, cx, cy, SIGHT));
 
+  const phase = lightPhase(state.tick, state.rules?.season?.dayNight);
+
   return {
     tick: state.tick,
     worldSeed: state.worldSeed,
     size: state.size,
+    // D63a: the light phase, computed engine-side so the client never
+    // duplicates the cycle maths. night flips the client lighting; the mille
+    // lets it ease around the boundary.
+    night: phase.night,
+    phaseMille: phase.phaseMille,
 
     firm: {
       id: firm.id, nameId: firm.nameId, state: firm.state,

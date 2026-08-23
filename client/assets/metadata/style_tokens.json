@@ -256,6 +256,32 @@
       ]
     }
   },
+  "note_lightingDay": "D63a. The base `lighting` IS the night look (the dystopia was authored dark); `lightingDay` is the overcast working day the cycle lerps toward \u2014 brighter and a touch warmer, never sunny: the city does not get nice weather. The scene eases between the two off view.night.",
+  "lightingDay": {
+    "clear": "#1A2027",
+    "key": {
+      "color": "#D8D2C4",
+      "intensity": 1.45,
+      "position": [
+        35,
+        60,
+        45
+      ]
+    },
+    "ambient": {
+      "color": "#6A6E76",
+      "intensity": 1.0
+    },
+    "bounce": {
+      "color": "#5E8E8A",
+      "intensity": 0.18,
+      "position": [
+        -30,
+        20,
+        -40
+      ]
+    }
+  },
   "note_portrait": "D47 portrait palette. Lived as a literal PALETTE object inside portraits.js until 2026-08-07 \u2014 the last colours outside this file, and the reason V1 acceptance criterion 14 stayed PARTIAL: a look candidate (Q41c/D48) reached the world but not the faces. Now a look is genuinely one file.",
   "portrait": {
     "backdrop": "#22262B",
