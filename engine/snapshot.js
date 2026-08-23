@@ -41,6 +41,8 @@ export function hashState(state) {
     w.writeU8(a.detection); w.writeI32LE(a.detectTimer);
     w.writeI32LE(a.carryKind); w.writeI32LE(a.carryRef);
     w.writeI32LE(a.insideBuildingId); w.writeU8(a.disguiseId ?? 0);
+    w.writeI32LE(a.insideAreaId); w.writeI32LE(a.areaCol); w.writeI32LE(a.areaRow);
+    w.writeI32LE(a.areaCool);
     w.writeI32LE(a.downTicks);
     w.writeI32LE(a.holdingSiteId); w.writeI32LE(a.vehicleId);
     for (const cid of a.contractIds) w.writeI32LE(cid);
@@ -105,6 +107,20 @@ export function hashState(state) {
     w.writeI32LE(h.condition); w.writeI32LE(h.cacheResources);
     w.writeI32LE(h.evacActive); w.writeI32LE(h.evacTicks); w.writeI32LE(h.evacPaused);
     w.writeI32LE(h.alarmTicks); w.writeI32LE(h.lootTicks); w.writeI32LE(h.lootedBy);
+  }
+  for (const ar of state.areas ?? []) {
+    w.writeI32LE(ar.id); w.writeI32LE(ar.siteId);
+    w.writeI32LE(ar.alarmStage); w.writeI32LE(ar.alarmTicks);
+    w.writeI32LE(ar.suppressedUntil); w.writeI32LE(ar.assetTaken);
+    for (const g of ar.guards) {
+      w.writeI32LE(g.id); w.writeI32LE(g.x); w.writeI32LE(g.y);
+      w.writeI32LE(g.wp); w.writeU8(g.facing); w.writeI32LE(g.cool);
+      w.writeI32LE(g.alertTicks); w.writeI32LE(g.downedUntil);
+      w.writeI32LE(g.targetX); w.writeI32LE(g.targetY);
+    }
+    for (const tm of ar.terminals) {
+      w.writeI32LE(tm.id); w.writeI32LE(tm.x); w.writeI32LE(tm.y);
+    }
   }
   for (const c of state.contractPool) {
     w.writeI32LE(c.id); w.writeI32LE(c.kind); w.writeI32LE(c.tier);

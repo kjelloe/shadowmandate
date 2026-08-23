@@ -29,6 +29,7 @@ import { findPath } from "./pathfind.js";
 import { inStandoff, aiStandoffChoice, CHOICE_NONE } from "./standoff.js";
 import { worldToCellFloor } from "../shared/fixedmath.js";
 import { sfc32Next } from "../shared/prng.js";
+import { areaObjective, areaTiles, areaEntryDoors, CARRY_AREA_ASSET, AT_WALL } from "./areas.js";
 
 export const P_CAUTIOUS = 0;
 export const P_GREEDY = 1;
@@ -319,6 +320,107 @@ export function aiDecide(state, firmId, rules) {
     return { command: null, telemetry };
   }
 
+  // ── S17: inside a mission area, the work IS the area ──
+  // A rule the actor does not know is a rule nobody follows: surveillance
+  // and extraction complete INSIDE now, so the AI walks the compound with
+  // the same commands a player uses. Deliberately naive (straight to the
+  // objective, straight out) — the guards are its difficulty, as they are
+  // the player's.
+  if (agent.insideAreaId >= 0) {
+    const contract = view.myContracts[0];
+    const areaWork = contract
+      && (contract.kind === 1 || contract.kind === 2)
+      && (contract.recoverAgentId ?? -1) < 0 && contract.stage === 2;
+    const area = state.areas.find((a) => a.id === agent.insideAreaId);
+    const cfgA = rules.areas;
+    const routeDone = (agent.route ?? []).length === 0
+      || (agent.routeIdx ?? 0) >= (agent.route ?? []).length;
+    const goTo = (x, y) =>
+      ({ command: { type: 20, agentId: agent.id, cellX: x, cellY: y }, telemetry });
+    if (!area) return { command: { type: 46, agentId: agent.id }, telemetry };
+    const doors = areaEntryDoors(areaTiles(state.worldSeed, area.siteId, cfgA),
+      cfgA.width | 0, cfgA.height | 0);
+    const door = doors[0] ?? { x: 1, y: (cfgA.height | 0) - 1 };
+    const atDoor = Math.max(Math.abs(agent.areaCol - door.x),
+      Math.abs(agent.areaRow - door.y)) <= 1;
+    const carrying = agent.carryKind === CARRY_AREA_ASSET;
+    const leaving = !areaWork || (contract.kind === 2 && carrying);
+    if (leaving) {
+      if (atDoor) return { command: { type: 46, agentId: agent.id }, telemetry };  // EXIT
+      if (routeDone) return goTo(door.x, door.y);
+      return { command: null, telemetry };
+    }
+    const obj = areaObjective(state.worldSeed, area.siteId, cfgA);
+    // Surveillance holds a cell SHORT of the objective: stepping onto it
+    // takes the asset (that is theft, a deliberate act, not a vantage), and
+    // the vantage check in contracts.js accepts Chebyshev 1.
+    const surv = contract.kind === 1;
+    if (surv && agent.detection !== 0) {
+      // Seen: the hold cannot tick and a camped guard never loses you if you
+      // stand still. Noticed → wait it out at the door; BURNED → leave, cool
+      // on the street, come back. Standing still while burned and watched is
+      // a deadlock: the watcher never blinks.
+      if (atDoor) {
+        if (agent.detection === DET_BURNED) return { command: { type: 46, agentId: agent.id }, telemetry };
+        return { command: null, telemetry };
+      }
+      if (routeDone) return goTo(door.x, door.y);
+      return { command: null, telemetry };
+    }
+    // Sneak from the first step inside: the entry strip's gap is sized for a
+    // sneaking silhouette (guard sight − 1), and upright is what it punishes.
+    if (agent.stance !== STANCE_SNEAK) {
+      return { command: { type: 21, agentId: agent.id, stance: STANCE_SNEAK }, telemetry };
+    }
+    const atObj = Math.max(Math.abs(agent.areaCol - obj.x),
+      Math.abs(agent.areaRow - obj.y)) <= (surv ? 1 : 0);
+    if (atObj && !(surv && agent.areaCol === obj.x && agent.areaRow === obj.y)) {
+      // Hold (surveillance ticks only while unseen).
+      return { command: null, telemetry };
+    }
+    let goal = obj;
+    if (surv) {
+      const tiles = areaTiles(state.worldSeed, area.siteId, cfgA);
+      const w = cfgA.width | 0, h = cfgA.height | 0;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const x = obj.x + dx, y = obj.y + dy;
+        if (x >= 0 && y >= 0 && x < w && y < h
+          && tiles[y * w + x] !== AT_WALL) { goal = { x, y }; break; }
+      }
+    }
+    // The one stealth instinct the AI gets: STAGE, then cross when the ring
+    // is clear. Guard positions are lawful here — an agent inside sees what
+    // a player inside sees. Beelining into the patrol at whatever phase it
+    // arrived on left three of the five pinned seeds without a single
+    // completion; freezing whenever a guard was "near" was worse — near the
+    // door a ring guard is always near, and everyone froze forever. So: wait
+    // in the south strip (outside sneak sight of the ring), commit when no
+    // guard is close to the crossing, and never stop mid-run.
+    const w2 = cfgA.width | 0, h2 = cfgA.height | 0;
+    const stagingY = h2 - 2;
+    if (agent.areaRow >= stagingY - 1 && agent.areaRow < h2
+      && !(agent.areaCol === goal.x && agent.areaRow === goal.y)) {
+      const tiles2 = areaTiles(state.worldSeed, area.siteId, cfgA);
+      let sx = Math.min(Math.max(goal.x, 1), w2 - 2);
+      while (sx < w2 - 1 && tiles2[stagingY * w2 + sx] === AT_WALL) sx++;
+      const ringClear = !area.guards.some((g) => (g.downedUntil | 0) <= state.tick
+        && Math.max(Math.abs(g.x - sx), Math.abs(g.y - stagingY))
+          <= (cfgA.guardSightRadius | 0) + 2);
+      if (!ringClear) {
+        const atStaging = agent.areaRow === stagingY
+          && Math.abs(agent.areaCol - sx) <= 1;
+        if (atStaging) {
+          if (!routeDone) return goTo(agent.areaCol, agent.areaRow);   // stop
+          return { command: null, telemetry };
+        }
+        if (routeDone) return goTo(sx, stagingY);
+        return { command: null, telemetry };
+      }
+    }
+    if (routeDone) return goTo(goal.x, goal.y);
+    return { command: null, telemetry };
+  }
+
   // ── S16 8k: get a pass, so secured work is not permanently off limits ──
   //
   // WHY THIS EXISTS. 8f gated acquisition and extraction behind a credential
@@ -585,6 +687,17 @@ export function aiDecide(state, firmId, rules) {
         return { command: { type: 41, agentId: agent.id, contractId: contract.id }, telemetry }; // ABANDON
       }
       if (arrivedAt(here, target)) {
+        // S17: surveillance and extraction work INSIDE — at the site, the
+        // next move is through the door. Surveillance waits out a burn on the
+        // street first: the hold only ticks while unseen, so walking back in
+        // burned re-runs the chase and never the contract.
+        if ((contract.kind === 1 || contract.kind === 2)
+          && (contract.recoverAgentId ?? -1) < 0 && contract.stage === 2) {
+          if (contract.kind === 1 && agent.detection !== DET_UNSEEN) {
+            return { command: null, telemetry };
+          }
+          return { command: { type: 45, agentId: agent.id }, telemetry };   // ENTER_AREA
+        }
         // Standing on it — the per-tick machine advances the stage. Sneak
         // while working: being seen is what fails a job.
         if (agent.stance !== STANCE_SNEAK) {

@@ -31,6 +31,7 @@ import { refillPool, rebuildOffers } from "../engine/contracts.js";
 import { spawnAiFirms, stepAiFirms } from "../engine/ai_firms.js";
 import { raiseAlarm, ALARM_LOCKDOWN } from "../engine/security.js";
 import { grantCredential } from "../engine/access.js";
+import { enterArea } from "../engine/areas.js";
 import { dropIn } from "../engine/hq.js";
 import { findDropZones } from "../engine/citygen.js";
 import { RULES } from "./helpers.js";
@@ -58,6 +59,15 @@ function populatedWorld() {
   const zone = findDropZones(s, RULES.citygen)[0];
   const err = dropIn(s, 0, zone.cellX, zone.cellY, RULES.hq, RULES.agents);
   if (err) throw new Error(`fixture drop-in failed: ${err}`);
+  // A mission area with an occupant (S17). Areas are hash-inert while empty
+  // like every lazy collection, so without one the twins' area writers —
+  // guards, terminals, alarm fields, and the agent's area coordinates — are
+  // never compared at all.
+  const insider = s.agents.find((a) => a.firmId === 0 && a.state !== 0);
+  insider.x = s.sites[0].cellX * 256 + 128;
+  insider.y = s.sites[0].cellY * 256 + 128;
+  const areaErr = enterArea(s, insider, RULES.areas);
+  if (areaErr) throw new Error(`fixture enterArea failed: ${areaErr}`);
   return s;
 }
 
@@ -79,6 +89,11 @@ test("the populated world actually populates — otherwise this file proves noth
     + "exactly the hole this file exists to close");
   assert.ok(s.hqs.length > 0,
     "no HQs — the twins' hq writers go uncompared (this was a real blind spot from M3 to playtest 4)");
+  assert.ok(s.areas.length > 0 && s.areas[0].guards.length > 0
+    && s.areas[0].terminals.length > 0,
+    "no populated mission area — the twins' area writers go uncompared");
+  assert.ok(s.agents.some((a) => a.insideAreaId >= 0),
+    "no agent inside an area — the area coordinate fields go uncompared at their defaults");
 });
 
 test("the paired hash functions agree on a world containing contracts and city", () => {

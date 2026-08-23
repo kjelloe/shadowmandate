@@ -6,7 +6,9 @@ import { apply } from "../engine/reducer.js";
 import { hashState } from "../engine/snapshot.js";
 import {
   CMD_ADVANCE_TICK, CMD_DROP_IN, CMD_ACCEPT_CONTRACT, CMD_ABANDON_CONTRACT,
+  CMD_ENTER_AREA,
 } from "../engine/commands.js";
+import { areaObjective, areaTiles, AT_WALL } from "../engine/areas.js";
 import {
   refillPool, rebuildOffers, poolTarget, completeContract,
   KIND_COURIER, KIND_SURVEILLANCE, KIND_EXTRACTION, KIND_ACQUISITION,
@@ -187,13 +189,36 @@ test("SCENARIO: surveillance only counts while the agent is unseen", () => {
   s = apply(s, { type: CMD_ADVANCE_TICK });
   assert.equal(s.contractPool.find((c) => c.id === 9100).stage, STAGE_WORK);
 
-  // Being noticed resets the hold — the contract is a stealth test, not a timer.
-  s.agents[agent.id].detection = 1;
-  s = apply(s, { type: CMD_ADVANCE_TICK });
-  s = apply(s, { type: CMD_ADVANCE_TICK });
-  assert.equal(s.contractPool.find((c) => c.id === 9100).stageTicks, 0,
+  // S17 AR-b: the hold happens INSIDE the mission area, at the vantage.
+  s = apply(s, { type: CMD_ENTER_AREA, agentId: agent.id });
+  assert.ok(s.agents[agent.id].insideAreaId >= 0, "agent did not enter the area");
+  const area = s.areas.find((a) => a.siteId === site.id);
+  const cfgA = RULES.areas;
+  const vantage = areaObjective(s.worldSeed, site.id, cfgA);
+  const tiles = areaTiles(s.worldSeed, site.id, cfgA);
+  const w = cfgA.width | 0;
+  // Hold a cell SHORT of the objective (standing on it is the theft, not the
+  // vantage) — the same spot the AI uses.
+  let hold = vantage;
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    const x = vantage.x + dx, y = vantage.y + dy;
+    if (tiles[y * w + x] !== AT_WALL) { hold = { x, y }; break; }
+  }
+  s.agents[agent.id].areaCol = hold.x;
+  s.agents[agent.id].areaRow = hold.y;
+
+  // A watched vantage does not tick: camp a guard next to the hold.
+  const g0 = area.guards[0];
+  g0.x = hold.x + (tiles[hold.y * w + hold.x + 1] !== AT_WALL ? 1 : -1);
+  g0.y = hold.y;
+  for (const g of area.guards.slice(1)) g.downedUntil = 1_000_000;
+  let seen = s;
+  for (let i = 0; i < 40; i++) seen = apply(seen, { type: CMD_ADVANCE_TICK });
+  assert.equal(seen.contractPool.find((c) => c.id === 9100).stageTicks, 0,
     "being seen must reset the surveillance hold");
 
+  // Unseen, the hold ticks. Down every guard so the vantage stays dark.
+  for (const g of area.guards) g.downedUntil = 1_000_000;
   s.agents[agent.id].detection = 0;
   // D41: surveillance is several separate passes, not one long stare — so a
   // single completed hold reports a PASS, and the contract keeps going.

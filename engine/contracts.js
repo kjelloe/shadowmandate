@@ -13,6 +13,7 @@ import { releaseAgent } from "./combat.js";
 import { hqOf } from "./hq.js";
 import { sfc32Next } from "../shared/prng.js";
 import { worldToCellFloor } from "../shared/fixedmath.js";
+import { areaObjective, CARRY_AREA_ASSET } from "./areas.js";
 
 export const KIND_COURIER = 0;
 export const KIND_SURVEILLANCE = 1;
@@ -436,6 +437,9 @@ export function objectiveCellOf(state, contract) {
 }
 
 function atObjective(state, agent, contract, radius = 1) {
+  // S17: same rule as atSite — inside the objective site's area counts.
+  if ((contract.recoverAgentId ?? -1) < 0
+    && insideSiteArea(state, agent, contract.siteId)) return true;
   const cell = objectiveCellOf(state, contract);
   if (!cell) return false;
   const here = agentCell(agent);
@@ -443,10 +447,20 @@ function atObjective(state, agent, contract, radius = 1) {
 }
 
 function atSite(state, agent, siteId, radius = 1) {
+  // S17: inside the site's mission area IS at the site — the street position
+  // freezes on entry, and an agent who came in off the diagonal (enterArea
+  // accepts Chebyshev 1, this check is Manhattan) froze one cell too far and
+  // never advanced past TRAVEL, looping in and out of the door forever.
+  if (insideSiteArea(state, agent, siteId)) return true;
   const cell = siteCell(state, siteId);
   if (!cell) return false;
   const here = agentCell(agent);
   return Math.abs(here.x - cell.x) + Math.abs(here.y - cell.y) <= radius;
+}
+
+function insideSiteArea(state, agent, siteId) {
+  const ar = (state.areas ?? []).find((x) => x.siteId === siteId);
+  return !!ar && agent.insideAreaId === ar.id;
 }
 
 // The player's explicit "do the thing here" action (plant, crack, pick up,
@@ -633,10 +647,17 @@ export function stepContracts(state, cfg, detCfg) {
         if (contract.stage === STAGE_TRAVEL && atSite(state, agent, contract.siteId)) {
           contract.stage = STAGE_WORK; contract.stageTicks = 0;
         } else if (contract.stage === STAGE_WORK) {
-          // Holding only counts while UNSEEN and while the patrol window is
-          // open — that is the whole contract.
-          if (!atSite(state, agent, contract.siteId) || agent.detection !== 0
-            || !windowOpen(state, contract.siteId, cfg)) {
+          // S17 AR-b: the hold happens INSIDE the mission area, at the
+          // vantage, and it ticks ONLY while unseen — hiding IS the gameplay
+          // (D63c). Stepping off the vantage, being seen, or leaving the
+          // area resets the current pass, exactly like the old street hold.
+          const sArea = state.areas.find((x) => x.siteId === contract.siteId);
+          const vantage = sArea
+            ? areaObjective(state.worldSeed, contract.siteId, state.rules.areas) : null;
+          const atVantage = sArea && agent.insideAreaId === sArea.id
+            && Math.max(Math.abs(agent.areaCol - vantage.x),
+              Math.abs(agent.areaRow - vantage.y)) <= 1;
+          if (!atVantage || agent.detection !== 0) {
             contract.stageTicks = 0;
           } else if (contract.stageTicks >= (spec.holdTicks ?? 300)) {
             // D41: several separate observation passes, not one long stare.
@@ -668,6 +689,20 @@ export function stepContracts(state, cfg, detCfg) {
         if (contract.stage === STAGE_TRAVEL && atObjective(state, agent, contract)) {
           contract.stage = STAGE_WORK; contract.stageTicks = 0;
           state.events.push({ type: "siteWorkStarted", contractId: contract.id, agentId: agent.id });
+        } else if (contract.stage === STAGE_WORK
+          && (contract.recoverAgentId ?? -1) < 0) {
+          // S17 AR-a: the work IS the mission area — go in, take the asset,
+          // walk it out. The street sees only the outcome: an agent stepping
+          // out of the compound carrying the goods flips the contract to its
+          // return leg. Recoveries (D51) below keep the persuasion flow —
+          // their objective is a Holding Site, which has no compound.
+          if (agent.insideAreaId < 0
+            && agent.carryKind === CARRY_AREA_ASSET
+            && agent.carryRef === contract.siteId) {
+            contract.stage = STAGE_RETURN;
+            contract.stageTicks = 0;
+            state.events.push({ type: "assetExtracted", contractId: contract.id, agentId: agent.id });
+          }
         } else if (contract.stage === STAGE_WORK) {
           // Leaving the contact mid-persuasion loses the progress; being seen
           // does not, because a grab is a risk you take, not a stealth reset.

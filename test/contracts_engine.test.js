@@ -46,8 +46,8 @@ test("the tick order is the documented contract", () => {
   // different way, but it is brittle about the thing it actually claims.
   const src = readFileSync(new URL("../engine/reducer.js", import.meta.url).pathname, "utf8");
   const body = src.slice(src.indexOf("function applyAdvanceTick"));
-  const order = ["stepAgent", "stepPatrol", "stepDetection", "stepHeat",
-    "stepArrests", "stepHqs", "stepContracts"];
+  const order = ["stepAgent", "stepPatrol", "stepAreas", "stepDetection",
+    "stepHeat", "stepArrests", "stepHqs", "stepContracts"];
   let cursor = -1;
   for (const fn of order) {
     const at = body.indexOf(`${fn}(`);
@@ -151,6 +151,10 @@ test("every command in the vocabulary is implemented", () => {
     [CMD.CMD_SITE_ACTION]: { agentId: 0, siteId: 0 },
     [CMD.CMD_STANDOFF_CHOICE]: { agentId: 0, standoffId: 0, choice: 1 },
     [CMD.CMD_DORMANCY_TICK]: { elapsedMs: 1000 },
+    [CMD.CMD_ENTER_AREA]: { agentId: 0 },
+    [CMD.CMD_EXIT_AREA]: { agentId: 0 },
+    [CMD.CMD_TAKEDOWN]: { agentId: 0 },
+    [CMD.CMD_HACK_TERMINAL]: { agentId: 0 },
   };
   for (const [typeStr, fields] of Object.entries(probe)) {
     const type = Number(typeStr);

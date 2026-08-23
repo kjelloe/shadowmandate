@@ -18,6 +18,7 @@ import {
   CMD_ENTER_BUILDING, CMD_EXIT_BUILDING, CMD_BUY_ITEM, CMD_STANDOFF_CHOICE,
   CMD_PAY_BAIL, CMD_DIALOGUE_CHOICE, CMD_DORMANCY_TICK,
   CMD_ENTER_VEHICLE, CMD_EXIT_VEHICLE,
+  CMD_ENTER_AREA, CMD_EXIT_AREA, CMD_TAKEDOWN, CMD_HACK_TERMINAL,
 } from "./commands.js";
 import { AGENT_ACTIVE, AGENT_DOWNED } from "./state.js";
 import {
@@ -26,6 +27,9 @@ import {
 import { stepDetection, stepHeat, agentCell } from "./detection.js";
 import { rescueAgent, captureAgent, useItem, stepArrests, payBail } from "./combat.js";
 import { dropIn, activateEvac, cancelEvac, extract, stepHqs, hqOf } from "./hq.js";
+import {
+  enterArea, exitArea, orderAreaMove, takedown, hackTerminal, stepAreas,
+} from "./areas.js";
 import {
   acceptContract, abandonContract, siteAction, stepContracts, reapContracts,
   refillPool, rebuildOffers, noteBurn, seedSitesNearHq,
@@ -95,6 +99,13 @@ export function copyState(state) {
     offers: state.offers.map((o) => ({ ...o, contractIds: o.contractIds.slice() })),
     standoffs: state.standoffs.map((s) => ({ ...s })),
     alarms: (state.alarms ?? []).map((a) => ({ ...a })),
+    // S17: guards and terminals are nested mutable arrays — the copyState
+    // rule (deep-copy every nested mutable, same commit that introduces it).
+    areas: (state.areas ?? []).map((ar) => ({
+      ...ar,
+      guards: ar.guards.map((g) => ({ ...g })),
+      terminals: ar.terminals.map((t) => ({ ...t })),
+    })),
     credentials: (state.credentials ?? []).map((c) => ({ ...c })),
     raids: (state.raids ?? []).map((r) => ({ ...r })),
     pacts: state.pacts.map((p) => ({ ...p })),
@@ -132,6 +143,13 @@ function applyMove(next, command) {
   if (!agent) return reject(next, command, "no_such_agent");
   if (agent.state !== AGENT_ACTIVE) return reject(next, command, "agent_not_active");
   if (agent.insideBuildingId >= 0) return reject(next, command, "agent_inside_building");
+  // Inside a mission area, the same MOVE command routes in AREA space (S17):
+  // one verb for the player and the AI, two floors for the world.
+  if (agent.insideAreaId >= 0) {
+    const err = orderAreaMove(next, agent, next.rules.areas, command.cellX, command.cellY);
+    if (err) return reject(next, command, err);
+    return next;
+  }
   // Tapping the cell you stand on is a valid non-order, not a routing failure.
   const here = agentCell(agent);
   if (here.x === command.cellX && here.y === command.cellY) return next;
@@ -403,6 +421,10 @@ function applyAdvanceTick(next) {
   }
   syncVehicles(next);
   for (const patrol of next.patrols) stepPatrol(next, r.detection, patrol);
+  // S17: the indoor layer steps after street movement and before street
+  // perception — occupants move, guards see, alarms breathe; the street
+  // systems below all SKIP agents who are inside an area.
+  stepAreas(next, r.areas, r.detection);
   stepDetection(next, r.detection, r.agents);
   // D39: attribute burns to the contracts they happened during. Done here,
   // from the events detection just emitted, rather than by having detection
@@ -489,6 +511,22 @@ export function apply(state, command) {
       return applyCutJunction(next, command);
     case CMD_LIFT_CREDENTIAL:
       return applyLiftCredential(next, command);
+    case CMD_ENTER_AREA: {
+      const err = enterArea(next, next.agents[command.agentId], next.rules.areas);
+      return err ? reject(next, command, err) : next;
+    }
+    case CMD_EXIT_AREA: {
+      const err = exitArea(next, next.agents[command.agentId], next.rules.areas);
+      return err ? reject(next, command, err) : next;
+    }
+    case CMD_TAKEDOWN: {
+      const err = takedown(next, next.agents[command.agentId], next.rules.areas, next.rules.combat);
+      return err ? reject(next, command, err) : next;
+    }
+    case CMD_HACK_TERMINAL: {
+      const err = hackTerminal(next, next.agents[command.agentId], next.rules.areas);
+      return err ? reject(next, command, err) : next;
+    }
     case CMD_SITE_ACTION:
       return applySiteAction(next, command);
     case CMD_ENTER_BUILDING:

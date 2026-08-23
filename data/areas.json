@@ -1,0 +1,16 @@
+{
+  "note": "S17 mission areas (D63c/D64). Compound scale: 24x16 with courtyards. All times in ticks at 10Hz. Guards are disable-only (D6): a takedown puts one down for guardDownTicks, exactly like combat does people. Terminals suppress the area alarm and are the junction-box's indoor cousin. Surveillance holds tick ONLY while unseen - hiding IS the gameplay.",
+  "width": 24,
+  "height": 16,
+  "guardsPerArea": 3,
+  "guardSightRadius": 4,
+  "guardSpeed": 20,
+  "guardAlertSpeedPct": 150,
+  "guardDownTicks": 900,
+  "takedownRange": 1,
+  "terminalSuppressTicks": 450,
+  "alarmStageTicks": 200,
+  "alarmMaxStage": 2,
+  "alarmSightBonusPct": 130,
+  "note_tiles": "Area tile ids reuse the street vocabulary where it fits: 0 open court, 1 corridor, 4 wall (impassable), 5 door (entry/exit), 8 cover crates. Walls block movement AND sight."
+}

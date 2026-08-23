@@ -129,6 +129,9 @@ export function stepDetection(state, cfg, agentsCfg) {
       agent.detectTimer = 0;
       continue;
     }
+    // S17: inside a mission area the GUARDS are the watchers (stepAreas);
+    // the street must neither see them nor decay their indoor detection.
+    if (agent.insideAreaId >= 0) continue;
     const cell = agentCell(agent);
     const districtId = districtAt(state, cell.x, cell.y);
     const heat = state.districts[districtId]?.heat ?? 0;
@@ -154,19 +157,25 @@ export function stepDetection(state, cfg, agentsCfg) {
         burnAgent(state, agent, cfg, districtId);
       }
     } else {
-      agent.detectTimer = (agent.detectTimer + 1) | 0;
-      if (agent.detection === DET_NOTICED && agent.detectTimer >= cfg.noticedDecayTicks) {
-        agent.detection = DET_UNSEEN;
-        agent.detectTimer = 0;
-        state.events.push({ type: "agentUnseen", agentId: agent.id });
-      } else if (agent.detection === DET_BURNED
-        && agent.detectTimer >= cfg.burnCooldownTicks
-        && heat < cfg.heat.checkpointsActiveAt) {
-        agent.detection = DET_NOTICED;
-        agent.detectTimer = 0;
-        state.events.push({ type: "agentCooled", agentId: agent.id });
-      }
+      decayDetection(state, agent, cfg, heat);
     }
+  }
+}
+
+// The unseen half of the ladder, in ONE place: the street (above) and the
+// area guards (S17) both feed it, so the decay thresholds cannot fork.
+export function decayDetection(state, agent, cfg, heat) {
+  agent.detectTimer = (agent.detectTimer + 1) | 0;
+  if (agent.detection === DET_NOTICED && agent.detectTimer >= cfg.noticedDecayTicks) {
+    agent.detection = DET_UNSEEN;
+    agent.detectTimer = 0;
+    state.events.push({ type: "agentUnseen", agentId: agent.id });
+  } else if (agent.detection === DET_BURNED
+    && agent.detectTimer >= cfg.burnCooldownTicks
+    && heat < cfg.heat.checkpointsActiveAt) {
+    agent.detection = DET_NOTICED;
+    agent.detectTimer = 0;
+    state.events.push({ type: "agentCooled", agentId: agent.id });
   }
 }
 

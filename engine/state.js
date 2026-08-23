@@ -57,6 +57,10 @@ export function createAgent(id) {
     route: [],                // pathfinder output being walked
     routeIdx: 0,
     insideBuildingId: -1,
+    // S17 mission areas: which area, and WHERE inside it (cell ints in the
+    // area's own local space — deliberately not world fixed-point).
+    insideAreaId: -1,
+    areaCol: 0, areaRow: 0, areaCool: 0,
     disguiseId: 0,            // D38 cover-shop appearance
     downTicks: 0,
     holdingSiteId: -1,
@@ -152,6 +156,9 @@ export function createInitialState(options = {}) {
     // so a world with nothing wrong writes no alarm bytes and hashes exactly as
     // it did before site security existed.
     alarms: [],
+    // S17 mission areas — lazy, hash-inert while empty like every collection
+    // here: a world where nobody has gone inside writes no area bytes.
+    areas: [],
     // M8 — S16 8e. Per-AGENT and per-SORTIE: a Firm cannot buy one card and
     // walk every operative through the same door, and the card does not
     // survive capture or extraction. Hash-inert while empty, like alarms.

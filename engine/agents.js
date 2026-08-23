@@ -98,6 +98,7 @@ export function orderMove(state, agent, cellX, cellY) {
 export function stepAgent(state, cfg, agent) {
   if (agent.state !== AGENT_ACTIVE && agent.state !== AGENT_DOWNED) return;
   if (agent.insideBuildingId >= 0) return;
+  if (agent.insideAreaId >= 0) return;   // S17: area movement is stepAreas' job
   const route = agent.route ?? [];
   if (!route.length || (agent.routeIdx ?? 0) >= route.length) {
     agent.moveProgress = 0;

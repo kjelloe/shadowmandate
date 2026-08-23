@@ -40,6 +40,12 @@ export const CMD_CUT_JUNCTION = 43;
 // game for anyone. This is the missing half.
 export const CMD_LIFT_CREDENTIAL = 44;
 
+// S17 mission areas (D63c/D64)
+export const CMD_ENTER_AREA = 45;
+export const CMD_EXIT_AREA = 46;
+export const CMD_TAKEDOWN = 47;
+export const CMD_HACK_TERMINAL = 48;
+
 // Encounters (S08)
 export const CMD_STANDOFF_CHOICE = 50;
 
@@ -70,6 +76,10 @@ export function validate(command) {
         && command.stance >= 0 && command.stance <= 2;
     case CMD_ENTER_VEHICLE:
     case CMD_EXIT_VEHICLE:
+    case CMD_ENTER_AREA:
+    case CMD_EXIT_AREA:
+    case CMD_TAKEDOWN:
+    case CMD_HACK_TERMINAL:
       return INT(command.agentId);
     case CMD_USE_ITEM:
       return INT(command.agentId) && INT(command.slot)
@@ -110,6 +120,10 @@ export function validate(command) {
 
 // Human-readable names, for events, probes and telemetry.
 export const COMMAND_NAMES = Object.freeze({
+  [CMD_ENTER_AREA]: "enterArea",
+  [CMD_EXIT_AREA]: "exitArea",
+  [CMD_TAKEDOWN]: "takedown",
+  [CMD_HACK_TERMINAL]: "hackTerminal",
   [CMD_ADVANCE_TICK]: "advanceTick",
   [CMD_DROP_IN]: "dropIn",
   [CMD_ACTIVATE_EVAC]: "activateEvac",

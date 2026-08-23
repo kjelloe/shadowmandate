@@ -19,6 +19,7 @@ import { cameraFacingAt, isDisabled } from "./cameras.js";
 import { beamLiveAt } from "./sensors.js";
 import { worldToCellFloor } from "../shared/fixedmath.js";
 import { lightPhase } from "./season.js";
+import { occupantsOf } from "./areas.js";
 
 const SIGHT = 10;          // what your own agent can make out, in cells
 
@@ -30,7 +31,7 @@ export function buildView(state, firmId, detCfg) {
   const firm = state.firms[firmId];
   if (!firm) return null;
   const own = state.agents.filter((a) => a.firmId === firmId && a.state !== 0);
-  const eyes = own.filter((a) => a.state === AGENT_ACTIVE).map(agentCell);
+  const eyes = own.filter((a) => a.state === AGENT_ACTIVE && a.insideAreaId < 0).map(agentCell);
   const hq = state.hqs.find((h) => h.firmId === firmId) ?? null;
   if (hq) eyes.push({ x: hq.cellX, y: hq.cellY });
 
@@ -63,6 +64,7 @@ export function buildView(state, firmId, detCfg) {
       // Where this agent is heading (playtest 6): the client's destination
       // pin. OWN agents only — a rival's destination would leak intent.
       targetX: a.targetX, targetY: a.targetY,
+      insideAreaId: a.insideAreaId, areaCol: a.areaCol, areaRow: a.areaRow,
       contractIds: a.contractIds.slice(),
     })),
 
@@ -71,7 +73,7 @@ export function buildView(state, firmId, detCfg) {
     rivals: state.agents
       .filter((a) => a.firmId >= 0 && a.firmId !== firmId
         && (a.state === AGENT_ACTIVE || a.state === AGENT_DOWNED)
-        && a.insideBuildingId < 0
+        && a.insideBuildingId < 0 && a.insideAreaId < 0
         && visible(worldToCellFloor(a.x), worldToCellFloor(a.y)))
       .map((a) => ({
         id: a.id, firmId: a.firmId, x: a.x, y: a.y, facing: a.facing,
@@ -164,6 +166,35 @@ export function buildView(state, firmId, detCfg) {
       id: b.id, kind: b.kind, cellX: b.entranceX, cellY: b.entranceY,
       exitX: b.exitX ?? -1, exitY: b.exitY ?? -1,
     })),
+
+    // S17: the inside of a mission area, for areas holding one of YOUR agents
+    // — inside the compound you see the compound, exactly like a player would.
+    // The GRID is not sent: the client derives it from worldSeed + siteId, the
+    // same pure function every replay uses. What crosses the wire is the
+    // mutable now — and only the now (D45): a guard is a position, a facing
+    // and two booleans, never a waypoint list; down and suppression are
+    // yes/no, never a timestamp a client could count down from.
+    areas: (state.areas ?? [])
+      .filter((ar) => own.some((a) => a.insideAreaId === ar.id))
+      .map((ar) => ({
+        id: ar.id, siteId: ar.siteId,
+        alarmStage: ar.alarmStage,
+        suppressed: ar.suppressedUntil > state.tick ? 1 : 0,
+        assetTaken: ar.assetTaken,
+        guards: ar.guards.map((g) => ({
+          id: g.id, x: g.x, y: g.y, facing: g.facing,
+          down: (g.downedUntil | 0) > state.tick ? 1 : 0,
+          alerted: g.alertTicks > 0 ? 1 : 0,
+        })),
+        terminals: ar.terminals.map((t) => ({ id: t.id, x: t.x, y: t.y })),
+        // Everyone else in the compound — same room, no fog indoors.
+        occupants: occupantsOf(state, ar.id)
+          .filter((o) => o.firmId !== firmId)
+          .map((o) => ({
+            id: o.id, firmId: o.firmId, x: o.areaCol, y: o.areaRow,
+            facing: o.facing, state: o.state, carrying: o.carryKind | 0,
+          })),
+      })),
 
     // The door the operative is standing on, if any — the client cannot offer
     // "go inside" without knowing there is an inside to go into.
