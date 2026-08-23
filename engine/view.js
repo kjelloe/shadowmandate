@@ -72,6 +72,9 @@ export function buildView(state, firmId, detCfg) {
 
     hq: hq ? {
       cellX: hq.cellX, cellY: hq.cellY, condition: hq.condition,
+      // Playtest 12: the client offers EVAC only where the reducer would
+      // accept it, so it needs the perimeter the reducer checks.
+      perimeterRadius: state.rules?.hq?.perimeterRadius ?? 4,
       cacheResources: hq.cacheResources, evacActive: hq.evacActive,
       evacTicks: hq.evacTicks, evacPaused: hq.evacPaused,
       alarmTicks: hq.alarmTicks,

@@ -35,7 +35,7 @@ from the commissioned batteries (`reports/sweeps/patrol_base{3,4}.csv`).
 
 ## Read first
 
-1. `specs/00_document_index.md` — document map, rulings D1–D62
+1. `specs/00_document_index.md` — document map, rulings D1–D63
 2. `plan-version1.md` — the operational plan (milestones M0–M7, gates)
 3. `plan-implementation-order.md` — slice-by-slice execution order, per-milestone
    STATUS markers (battery runbook: `ops/BATCH_PC.md`, private ops repo)

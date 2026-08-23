@@ -12,6 +12,7 @@ import {
   ownAgent, heatDisplay, districtUnder, boardRows, activeRows, objectiveFor,
   objectiveBearing, evacDisplay, toastsFor, debriefRows, reputationBar,
   payloadForBuilding, overlayRows, disguiseFor, districtChoices, standingRows, missionBanner,
+  journalLine, gameClock, evacAvailable, SPOKEN_LINES,
   cuttableJunction, liftableGuard, dropshipFlight, DROPSHIP_MS, MAX_PINS,
   HEAT_CLASS as HEAT_CLASSES,
 } from "./models.js";
@@ -91,6 +92,17 @@ session.onChange((s, events) => {
   if ((events ?? []).some((e) => e.type === "dropZonesReady")) showZonePicker();
   if ((events ?? []).some((e) => e.type === "debriefReady")) { showDebrief(s); return; }
   for (const e of events ?? []) {
+    // The journal (playtest 12): every event with a line gets a timestamped
+    // entry — mission taken/completed/failed, what the informant said, burns,
+    // evac beats. Session-scoped, capped, rendered on demand.
+    const line = journalLine(e);
+    if (line) {
+      journal.push({ tick: s.view.tick, ...line });
+      if (journal.length > 250) journal.shift();
+      // A purchase's spoken line ALSO answers in the dialogue, so success
+      // reads in character exactly like refusal does.
+      if (line.spoken) dialogResponse = { key: line.key, until: Date.now() + 6000 };
+    }
     if (e.type === "rejected") {
       // A refused purchase is the NPC saying no (playtest 8): it answers IN
       // the dialogue, in character — the technical toast is for everything
@@ -217,6 +229,9 @@ function paint(s, events) {
   renderStances();
   renderBoard(view);
   renderBanner(view, events);
+  renderJournal();
+  // EVAC is offered only where the reducer would accept it (playtest 12).
+  $("#evac-btn").hidden = !evacAvailable(view);
   renderActive(view);
   renderObjectiveArrow(view);
   renderBuilding(view);
@@ -292,6 +307,28 @@ function renderBanner(view, events) {
   const pct = b.progress !== null ? ` ${Math.round(b.progress * 100)}%` : "";
   const more = b.others > 0 ? ` (+${b.others})` : "";
   $("#mission-stage").textContent = `${t(b.stageKey)}${pct}${more}`;
+}
+
+// ── The journal overlay (playtest 12) ──────────────────────────────────────
+const journal = [];
+let journalRendered = -1;
+function renderJournal() {
+  const panel = $("#journal");
+  if (panel.hidden || journalRendered === journal.length) return;
+  journalRendered = journal.length;
+  const list = $("#journal-list");
+  list.textContent = "";
+  for (const entry of [...journal].reverse()) {
+    const li = document.createElement("li");
+    const when = document.createElement("span");
+    when.className = "when";
+    when.textContent = gameClock(entry.tick).label;
+    const what = document.createElement("span");
+    what.textContent = t(entry.key, ...(entry.args ?? []).map((a) =>
+      typeof a === "string" && a.includes(".") ? t(a) : a));
+    li.append(when, what);
+    list.appendChild(li);
+  }
 }
 
 function renderBoard(view) {
@@ -777,6 +814,12 @@ $("#enter-btn").addEventListener("click", () => {
 });
 $("#board-btn").addEventListener("click", () => { $("#board").hidden = !$("#board").hidden; });
 $("#evac-btn").addEventListener("click", () => session.send({ type: 11, firmId: session.firmId }));
+$("#journal-btn").addEventListener("click", () => {
+  const panel = $("#journal");
+  panel.hidden = !panel.hidden;
+  journalRendered = -1;
+  renderJournal();
+});
 $("#intro-dismiss").addEventListener("click", () => {
   $("#intro").hidden = true;
   localStorage.setItem("sm_intro_seen", "1");

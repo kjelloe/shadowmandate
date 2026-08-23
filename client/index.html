@@ -54,6 +54,7 @@
         <div id="cache" class="pill"></div>
         <div id="objective" class="pill" hidden></div>
         <button id="board-btn" class="primary" data-i18n="board.title"></button>
+        <button id="journal-btn" data-i18n="journal.title"></button>
         <button id="enter-btn" data-i18n="building.enter" hidden></button>
       <button id="cut-btn" data-i18n="junction.cut" hidden></button>
       <button id="lift-btn" data-i18n="access.lift" hidden></button>
@@ -103,6 +104,11 @@
       <button class="close" aria-label="leave">&#10005;</button>
     </div>
 
+    <div id="journal" class="overlay" hidden>
+      <h2 data-i18n="journal.title"></h2>
+      <ul id="journal-list"></ul>
+      <button class="close" aria-label="close">&#10005;</button>
+    </div>
     <div id="evac" class="overlay" hidden>
       <h2 data-i18n="evac.beaconActive"></h2>
       <p id="evac-eta"></p>

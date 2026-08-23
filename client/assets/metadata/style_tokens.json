@@ -212,9 +212,9 @@
       "tank": "#3A4046"
     }
   },
-  "note_scale": "World scale (playtest 7, D60): the engine grid is untouched \u2014 cells are cells \u2014 but FIGURES render at 1/16 of a cell so streets, sidewalks and buildings read 16x bigger (playtest 8 raised the playtest-7 8x \u2014 room for more agents on the sidewalks later). Applied by manifest CLASS at build time in the scene; a per-entry `scale` in the manifest overrides the class (the dropship is a vehicle, not a person). Rings that mark a CELL (HQ, pins, re-spray) stay cell-scale; the ring under a figure follows the figure.",
+  "note_scale": "World scale (playtest 7, D60): the engine grid is untouched \u2014 cells are cells \u2014 but FIGURES render at 1/8 of a cell (playtest 12: 1/16 figures were a few pixels \u2014 the ruled ratio is figures 8x taller on screen with roads 4x wider, i.e. figures 2x relative plus a much closer camera; the closest zoom delivers the full 8x). Applied by manifest CLASS at build time in the scene; a per-entry `scale` in the manifest overrides the class (the dropship is a vehicle, not a person). Rings that mark a CELL (HQ, pins, re-spray) stay cell-scale; the ring under a figure follows the figure.",
   "scale": {
-    "figure": 0.0625,
+    "figure": 0.125,
     "marker": 0.5,
     "structure": 1.0
   },

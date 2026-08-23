@@ -33,7 +33,7 @@
     "minClearRadius": 8
   },
   "patrols": {
-    "perDistrictBase": 3,
+    "perDistrictBase": 4,
     "routeLengthMin": 8
   },
   "streetSpacing": 8,

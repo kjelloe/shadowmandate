@@ -677,12 +677,12 @@ export function clutterPlacements(tiles, size, seed, density) {
 // figure-height, a drum is chest-high — props keep their human proportions
 // while the city towers over everyone.
 const CLUTTER_GEO = {
-  crate: () => new THREE.BoxGeometry(0.06, 0.06, 0.06),
-  barrel: () => new THREE.CylinderGeometry(0.019, 0.021, 0.055, 7),
-  vent: () => new THREE.BoxGeometry(0.09, 0.036, 0.065),
-  tarp: () => new THREE.BoxGeometry(0.1, 0.028, 0.09),
+  crate: () => new THREE.BoxGeometry(0.1, 0.1, 0.1),
+  barrel: () => new THREE.CylinderGeometry(0.032, 0.035, 0.095, 7),
+  vent: () => new THREE.BoxGeometry(0.15, 0.06, 0.11),
+  tarp: () => new THREE.BoxGeometry(0.18, 0.045, 0.15),
 };
-const CLUTTER_BASE_H = { crate: 0.06, barrel: 0.055, vent: 0.036, tarp: 0.028 };
+const CLUTTER_BASE_H = { crate: 0.1, barrel: 0.095, vent: 0.06, tarp: 0.045 };
 
 export function buildClutter(tiles, size, seed) {
   if (!CLUTTER) return null;
@@ -800,9 +800,9 @@ export function roadFeatures(tiles, size, seed, road) {
   return { markings, lamps, sidewalks };
 }
 
-// Re-proportioned for D61 (figures at 1/16 cell): a lamp is ~5 figure
+// Proportioned for 1/8-cell figures (playtest 12): a lamp is ~5 figure
 // heights, which is what a street light actually is.
-const LAMP_H = 0.34;
+const LAMP_H = 0.56;
 
 // The meshes. One instanced mesh per material; the blinking lamps' glowing
 // parts land in two groups (A and B, opposite phases) that the scene toggles
@@ -862,7 +862,7 @@ export function buildRoads(tiles, size, seed) {
   }
 
   if (lamps.length) {
-    const postGeo = new THREE.CylinderGeometry(0.01, 0.013, LAMP_H, 5);
+    const postGeo = new THREE.CylinderGeometry(0.016, 0.02, LAMP_H, 5);
     const posts = new THREE.InstancedMesh(
       postGeo,
       new THREE.MeshLambertMaterial({ color: new THREE.Color().setRGB(...hexRgb(ROAD.lampPost)) }),
@@ -904,9 +904,9 @@ export function buildRoads(tiles, size, seed) {
       buckets.get(key).push(l);
     }
     const blink = { A: [], B: [] };
-    const headGeo = new THREE.BoxGeometry(0.04, 0.025, 0.04);
-    const coneGeo = new THREE.ConeGeometry(0.19, LAMP_H - 0.04, 8, 1, true);
-    const poolGeo = new THREE.CircleGeometry(0.21, 12);
+    const headGeo = new THREE.BoxGeometry(0.055, 0.035, 0.055);
+    const coneGeo = new THREE.ConeGeometry(0.3, LAMP_H - 0.06, 8, 1, true);
+    const poolGeo = new THREE.CircleGeometry(0.34, 12);
     for (const [key, list] of buckets) {
       const off = key === "off";
       const warm = key.endsWith("warm");

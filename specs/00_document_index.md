@@ -17,7 +17,7 @@ M7 in progress and playable in a browser (updated 2026-08-06)
 | 6 | `06_open_questions.md` | Archive of answered design questions (Q1–Q21); the live queue is `../dev-questions.md` |
 | 7 | `07_spec_map.md` | The spec structure: how design docs, plans, and system specs relate; milestone → spec matrix |
 | `08_reference_mission_taxonomy.md` | Bullfrog mission corpus mapped to our contract types; the Eliminate-family collision with D6; funding/research/upgrade meta-layer | research note |
-| 8 | `systems/S01…S16` | **System specs (implementation contracts)** — state shapes, commands, ruleset keys, behaviour tables per system. S16 (opposition & site security) is specced, not built — it is what M8 implements |
+| 8 | `systems/S01…S17` | **System specs (implementation contracts)** — state shapes, commands, ruleset keys, behaviour tables per system. S16 (opposition & site security) is specced, not built — it is what M8 implements |
 | — | `../dev-questions.md` | **Live question queue (Q22+)** — pending decisions with proposals; answers become rulings and move to `06` |
 | — | `../plan-version1.md` (+ `.html`) | **The operational V1 plan** — features in/out, milestones M0–M7, gates, acceptance (supersedes `03` for day-to-day work) |
 | — | `../plan-version2.md` (+ `.html`) | The operational V2 plan — M9–M14 (renumbered 2026-08-23: M8 is the opposition milestone built between the plans) |
@@ -166,6 +166,12 @@ M7 in progress and playable in a browser (updated 2026-08-06)
 | # | Decision | Ruling |
 |---:|---|---|
 | D62 | Playtest 10 omnibus | **Q44 closed: HQ and informant stay ONE building** (no separate handler actions exist; revisit only if they ever do). Day-night: S03/S09 spec drafts commissioned; **cubby holes cost 10**; the night sneak percentage still needs a number. Walking: **sensible side en route** (right hand of travel), tapped kerb takes over on the final stretch. The splash carries a **wordmark** over the title diorama. The drop picker shows **server-predicted landings** and deploys the server's own pick — the emblem is a promise, not an estimate. **plan-version2 renumbered M9–M14**; M8 stays the opposition milestone. Patrol-density batteries commissioned at 3 and 4 per district |
+
+## Seventeenth decision batch (2026-08-23, playtest 12)
+
+| # | Decision | Ruling |
+|---:|---|---|
+| D63 | Night + scale + mission areas | **Night sneak factor: 30%** (watchers see 30% shorter at night — unblocks the S03/S09 day-night build). **World scale**: figures at 1/8 of a cell with a much closer camera (default 3.5 cells, min 1.5 — the full 8x-taller figure at closest zoom); clutter/lamps/beams re-proportioned to match. **Mission areas (revises D45)**: live SHARED 3D spaces on the same world tick — "Begin extraction/surveillance" enters a guarded interior; sneak, bloodless takedowns, hackable terminals; other players may enter to help or sabotage; long goal: multi-team HQ assault. Spec: S17; first slices build extraction AND surveillance areas together. **City life**: patrols to 4/district (battery-verified); civilians and hover cars specced in S17 as engine-side ambient life, own slice |
 
 **Open owner questions: Q45 remainders** (the night sneak percentage; the
 patrol-density verdict once the batteries read) in `../dev-questions.md`.

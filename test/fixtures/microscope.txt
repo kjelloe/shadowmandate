@@ -1,16 +1,16 @@
 # Shadow Mandate city — seed 4711, size 16, spacing 5
-# districts 3  sites 9  buildings 9  patrols 9
+# districts 3  sites 9  buildings 9  patrols 12
 legend: . open  = street  : alley  P plaza  # block  D door  T transit
         ! checkpoint  y yard  , rough  ~ water
 marks:  S site  H holding  i informant  $ market  c cover shop  x its back door
         p patrol  0-4 district core
 ...P=..=...=y.yy
-.###pSx=$P#p##S.
+.###pSx=$P#=##S.
 .###=#H2###=#y#.
-.S##=##=#$#=##c.
-TTTpTTpTTT1TTppT
-.###=c#=iSx=###.
-.##i=##=###=#.#.
+.S##p##=#$#=##c.
+TTpTTTTTTT1TTppT
+.###=c#=iSxp###.
+.##i=##p###=#.#.
 .###=##p###0##$.
 ===p==p=========
 .###=##=##c=#S#.

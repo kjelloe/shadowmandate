@@ -518,6 +518,76 @@ export function walkOffset(view, tiles, size, hint = null) {
   return ew ? { dx: 0, dz: snapped } : { dx: snapped, dz: 0 };
 }
 
+// EVAC is offered only where the server would accept it (playtest 12): a
+// button that offers what the reducer refuses is worse than no button. The
+// D51 exception stands — with no operative in the field, folding is allowed
+// from anywhere.
+export function evacAvailable(view) {
+  const hq = view?.hq;
+  if (!hq) return false;
+  if (hq.evacActive) return true;                 // cancel/status stays visible
+  const a = ownAgent(view);
+  if (!a) return true;                            // D51: fold with nobody left
+  const r = hq.perimeterRadius ?? 4;
+  return Math.abs(Math.floor(a.x / 256) - hq.cellX)
+    + Math.abs(Math.floor(a.y / 256) - hq.cellY) <= r;
+}
+
+// ── The journal (playtest 12) ──────────────────────────────────────────────
+// "What was said, at what day/time; when missions were undertaken and
+// completed or failed." Pure event->line mapping so the journal's CONTENT is
+// unit-tested; main.js only accumulates and renders.
+
+// Mirrors engine/season.js TICKS_PER_DAY (the client cannot import the
+// engine; a guard test keeps the two in step).
+export const TICKS_PER_DAY = 864000;
+export function gameClock(tick) {
+  const t = Math.max(0, tick | 0);
+  const day = Math.trunc(t / TICKS_PER_DAY) + 1;
+  const frac = (t % TICKS_PER_DAY) / TICKS_PER_DAY;
+  const mins = Math.trunc(frac * 24 * 60);
+  const hh = String(Math.trunc(mins / 60)).padStart(2, "0");
+  const mm = String(mins % 60).padStart(2, "0");
+  return { day, hh, mm, label: `D${day} ${hh}:${mm}` };
+}
+
+// What the informant/vendor SAID for a given purchase — the same lines the
+// dialogue shows, so the journal is a transcript, not a paraphrase.
+export const SPOKEN_LINES = {
+  "dialog.informant.askRival": "dialog.respond.rival",
+  "dialog.informant.askHeat": "dialog.respond.heat",
+  "dialog.informant.askCredential": "dialog.respond.credential",
+};
+
+export function journalLine(e) {
+  const kind = (k) => CONTRACT_KEYS[k] ?? "contract.courier";
+  switch (e.type) {
+    case "firmDeployed": return { key: "journal.deployed", args: [] };
+    case "contractAccepted": return { key: "journal.accepted", args: [kind(e.kind)] };
+    case "contractCompleted": return { key: "journal.completed", args: [kind(e.kind), e.reward ?? 0] };
+    case "contractFailed": return { key: "journal.failed", args: [e.reason ?? ""] };
+    case "contractExpired": return { key: "journal.expired", args: [] };
+    case "agentBurned": return { key: "journal.burned", args: [] };
+    case "agentCaptured": return { key: "journal.captured", args: [] };
+    case "agentArrested": return { key: "journal.arrested", args: [] };
+    case "agentDowned": return { key: "journal.downed", args: [] };
+    case "evacStarted": return { key: "journal.evacStarted", args: [] };
+    case "evacReady": return { key: "journal.evacReady", args: [] };
+    case "evacCancelled": return { key: "journal.evacCancelled", args: [] };
+    case "firmExtracted": return { key: "journal.extracted", args: [e.banked ?? 0] };
+    case "perimeterAlarm": return { key: "journal.perimeterAlarm", args: [] };
+    case "cacheLooted": return { key: "journal.cacheLooted", args: [e.amount ?? 0] };
+    case "rivalHqRevealed": return { key: "journal.rivalRevealed", args: [] };
+    case "bailPaid": return { key: "journal.bailPaid", args: [e.cost ?? 0] };
+    case "coverBought": return { key: "journal.coverBought", args: [e.cost ?? 0] };
+    case "itemBought": return { key: "journal.itemBought", args: [e.itemKey ?? "", e.cost ?? 0] };
+    // The transcript half: record the RESPONSE line the NPC spoke.
+    case "dialogueChosen":
+      return { key: SPOKEN_LINES[e.optionKey] ?? "dialog.respond.refuse", args: [], spoken: true };
+    default: return null;
+  }
+}
+
 // ── Dropship choreography (S05) ────────────────────────────────────────────
 //
 // Presentation only: the dropship never exists in engine state, and the server

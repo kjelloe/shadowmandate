@@ -636,3 +636,38 @@ test("D61: the four walking positions pick the one nearest the line to the desti
   assert.equal(walkOffset(standing, tiles, size), null,
     "standing still must HOLD the current position, not snap to centre");
 });
+
+test("the journal maps events to timestamped lines (playtest 12)", async () => {
+  const { journalLine, gameClock, TICKS_PER_DAY, SPOKEN_LINES } = await import("../client/js/models.js");
+  const engine = await import("../engine/season.js");
+  // The deliberate duplicate: the client's day length mirrors the engine's.
+  assert.equal(TICKS_PER_DAY, engine.TICKS_PER_DAY);
+
+  const clock = gameClock(TICKS_PER_DAY + Math.trunc(TICKS_PER_DAY / 2));
+  assert.equal(clock.day, 2);
+  assert.equal(clock.label, "D2 12:00", "half a day in must read noon");
+
+  assert.deepEqual(journalLine({ type: "contractAccepted", kind: 2 }),
+    { key: "journal.accepted", args: ["contract.extraction"] });
+  assert.deepEqual(journalLine({ type: "contractCompleted", kind: 1, reward: 90 }),
+    { key: "journal.completed", args: ["contract.surveillance", 90] });
+  // The transcript half: what the informant SAID is what the journal keeps.
+  const said = journalLine({ type: "dialogueChosen", optionKey: "dialog.informant.askHeat" });
+  assert.equal(said.key, SPOKEN_LINES["dialog.informant.askHeat"]);
+  assert.ok(said.spoken, "spoken lines must flag themselves so the dialogue answers too");
+  assert.equal(journalLine({ type: "heatChanged" }), null, "noise events stay out of the log");
+});
+
+test("EVAC is offered only where the reducer would accept it (playtest 12)", async () => {
+  const { evacAvailable } = await import("../client/js/models.js");
+  const hq = { cellX: 10, cellY: 10, perimeterRadius: 4, evacActive: 0 };
+  const at = (x, y) => ({ hq, agents: [{ id: 0, state: 1, x: x * 256 + 128, y: y * 256 + 128 }] });
+  assert.ok(evacAvailable(at(10, 10)), "at the HQ door");
+  assert.ok(evacAvailable(at(12, 12)), "inside the perimeter");
+  assert.ok(!evacAvailable(at(20, 10)), "ten cells out is not the perimeter");
+  assert.ok(evacAvailable({ hq: { ...hq, evacActive: 1 }, agents: [{ id: 0, state: 1, x: 0, y: 0 }] }),
+    "a RUNNING evac stays visible for cancel wherever you are");
+  assert.ok(evacAvailable({ hq, agents: [] }),
+    "D51: with nobody in the field, folding is allowed from anywhere");
+  assert.ok(!evacAvailable({ hq: null, agents: [] }), "no HQ, no evac");
+});

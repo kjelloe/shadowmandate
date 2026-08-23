@@ -96,10 +96,10 @@ export function createScene(canvas) {
   scene.add(bounce);
 
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 500);
-  let zoomCells = 6;           // how many cells fit across the view — street
-                               // level by default since D60/D61: with figures
-                               // at 1/16 scale this is where the game is
-                               // played; overview is a zoom-out or the minimap
+  let zoomCells = 3.5;         // how many cells fit across the view — the
+                               // playtest-12 ruling: figures ~50px at default,
+                               // the full 8x at closest zoom, buildings 4x on
+                               // screen; overview is a zoom-out or the minimap
   let terrainTiles = null;     // kept for the walking-position decision (D61)
   const lane = { x: 0, z: 0 }; // the slewed lateral walk offset (D61)
   let blinkGroups = null;      // faulty street lamps (playtest 5), toggled by tick
@@ -398,11 +398,11 @@ export function createScene(canvas) {
       const bx = x.toX + 0.5, bz = x.toY + 0.5;
       const dx = bx - ax, dz = bz - az;
       const len = Math.hypot(dx, dz) || 1;
-      // Waist height against D61-scale figures — a beam over their heads
+      // Waist height against 1/8-scale figures — a beam over their heads
       // would read as sky decoration, not a line you must not stand in.
-      mesh.position.set((ax + bx) / 2, 0.045, (az + bz) / 2);
+      mesh.position.set((ax + bx) / 2, 0.08, (az + bz) / 2);
       mesh.rotation.y = -Math.atan2(dz, dx);
-      mesh.scale.set(len + 0.9, 0.025, 0.06);
+      mesh.scale.set(len + 0.9, 0.04, 0.09);
     }
     for (const j of view.junctions ?? []) {
       at(takeVisual(j.cut ? "junctionCut" : "junction"), j.cellX + 0.5, j.cellY + 0.5);
@@ -541,6 +541,6 @@ export function createScene(canvas) {
     draw, resize, setTerrain, screenToCell, setMoveHint, drawDropship,
     cameraDistance: () => CAMERA_DISTANCE,
     hasTerrain: () => terrain !== null,
-    zoomBy(f) { zoomCells = Math.max(3, Math.min(70, zoomCells * f)); resize(); },
+    zoomBy(f) { zoomCells = Math.max(1.5, Math.min(70, zoomCells * f)); resize(); },
   };
 }
