@@ -4,7 +4,7 @@ Drop-in/drop-out covert-ops game. Sibling of Fireline Command
 (`~/GIT/firepower` — the fork source, never modified from here).
 
 **Status: M0–M6 complete; M7 done as far as it can go solo, and PLAYABLE in a
-browser. `npm test` = 444 green**, plus four browser gates (`smoke`, `ui`,
+browser. `npm test` = 448 green**, plus four browser gates (`smoke`, `ui`,
 `mobile`, `gallery`). Batch lane verified (`ops/BATCH_PC.md`). **Remaining in M7**:
 the VM deploy (7e) and native GPU perf (7f) — both need the owner's hardware.
 **M8 — opposition and site security — IS IN PROGRESS** (8a–8k done: alarms, cameras,
@@ -25,13 +25,17 @@ the prison block; the mission banner; **D61: figures render at 1/16 of a
 cell** (engine grid untouched), street-level default zoom, zoom-adaptive HUD
 rings, taps snap to routable cells with a destination pin, and the tap's
 sub-cell fraction picks one of the FOUR walking positions (sidewalks/lanes).
-**Open: Q44** (HQ safehouse doubles as the informant building) and **Q45**
-(day-night cycle, weather, deeper district character, patrol density — all
-owner-directed backlog).
+**Playtest 10 (D62)**: title diorama + wordmark on the splash,
+sensible-side walking with the tapped kerb on the final stretch, the drop
+picker shows server-predicted landings (a promise, not an estimate), Q44
+closed (HQ/informant stay one building), day-night SPEC drafts in S03/S09
+(cubby holes cost 10), plan-version2 renumbered **M9–M14**. **Open: Q45
+remainders** — the night sneak percentage, and the patrol-density verdict
+from the commissioned batteries (`reports/sweeps/patrol_base{3,4}.csv`).
 
 ## Read first
 
-1. `specs/00_document_index.md` — document map, rulings D1–D61
+1. `specs/00_document_index.md` — document map, rulings D1–D62
 2. `plan-version1.md` — the operational plan (milestones M0–M7, gates)
 3. `plan-implementation-order.md` — slice-by-slice execution order, per-milestone
    STATUS markers (battery runbook: `ops/BATCH_PC.md`, private ops repo)

@@ -11,6 +11,7 @@ import { createInitialState } from "../engine/state.js";
 import { generateCity, findDropZones, autoSelectDropZone } from "../engine/citygen.js";
 import { buildView } from "../engine/view.js";
 import { hashState } from "../engine/snapshot.js";
+import { hqLandingFor } from "../engine/hq.js";
 import { refillPool, rebuildOffers } from "../engine/contracts.js";
 import { spawnAiFirms, stepAiFirms } from "../engine/ai_firms.js";
 import { worldNews } from "../engine/dormancy.js";
@@ -278,6 +279,35 @@ export class World {
     const firm = this.state.firms[firmId];
     return autoSelectDropZone(this.state, zones, this.rules.citygen, this.rules.hq,
       firm?.tierUnlocked ?? 1);
+  }
+
+  // The drop picker's honesty (playtest 10 ruling, closing the D56 gap): the
+  // dropship lands at a SAFEHOUSE, not the dot the player taps. The server
+  // computes one representative zone per district AND where a drop there
+  // would actually land — with the engine's own hqLandingFor, so the
+  // prediction cannot drift from the reducer. The client deploys with the
+  // server's pick, which is what makes the shown landing a promise.
+  zonePicks() {
+    const zones = findDropZones(this.state, this.rules.citygen);
+    const byDistrict = new Map();
+    for (const z of zones) {
+      if (!byDistrict.has(z.districtId)) byDistrict.set(z.districtId, []);
+      byDistrict.get(z.districtId).push(z);
+    }
+    const picks = [];
+    for (const [districtId, list] of byDistrict) {
+      const z = list[Math.floor(list.length / 2)];
+      const landing = hqLandingFor(this.state, z.cellX, z.cellY, this.rules.hq);
+      picks.push({
+        districtId, cellX: z.cellX, cellY: z.cellY,
+        landingX: landing.cellX, landingY: landing.cellY,
+      });
+    }
+    return picks;
+  }
+
+  predictLanding(cellX, cellY) {
+    return hqLandingFor(this.state, cellX, cellY, this.rules.hq);
   }
 
   // The terrain, sent once at drop-in time. It is static world data — the

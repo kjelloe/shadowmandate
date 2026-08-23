@@ -131,3 +131,25 @@ button — the only leave control. What changed and why:
   overlay opens, Leave exits — and the check was mutation-tested by making
   Leave a no-op (fails by name, with the downstream checks collapsing behind
   it exactly as a trapped agent would).
+
+## SPEC DRAFT — waiting for dark (Q45, owner-directed 2026-08-23; NOT BUILT)
+
+The S09 half of the day-night contract (S03 has the clock and the detection
+factor). Two ways to skip to nightfall, neither built yet:
+
+- **"Stay until nightfall"** — a free option in the SAFEHOUSE dialogue
+  (available only during DAY). The agent goes inside; the engine advances
+  the agent's availability, not the world: in a persistent shared world time
+  cannot skip, so the agent is parked `insideBuildingId` until `phaseOf`
+  crosses into night, then auto-exits (event `waitedForDark`). The overlay
+  shows a countdown. Contracts with timers keep ticking — waiting has a
+  price in expiring work, which is what makes it a decision.
+- **Cubby holes** — a new small placement (citygen pass, on alleys/yards),
+  cost **10** (ruled), same parking mechanic, paid because they are
+  EVERYWHERE while safehouses are one per district. Marker-class visual via
+  the manifest, shipped in the same slice as the mechanic (a mechanic the
+  player cannot see is an ambush).
+
+Open before build: the night sneak factor NN% (S03), and whether an AI Firm
+also waits for dark (proposed: yes, when its scorer prices a night approach
+meaningfully cheaper — same decision path as the player's).

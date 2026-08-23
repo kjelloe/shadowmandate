@@ -63,7 +63,9 @@ let lastStance = 1;
 function splashText(b) {
   const pad = (label, value) => `${label.padEnd(24, ".")} ${value}`;
   return [
-    t("splash.title"), t("splash.terminal"), "",
+    // The title itself is the #wordmark element now (playtest 10 ruling);
+    // the terminal keeps the boot line and the numbers.
+    t("splash.terminal"), "",
     // A fresh identity just got its recovery code — this is a NEW director,
     // and the splash should say hello before it says numbers (playtest 3).
     ...(session.recoveryCode ? [t("splash.welcome"), ""] : []),
@@ -691,6 +693,17 @@ function showZonePicker() {
     ctx.strokeStyle = mark("dropZoneAuto"); ctx.lineWidth = 2;
     ctx.strokeRect(session.autoZone.cellX * px - 3, session.autoZone.cellY * px - 3, px + 6, px + 6);
   }
+  // WHERE A DROP ACTUALLY LANDS (playtest 10, closing the D56 honesty gap):
+  // the HQ emblem at each district pick's predicted safehouse, straight from
+  // the engine's own landing rule server-side. The picker stops lying.
+  const drawLanding = (lx, ly) => {
+    ctx.strokeStyle = mark("ownHq"); ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(lx * px + px / 2, ly * px + px / 2, Math.max(4, px), 0, Math.PI * 2);
+    ctx.stroke();
+  };
+  for (const p of session.zonePicks ?? []) drawLanding(p.landingX, p.landingY);
+  if (session.autoLanding) drawLanding(session.autoLanding.cellX, session.autoLanding.cellY);
 
   // The district list: choosing between 240 identical squares is not a choice.
   const list = $("#zone-districts");
@@ -710,9 +723,12 @@ function showZonePicker() {
     right.textContent = t(d.heatKey);
     li.append(left, right);
     li.addEventListener("click", () => {
-      // Drop into the best zone inside the district they picked.
+      // Deploy with the SERVER'S pick for the district, so the landing the
+      // picker showed is the landing the drop performs — the shown emblem is
+      // a promise, not an estimate.
+      const pick = (session.zonePicks ?? []).find((p) => p.districtId === d.id);
       const inDistrict = (session.dropZones ?? []).filter((z) => z.districtId === d.id);
-      deployAt(inDistrict[Math.floor(inDistrict.length / 2)] ?? session.autoZone);
+      deployAt(pick ?? inDistrict[Math.floor(inDistrict.length / 2)] ?? session.autoZone);
     });
     list.appendChild(li);
   }

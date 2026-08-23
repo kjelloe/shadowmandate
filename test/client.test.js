@@ -608,22 +608,23 @@ test("D61: the four walking positions pick the one nearest the line to the desti
       targetX: tx * 256 + 128, targetY: ty * 256 + 128 }],
   });
 
-  // Destination far NORTH of the street: the near (north, -z) sidewalk.
-  assert.deepEqual(walkOffset(view(2, 3, 6, 0), tiles, size), { dx: 0, dz: -0.4 });
-  // Destination far SOUTH: the south sidewalk.
-  assert.deepEqual(walkOffset(view(2, 3, 6, 7), tiles, size), { dx: 0, dz: 0.4 });
-  // Destination straight down the street: the nearest LANE, not a sidewalk.
-  const straight = walkOffset(view(2, 3, 6, 3), tiles, size);
-  assert.ok(Math.abs(Math.abs(straight.dz) - 0.15) < 1e-9,
-    `straight-ahead travel should take a road lane, got ${JSON.stringify(straight)}`);
-  // Every offset it can produce is one of the four positions.
-  assert.ok(WALK_POSITIONS.includes(straight.dz));
-  // The tap HINT wins over the line rule (playtest 9): tap by the north
-  // kerb and the operative walks that sidewalk even toward a southern goal.
+  // EN ROUTE (far from the destination): the SENSIBLE side — the right-hand
+  // sidewalk of the travel direction, like a pedestrian (playtest 10 ruling).
+  assert.deepEqual(walkOffset(view(2, 3, 6, 0), tiles, size), { dx: 0, dz: 0.4 },
+    "walking east takes the south kerb — the right hand of travel");
+  assert.deepEqual(walkOffset(view(6, 3, 2, 0), tiles, size), { dx: 0, dz: -0.4 },
+    "walking west takes the north kerb");
+  // A hint does NOT override the sensible side while still en route…
   assert.deepEqual(walkOffset(view(2, 3, 6, 7), tiles, size, { dx: 0.1, dz: -0.45 }),
-    { dx: 0, dz: -0.4 }, "the tapped kerb must win over the destination line");
-  assert.deepEqual(walkOffset(view(2, 3, 6, 3), tiles, size, { dx: 0, dz: 0.12 }),
-    { dx: 0, dz: 0.15 }, "a tap just right of centre reads as the right lane");
+    { dx: 0, dz: 0.4 }, "the tapped kerb must wait for the final stretch");
+  // …but on the FINAL stretch (within two cells) the tapped kerb takes over,
+  // so the operative ends up exactly where the player pointed.
+  assert.deepEqual(walkOffset(view(4, 3, 5, 3), tiles, size, { dx: 0, dz: -0.45 }),
+    { dx: 0, dz: -0.4 }, "the tapped kerb wins at the destination");
+  const nearLane = walkOffset(view(4, 3, 5, 3), tiles, size, { dx: 0, dz: 0.12 });
+  assert.deepEqual(nearLane, { dx: 0, dz: 0.15 },
+    "a tap just right of centre reads as the right lane on arrival");
+  assert.ok(WALK_POSITIONS.includes(nearLane.dz));
   // Off the road: no offset. Standing (no order): hold (null).
   assert.deepEqual(walkOffset(view(2, 1, 6, 0), tiles, size), { dx: 0, dz: 0 });
   const standing = { agents: [{ id: 0, state: 1, x: 2 * 256 + 128, y: 3 * 256 + 128,

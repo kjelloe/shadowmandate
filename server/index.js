@@ -203,6 +203,10 @@ wss.on("connection", (socket) => {
         return send({
           type: "dropZones", zones, auto, tiles: world.clientTiles(),
           districtMap: world.clientDistricts(),
+          // Playtest 10: the picker shows WHERE a drop actually lands (the
+          // safehouse), predicted by the engine's own landing rule.
+          picks: world.zonePicks(),
+          autoLanding: auto ? world.predictLanding(auto.cellX, auto.cellY) : null,
           // Districts with their trait, heat band and how much tier-appropriate
           // work is in them: a choice between 240 identical squares is not a
           // choice (D37 picks well, but the player should see WHY).

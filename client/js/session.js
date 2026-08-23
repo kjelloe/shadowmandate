@@ -87,6 +87,8 @@ export function createRemoteSession({ url, token }) {
           session.tiles = msg.tiles;
           session.districtMap = msg.districtMap ?? session.districtMap;
           session.zoneDistricts = msg.districts ?? [];
+          session.zonePicks = msg.picks ?? [];
+          session.autoLanding = msg.autoLanding ?? null;
           emit([{ type: "dropZonesReady" }]);
           break;
         // The world just reset under this player's feet (D33/D50). Their agent,

@@ -20,7 +20,7 @@ M7 in progress and playable in a browser (updated 2026-08-06)
 | 8 | `systems/S01…S16` | **System specs (implementation contracts)** — state shapes, commands, ruleset keys, behaviour tables per system. S16 (opposition & site security) is specced, not built — it is what M8 implements |
 | — | `../dev-questions.md` | **Live question queue (Q22+)** — pending decisions with proposals; answers become rulings and move to `06` |
 | — | `../plan-version1.md` (+ `.html`) | **The operational V1 plan** — features in/out, milestones M0–M7, gates, acceptance (supersedes `03` for day-to-day work) |
-| — | `../plan-version2.md` (+ `.html`) | The operational V2 plan — M8–M13 |
+| — | `../plan-version2.md` (+ `.html`) | The operational V2 plan — M9–M14 (renumbered 2026-08-23: M8 is the opposition milestone built between the plans) |
 | — | `../plan-implementation-order.md` | Slice-by-slice execution order for M0–M7 + gaming-PC battery runbook |
 | — | `design_update_2026-08-03_shadow_mandate.md` | Verbatim user design update: title, terminology contract (record; incorporated into `01`) |
 | — | `starter_design_document.md` | Original concept brief. Historical — superseded where it conflicts with `01_design_of_record.md` |
@@ -161,8 +161,14 @@ M7 in progress and playable in a browser (updated 2026-08-06)
 |---:|---|---|
 | D61 | 16x world + walking positions | **Figures render at 1/16 of a cell** (up from D60's 1/8 — room for more agents on the sidewalks later); default camera 6 cells across, zoom 3–70. **The agent walks one of four positions on a road** — left sidewalk, left lane, right lane, right sidewalk — whichever lies nearest the straight line to the destination; render-only, always inside the simulated cell; agent only for now, rivals/patrols queued |
 
-**Open owner questions: Q44** (the HQ safehouse doubles as the informant
-building) in `../dev-questions.md`, which also holds the tracked gaps.
+## Sixteenth decision batch (2026-08-23, playtest 10 answers)
+
+| # | Decision | Ruling |
+|---:|---|---|
+| D62 | Playtest 10 omnibus | **Q44 closed: HQ and informant stay ONE building** (no separate handler actions exist; revisit only if they ever do). Day-night: S03/S09 spec drafts commissioned; **cubby holes cost 10**; the night sneak percentage still needs a number. Walking: **sensible side en route** (right hand of travel), tapped kerb takes over on the final stretch. The splash carries a **wordmark** over the title diorama. The drop picker shows **server-predicted landings** and deploys the server's own pick — the emblem is a promise, not an estimate. **plan-version2 renumbered M9–M14**; M8 stays the opposition milestone. Patrol-density batteries commissioned at 3 and 4 per district |
+
+**Open owner questions: Q45 remainders** (the night sneak percentage; the
+patrol-density verdict once the batteries read) in `../dev-questions.md`.
 
 ## Sibling project references
 

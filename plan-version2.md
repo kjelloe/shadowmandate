@@ -1,5 +1,10 @@
 # Shadow Mandate — Version 2 Plan: "The Squad"
 
+> **Renumbered 2026-08-23 (owner ruling):** V2 milestones are **M9–M14**.
+> **M8 is the opposition-and-site-security milestone** (spec S16) built
+> between the two plans — it took the number first, and the collision is now
+> resolved in its favour.
+
 *Created 2026-08-03. Status: **planned — starts after V1 ships**. HTML twin:
 `plan-version2.html`. Prerequisite: `plan-version1.md` complete.
 Design of record: `specs/01_design_of_record.md` (rulings D1–D26).*
@@ -56,12 +61,12 @@ monetization (D24 door stays closed).
 
 | # | Name | Scope | Gate |
 |---:|---|---|---|
-| M8 | Humans Online | No-lobby join, reconnect grace, disconnect regency, per-seat views verified against server views | Server tests with real ws clients: join/play/drop/reconnect/tamper-reject; two-device LAN session completes a full loop |
-| M9 | Squads | Shared scaled HQ, squad board and markers, pings, squad evac with left-behind loop and paid return trip | 4-client Playwright flow: squad drop-in, joint contract, deliberate leave-behind, later rescue |
-| M10 | Standoff vs Humans | Networked simultaneous choice, pacts enforced both ways, Shadow/Intercept options, one mixed-world protocol | Acceptance flows for every choice combination; battery: standoffs within pacing band, AI honours pacts |
-| M11 | Support Agents | Recruitment, intent commands, stances, regency; carry/rescue duties | Census: support agents complete courier legs, rescues, HQ defense; a solo player clears a tier-3 contract that a lone agent cannot |
-| M12 | Full Contract Set | Five new contract types incl. Firm War v1; Scientist/Official/Trader NPCs; vendor expansion; interiors decision at Vault Raid | Every type fires in census; heist and war loops pass 5-seed gates; economy battery: no contract type >35% of optimal play |
-| M13 | Fairness & Scale | n=600 mixed-load batteries; extended mirror/firm-swap instruments; server robustness; email OTP; LAN/hosted parity | Battery in fairness tolerances; server soak under churn; OTP recovers a ledger end-to-end; deploy runbook updated |
+| M9 | Humans Online | No-lobby join, reconnect grace, disconnect regency, per-seat views verified against server views | Server tests with real ws clients: join/play/drop/reconnect/tamper-reject; two-device LAN session completes a full loop |
+| M10 | Squads | Shared scaled HQ, squad board and markers, pings, squad evac with left-behind loop and paid return trip | 4-client Playwright flow: squad drop-in, joint contract, deliberate leave-behind, later rescue |
+| M11 | Standoff vs Humans | Networked simultaneous choice, pacts enforced both ways, Shadow/Intercept options, one mixed-world protocol | Acceptance flows for every choice combination; battery: standoffs within pacing band, AI honours pacts |
+| M12 | Support Agents | Recruitment, intent commands, stances, regency; carry/rescue duties | Census: support agents complete courier legs, rescues, HQ defense; a solo player clears a tier-3 contract that a lone agent cannot |
+| M13 | Full Contract Set | Five new contract types incl. Firm War v1; Scientist/Official/Trader NPCs; vendor expansion; interiors decision at Vault Raid | Every type fires in census; heist and war loops pass 5-seed gates; economy battery: no contract type >35% of optimal play |
+| M14 | Fairness & Scale | n=600 mixed-load batteries; extended mirror/firm-swap instruments; server robustness; email OTP; LAN/hosted parity | Battery in fairness tolerances; server soak under churn; OTP recovers a ledger end-to-end; deploy runbook updated |
 
 ## Acceptance criteria
 

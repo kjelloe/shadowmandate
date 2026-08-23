@@ -247,15 +247,12 @@ answered.
   see, and an hour of play answers whether the burn rate reads as *tense* or
   *unfair* — which decides whether A is a bug fix or a difficulty preference.
 
-## MX — Opposition & Site Security ✅ DONE (8a–8l)
+## M8 — Opposition & Site Security ✅ DONE (8a–8l)
 
-**NAMING COLLISION, flagged for the owner.** This milestone was added mid-V1 as
-"M8", but `plan-version2.md` already uses **M8 for "Humans Online"**. Two
-different milestones share a number across the two plans. Proposal: this one
-becomes **MX (Opposition)** since it is a V1 difficulty layer rather than a V2
-milestone, and V2's M8–M13 keep their numbers. Slice ids (8a–8l) are left alone
-— they are referenced throughout `dev-log.md`, S16 and every commit message, and
-renaming them would break the trail for no gain.
+**Naming collision RESOLVED (owner ruling, 2026-08-23): this milestone keeps
+M8.** `plan-version2.md` was renumbered to **M9–M14** ("Humans Online" is M9
+now). Slice ids (8a–8l) were always left alone — they are referenced
+throughout `dev-log.md`, S16 and every commit message.
 
 The difficulty layer. D42 rules that extraction and acquisition are
 under-opposed rather than mispriced, so this is what the contract balance is

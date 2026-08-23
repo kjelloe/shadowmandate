@@ -444,3 +444,24 @@ test("purchases and bail actually debit the ledger, and the view shows the bank 
     world.stop();
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test("zone picks predict the REAL landing with the engine's own rule (playtest 10)", () => {
+  const { world } = hostedWorld();
+  const picks = world.zonePicks();
+  assert.ok(picks.length >= 2, "a multi-district world should offer several picks");
+  const zones = findDropZones(world.state, RULES.citygen);
+  for (const p of picks) {
+    assert.ok(zones.some((z) => z.cellX === p.cellX && z.cellY === p.cellY
+      && z.districtId === p.districtId),
+      `pick for district ${p.districtId} is not a real drop zone`);
+    // The shown landing must be a safehouse DOOR — the same cell dropIn will
+    // choose, since both run hqLandingFor against the same state.
+    const door = world.state.buildings.find((b) => b.kind === 0
+      && b.entranceX === p.landingX && b.entranceY === p.landingY);
+    assert.ok(door, `pick for district ${p.districtId} predicts a landing off any safehouse door`);
+    // And it IS the promise: submitting the pick lands exactly there.
+    const predicted = world.predictLanding(p.cellX, p.cellY);
+    assert.equal(predicted.cellX, p.landingX);
+    assert.equal(predicted.cellY, p.landingY);
+  }
+});

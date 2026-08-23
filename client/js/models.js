@@ -484,10 +484,25 @@ export function walkOffset(view, tiles, size, hint = null) {
   if (ew === ns) return { dx: 0, dz: 0 };        // intersection or orphan cell
   const dest = moveTarget(view);
   if (!dest) return null;                         // standing: hold position
-  const perp = hint
-    ? (ew ? hint.dz : hint.dx)
-    : (ew ? (dest.cellY + 0.5) - (a.y / 256)
-          : (dest.cellX + 0.5) - (a.x / 256));
+  // The SENSIBLE side (playtest 10 ruling): en route, walk the right-hand
+  // sidewalk of the travel direction like a pedestrian — through turns, the
+  // side swaps with the heading. Only on the FINAL stretch (within two cells
+  // of the destination) does the tap's kerb hint take over, so the operative
+  // still ends up exactly where the player pointed.
+  const nearDest = Math.abs(dest.cellX - cellX) + Math.abs(dest.cellY - cellY) <= 2;
+  let perp;
+  if (nearDest && hint) {
+    perp = ew ? hint.dz : hint.dx;
+  } else if (nearDest) {
+    perp = ew ? (dest.cellY + 0.5) - (a.y / 256)
+              : (dest.cellX + 0.5) - (a.x / 256);
+  } else {
+    const along = ew ? Math.sign(dest.cellX + 0.5 - a.x / 256)
+                     : Math.sign(dest.cellY + 0.5 - a.y / 256);
+    // Right hand of travel: east -> south kerb, west -> north; south -> west
+    // kerb, north -> east.
+    perp = ew ? along * 0.4 : -along * 0.4;
+  }
   const clamped = Math.max(-0.4, Math.min(0.4, perp));
   const snapped = WALK_POSITIONS.reduce((best, p) =>
     Math.abs(p - clamped) < Math.abs(best - clamped) ? p : best);

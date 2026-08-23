@@ -90,3 +90,43 @@ relationship in mind.
 
 `⚙ tune` every radius/window against the M5 battery — initial values copied
 from Fireline alarm radii. (Patrol arrests ruled: D27.)
+
+## SPEC DRAFT — the day-night cycle (Q45, owner-directed 2026-08-23; NOT BUILT)
+
+The owner's direction: buildings light up at night; sneaking is easier in the
+dark; safehouses offer "stay until nightfall"; paid cubby holes (cost 10,
+ruled) hold you until dark. This section is the S03 half of the contract —
+S09 carries the building actions. Nothing below exists in code yet.
+
+### The clock is DERIVED, never stored
+
+`phaseOf(tick, season.dayTicks)` returns DAY or NIGHT plus a 0..1 progress —
+computed from `state.tick` exactly like the season clock, so the four-places
+rule never applies and dormancy jumps need no special handling. Proposed
+shape: a game "day" of `season.dayTicks` (existing day length), split
+`dayShare` (proposed 0.6) light / 0.4 dark. All numbers in `data/season.json`.
+
+### What night CHANGES (detection)
+
+One multiplier, applied where perception radii are computed:
+`nightSightFactor` (proposed 0.7 — patrols and cameras see 30% shorter at
+night; **the exact NN% needs the owner's ruling before build**). Rules:
+
+- The factor applies to the WATCHERS (patrol perception, camera range), not
+  to the agent's own fog sight — night helps the sneak, it does not blind
+  the player.
+- Heat, alarms and arrest thresholds are unchanged: night makes being seen
+  less likely, not being caught less costly.
+- The AI scorer must learn the factor IN THE SAME SLICE (a rule the actor
+  does not know…): night shifts its risk pricing exactly as it shifts the
+  player's.
+- Determinism: the factor is a pure function of tick — batteries stay
+  replayable; re-pin era baselines when the data version bumps.
+
+### Client contract
+
+The world visibly darkens/lightens (lighting tokens interpolated by phase —
+lighting is art direction, D46: a `lightingNight` token set beside the
+existing one); window density rises at night. The HUD shows the phase the
+same way it shows the season day — derived, never sent (the client computes
+phaseOf from view.tick and the ruleset it already has).
