@@ -4,7 +4,7 @@ Drop-in/drop-out covert-ops game. Sibling of Fireline Command
 (`~/GIT/firepower` — the fork source, never modified from here).
 
 **Status: M0–M6 complete; M7 done as far as it can go solo, and PLAYABLE in a
-browser. `npm test` = 439 green**, plus four browser gates (`smoke`, `ui`,
+browser. `npm test` = 444 green**, plus four browser gates (`smoke`, `ui`,
 `mobile`, `gallery`). Batch lane verified (`ops/BATCH_PC.md`). **Remaining in M7**:
 the VM deploy (7e) and native GPU perf (7f) — both need the owner's hardware.
 **M8 — opposition and site security — IS IN PROGRESS** (8a–8k done: alarms, cameras,

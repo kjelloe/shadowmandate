@@ -126,3 +126,16 @@ operative on a door with a patrol at distance 1, and they were BURNED during
 the drop cinematic before the player ever had control (reproduced: seed 42,
 district 0, noticed at tick 0, burned at tick 38). The exact scenario is
 pinned in `test/hq.test.js`, including 80 ticks unseen after landing.
+
+## Playtest 8 addendum — clearance means every detection source (2026-08-23)
+
+The patrol-clear landing held and the burn came back anyway: a CAMERA six
+cells from the safehouse door noticed the operative at tick 80, while a new
+player stood at spawn reading the intro. `hqLandingFor`'s preferred pass now
+also requires the door outside every ACTIVE camera's range (Chebyshev,
+matching how camera coverage is measured; disabled cameras don't count).
+The lesson generalises: "clear" must enumerate every detection source the
+engine has, not the one the last bug happened to involve — when a new source
+class lands (drones, informant snitches, whatever S16 grows next), this
+function is one of the places it must be added, and the 22-spawn/6-seed
+15-second-loiter sweep in test/hq.test.js is the guard that notices.

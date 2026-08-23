@@ -239,3 +239,11 @@ bounds, camera tilt copied from Fireline then adjusted.
   (it is a forced choice). The building ✕ still SENDS exitBuilding.
 - Pavement pads under every lamp post (an intersection corner has no
   sidewalk strip, and a lamp standing on asphalt read wrong).
+
+## Playtest 8 review addendum (2026-08-23)
+
+Patrols and rivals carry zoom-adaptive rings in their radar mark colours
+(0.7x the agent's ring): at 1/16 figure scale an unmarked patrol is pixels
+tall, and a patrol you cannot see is an ambush — the opposition doctrine
+applied to the renderer. Both surfaces (diorama, radar) speak the same mark
+tokens, so they cannot disagree about what a colour means.

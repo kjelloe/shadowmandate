@@ -322,6 +322,13 @@ export function createScene(canvas) {
     // Every HUD ring breathes with the zoom (playtest 8): close in they
     // shrink to neat markers, zoomed out they grow so they stay findable.
     const ringZoom = Math.max(0.4, Math.min(2, zoomCells / 12));
+    // Figure rings follow the figure scale AND the zoom; defined here because
+    // patrols and rivals draw before the agents do.
+    const figureRing = (tokens.scale?.figure ?? 1) * 2.6
+      * Math.max(0.6, Math.min(3, zoomCells / 10));
+    // NPC rings are deliberately smaller than your own: findable, not
+    // shouting — YOUR ring is how you find yourself.
+    const npcRing = figureRing * 0.7;
     const own = view.agents?.find((a) => a.state === 1) ?? view.agents?.[0];
     const target = own
       ? { x: own.x / CELL, y: own.y / CELL }
@@ -366,7 +373,12 @@ export function createScene(canvas) {
       }
     }
     for (const p of view.patrols) {
+      // A ring under every patrol (playtest 8 review): at 1/16 scale the
+      // figure is pixels tall, and a patrol you cannot see is an ambush —
+      // the opposition doctrine, applied to the renderer. Same mark colours
+      // the radar speaks, so the two surfaces agree.
       at(takeVisual(p.alerted ? "patrolAlert" : "patrol"), p.x + 0.5, p.y + 0.5);
+      at(takeRing(tokens.marks[p.alerted ? "patrolAlert" : "patrol"], npcRing), p.x + 0.5, p.y + 0.5, 0.04);
     }
     // Sensor beams (S16 8c). Drawn low and thin, spanning both endpoints, so
     // the line you must not be standing in is unambiguous.
@@ -395,12 +407,10 @@ export function createScene(canvas) {
       at(obj, c.cellX + 0.5, c.cellY + 0.5);
       obj.rotation.y = octantToRadians(c.facing);
     }
-    for (const r of view.rivals) at(takeVisual("rival"), r.x / CELL, r.y / CELL);
-    // A figure's ring follows the figure scale (D60) AND the zoom (playtest
-    // 8): close in it shrinks to a neat halo, zoomed out it grows so the
-    // RING stays how you find yourself when the figure is pixels tall.
-    const figureRing = (tokens.scale?.figure ?? 1) * 2.6
-      * Math.max(0.6, Math.min(3, zoomCells / 10));
+    for (const r of view.rivals) {
+      at(takeVisual("rival"), r.x / CELL, r.y / CELL);
+      at(takeRing(tokens.marks.rival, npcRing), r.x / CELL, r.y / CELL, 0.04);
+    }
     // The walking position (D61): slew the drawn offset toward the pure
     // decision, so kerb-hops and street crossings are visible movement. A
     // null decision means "standing — hold the position you have".
