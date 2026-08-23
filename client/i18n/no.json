@@ -191,5 +191,15 @@
   "intro.board": "OPPDRAG: dine tilbud. Ta inntil to, FEST de du vil ha ringet på radaren.",
   "intro.evac": "EVAK: tenn signalet og hold hovedkvarteret til droppskipet kommer.",
   "intro.radar": "Radaren. Emblemet med ring er hovedkvarteret ditt — det er hjem, og der droppskipet lander.",
-  "intro.go": "FORSTÅTT"
+  "intro.go": "FORSTÅTT",
+  "area.beginExtraction": "START UTHENTING",
+  "area.beginSurveillance": "START OVERVÅKING",
+  "area.exit": "Forlat anlegget",
+  "area.takedown": "Nedkjemping",
+  "area.hack": "Hack terminal",
+  "toast.areaAlarm": "Alarmen i anlegget er utløst",
+  "toast.areaSuppressed": "Alarmen er dempet",
+  "toast.guardDowned": "Vakt nedkjempet",
+  "toast.agentDumped": "En operatør ble dumpet ved porten",
+  "toast.areaAssetTaken": "Objektet sikret — kom deg til porten"
 }

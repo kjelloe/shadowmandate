@@ -283,6 +283,12 @@ const TOASTS = {
   accessDenied: { key: "toast.accessDenied" },
   defenceBreached: { key: "toast.defenceBreached", alarm: true },
   credentialGained: { key: "toast.credentialGained" },
+  // S17 mission areas: the indoor events a player must be TOLD about.
+  areaAlarm: { key: "toast.areaAlarm", alarm: true },
+  areaSuppressed: { key: "toast.areaSuppressed" },
+  guardDowned: { key: "toast.guardDowned" },
+  agentDumped: { key: "toast.agentDumped", alarm: true },
+  areaAssetTaken: { key: "toast.areaAssetTaken" },
 };
 
 export function toastsFor(events) {
@@ -644,5 +650,56 @@ export function dropshipFlight(elapsed, dir = 1, cfg = {}) {
     // The HQ is revealed at the hover on the way in, and hidden at it on the
     // way out. This is the one thing the choreography actually gates.
     hqVisible: dir >= 0 ? t >= 0.5 : t < 0.5,
+  };
+}
+
+// ── S17 mission areas: the client-side decisions ───────────────────────────
+// The same gates the AI uses, phrased for buttons. Kind indices are wire
+// vocabulary (like CONTRACT_KEYS above): 1 surveillance, 2 extraction.
+
+const AREA_KINDS = [1, 2];
+
+// The BEGIN button: at the site of an accepted, non-recovery surveillance or
+// extraction contract that has reached its work stage, and not already inside.
+export function beginMission(view) {
+  const a = ownAgent(view);
+  if (!a || a.state !== 1 || a.insideAreaId >= 0 || a.insideBuildingId >= 0) return null;
+  const ax = Math.floor(a.x / 256), ay = Math.floor(a.y / 256);
+  for (const c of view?.active ?? []) {
+    if (!AREA_KINDS.includes(c.kind) || c.stage !== 2 || c.recovery) continue;
+    const site = (view.sites ?? []).find((s) => s.id === c.siteId);
+    if (!site) continue;
+    if (Math.max(Math.abs(site.cellX - ax), Math.abs(site.cellY - ay)) <= 1) {
+      return {
+        contractId: c.id, kind: c.kind,
+        labelKey: c.kind === 1 ? "area.beginSurveillance" : "area.beginExtraction",
+      };
+    }
+  }
+  return null;
+}
+
+// The area your agent is standing in, with the agent — or null on the street.
+export function areaView(view) {
+  const a = ownAgent(view);
+  if (!a || a.insideAreaId < 0) return null;
+  const area = (view?.areas ?? []).find((x) => x.id === a.insideAreaId);
+  return area ? { area, self: a } : null;
+}
+
+// Which of the indoor actions are in reach RIGHT NOW. Adjacency only — the
+// flank rule stays the reducer's secret; a refused takedown is a rejection
+// toast, which is honest ("you were seen coming").
+export function areaActions(view) {
+  const av = areaView(view);
+  if (!av) return { exit: false, takedown: false, hack: false };
+  const { area, self } = av;
+  const near = (x, y) =>
+    Math.max(Math.abs(x - self.areaCol), Math.abs(y - self.areaRow)) <= 1;
+  return {
+    exit: (area.doors ?? []).some((d) => near(d.x, d.y)),
+    takedown: (area.guards ?? []).some((g) => !g.down && near(g.x, g.y))
+      || (area.occupants ?? []).some((o) => o.state === 1 && near(o.x, o.y)),
+    hack: (area.terminals ?? []).some((t) => near(t.x, t.y)),
   };
 }

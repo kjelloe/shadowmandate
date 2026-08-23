@@ -671,3 +671,50 @@ test("EVAC is offered only where the reducer would accept it (playtest 12)", asy
     "D51: with nobody in the field, folding is allowed from anywhere");
   assert.ok(!evacAvailable({ hq: null, agents: [] }), "no HQ, no evac");
 });
+
+test("S17: BEGIN appears only at the site of a workable area contract", async () => {
+  const { beginMission } = await import("../client/js/models.js");
+  const base = {
+    agents: [{ id: 0, state: 1, x: 10 * 256 + 128, y: 10 * 256 + 128,
+      insideAreaId: -1, insideBuildingId: -1 }],
+    sites: [{ id: 7, cellX: 10, cellY: 10 }],
+    active: [{ id: 1, kind: 2, stage: 2, siteId: 7, recovery: 0 }],
+  };
+  assert.equal(beginMission(base).labelKey, "area.beginExtraction");
+  assert.equal(beginMission({ ...base,
+    active: [{ id: 1, kind: 1, stage: 2, siteId: 7, recovery: 0 }] }).labelKey,
+  "area.beginSurveillance");
+  // Not at the site, wrong stage, recovery, courier kind, already inside: no button.
+  assert.equal(beginMission({ ...base,
+    agents: [{ ...base.agents[0], x: 20 * 256 }] }), null, "must be at the site");
+  assert.equal(beginMission({ ...base,
+    active: [{ ...base.active[0], stage: 1 }] }), null, "must be at the work stage");
+  assert.equal(beginMission({ ...base,
+    active: [{ ...base.active[0], recovery: 1 }] }), null, "recovery stays a street job");
+  assert.equal(beginMission({ ...base,
+    active: [{ ...base.active[0], kind: 0 }] }), null, "courier has no inside");
+  assert.equal(beginMission({ ...base,
+    agents: [{ ...base.agents[0], insideAreaId: 3 }] }), null, "already inside");
+});
+
+test("S17: area actions are adjacency decisions", async () => {
+  const { areaActions, areaView } = await import("../client/js/models.js");
+  const view = {
+    agents: [{ id: 0, state: 1, x: 0, y: 0, insideAreaId: 5, areaCol: 10, areaRow: 8 }],
+    areas: [{ id: 5, doors: [{ x: 10, y: 9 }], terminals: [{ x: 3, y: 12 }],
+      guards: [{ x: 11, y: 8, down: 0 }], occupants: [] }],
+  };
+  assert.ok(areaView(view), "agent inside must resolve their area");
+  const acts = areaActions(view);
+  assert.equal(acts.exit, true, "door adjacent");
+  assert.equal(acts.takedown, true, "guard adjacent");
+  assert.equal(acts.hack, false, "terminal far away");
+  // A downed guard is not a takedown target; a rival occupant is.
+  view.areas[0].guards[0].down = 1;
+  assert.equal(areaActions(view).takedown, false);
+  view.areas[0].occupants = [{ x: 9, y: 8, state: 1 }];
+  assert.equal(areaActions(view).takedown, true);
+  // On the street there are no indoor actions.
+  view.agents[0].insideAreaId = -1;
+  assert.deepEqual(areaActions(view), { exit: false, takedown: false, hack: false });
+});

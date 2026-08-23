@@ -1,6 +1,16 @@
 # S17 — Mission Areas ("the minigames that are places")
 
-*Status: SPEC DRAFT (2026-08-23, owner-directed). Nothing built. Revises D45.*
+*Status: AR-a + AR-b BUILT (2026-08-24, slices AR-1 engine + AR-2 client).
+Compound scale ruled (D64): 24x16, guards 3 x sight 4, ring rows 8..h-6 —
+both approaches (entry strip, wing doors) stay outside sneak sight, per the
+8a doctrine. The 8f credential gate lives on the ASSET, not the door
+(surveillance and saboteurs need no badge). Detection decay is shared with
+the street (`decayDetection`, one home) and runs indoors at heat 0. An
+alerted compound keeps stepping while empty so bail-out-and-cool works.
+Client: fixed-frame compound diorama (area3d.js), BEGIN/LEAVE/TAKEDOWN/HACK
+buttons, threshold fade, tap-to-move in area coordinates. Not yet built:
+city life (civilians, hover cars), HQ-assault areas, guard credential lifts
+indoors, area retune batteries (D42 order: opposition first). Revises D45.*
 
 ## The ruling this implements (D63)
 

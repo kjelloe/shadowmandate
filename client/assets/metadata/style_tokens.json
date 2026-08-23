@@ -1,303 +1,320 @@
 {
-  "note": "Painted Low-Poly Hybrid style tokens (S15). SINGLE SOURCE OF TRUTH for materials, palette and Firm identity \u2014 every procedural model is generated from this file, and the renderer must not carry colours of its own. Forked from the sibling project's pattern (Q41a/D46).",
-  "materials": {
-    "paintedMatte": {
-      "roughness": 0.85,
-      "metalness": 0.0
-    },
-    "firmPanel": {
-      "roughness": 0.75,
-      "metalness": 0.0
-    },
-    "wornMetal": {
-      "roughness": 0.9,
-      "metalness": 0.15
-    },
-    "glass": {
-      "roughness": 0.35,
-      "metalness": 0.1
-    },
-    "signal": {
-      "roughness": 0.5,
-      "metalness": 0.0
+ "note": "Painted Low-Poly Hybrid style tokens (S15). SINGLE SOURCE OF TRUTH for materials, palette and Firm identity \u2014 every procedural model is generated from this file, and the renderer must not carry colours of its own. Forked from the sibling project's pattern (Q41a/D46).",
+ "materials": {
+  "paintedMatte": {
+   "roughness": 0.85,
+   "metalness": 0.0
+  },
+  "firmPanel": {
+   "roughness": 0.75,
+   "metalness": 0.0
+  },
+  "wornMetal": {
+   "roughness": 0.9,
+   "metalness": 0.15
+  },
+  "glass": {
+   "roughness": 0.35,
+   "metalness": 0.1
+  },
+  "signal": {
+   "roughness": 0.5,
+   "metalness": 0.0
+  }
+ },
+ "note_marks": "Carried verbatim from the pre-pipeline MARK table in scene.js so the 7a pipeline changes HOW things are built without changing what anything means. The minimap reads the same values, so the two can never disagree. `objective` (playtest 11) is the MISSION-TARGET ring/beacon colour \u2014 deliberately distinct from siteActive (which tints the site MODEL) so the where-to-go circle never blends with the what-it-is marker.",
+ "marks": {
+  "site": "#6B6250",
+  "siteOffered": "#D9A441",
+  "siteActive": "#53D6C6",
+  "objective": "#B48FE0",
+  "informant": "#3E8E8C",
+  "market": "#8A867E",
+  "coverShop": "#B5613C",
+  "holding": "#7A4A3A",
+  "patrol": "#8A867E",
+  "patrolAlert": "#C2452F",
+  "rival": "#B5613C",
+  "ownHq": "#3E8E8C",
+  "rivalHq": "#B5613C",
+  "agentUnseen": "#E8E6E0",
+  "agentNoticed": "#D9A441",
+  "agentBurned": "#C2452F",
+  "camera": "#C2452F",
+  "cameraDisabled": "#4A5058",
+  "beamLive": "#C2452F",
+  "beamDark": "#3E4650",
+  "dropZone": "#3E8E8C",
+  "dropZoneAuto": "#D9A441",
+  "junction": "#D9A441",
+  "junctionCut": "#3E4650",
+  "dropship": "#53D6C6",
+  "pinned": "#8FA7C4",
+  "guard": "#8A867E",
+  "guardAlert": "#C2452F",
+  "guardDown": "#4A5566",
+  "terminal": "#D9A441"
+ },
+ "note_body": "Body colours are the PAINTED part \u2014 the part a tint never touches. Keeping them separate from marks is what lets detection state stay readable: the coat stays the coat while the state band changes colour.",
+ "body": {
+  "coat": "#3C424A",
+  "coatDark": "#2C3138",
+  "trouser": "#1C1F24",
+  "skin": "#C9A98B",
+  "visor": "#141619",
+  "kiosk": "#3A3F47",
+  "kioskRoof": "#4A5058",
+  "canvas": "#3E4650",
+  "post": "#5A6068",
+  "bars": "#6E747C",
+  "plinth": "#2A2E36"
+ },
+ "note_firms": "S15 palettes. Firm identity is carried by COLOUR AND SYMBOL together \u2014 colour alone fails for a colourblind player, which is the same reason the 7a silhouette pass exists.",
+ "firms": [
+  {
+   "id": 0,
+   "name": "corporate",
+   "primary": "#5B6B7F",
+   "accent": "#8FA7C4",
+   "trim": "#E8E6E0",
+   "symbol": "bar"
+  },
+  {
+   "id": 1,
+   "name": "insurgent",
+   "primary": "#B5613C",
+   "accent": "#C9A06B",
+   "trim": "#53D6C6",
+   "symbol": "chevron"
+  },
+  {
+   "id": 2,
+   "name": "mercenary",
+   "primary": "#3A3D42",
+   "accent": "#8A867E",
+   "trim": "#D9A441",
+   "symbol": "dot"
+  }
+ ],
+ "note_terrain": "The TILE look \u2014 the other half of Q41c, retuned 2026-08-18 to the dystopian night reference (playtest 3, finding 3; debugging/dystopia-city-01.png): colder, darker, streets kept a step brighter than the mass so navigation survives the murk, warm sodium reserved for entrances and checkpoints. Values are the authored hex; consumers convert with a plain /255, NOT through THREE.Color \u2014 colour management would sRGB-decode them and darken the ground by a factor of five.",
+ "terrain": {
+  "tiles": {
+   "0": "#1E2124",
+   "1": "#49515E",
+   "2": "#2A2F36",
+   "3": "#545B67",
+   "4": "#101318",
+   "5": "#6A5B3E",
+   "6": "#4A5566",
+   "7": "#7A4A3A",
+   "8": "#2A2D28",
+   "9": "#2A2724",
+   "10": "#152028"
+  },
+  "note_block": "Building mass tone ramp. A second seeded hash draw picks a point on it, so tone and height vary independently \u2014 keying both off one value makes every tall block the same shade, which reads as authored rather than grown.",
+  "blockLo": "#20242F",
+  "blockHi": "#3A424F",
+  "unknown": "#222222",
+  "backdrop": "#0B0E14",
+  "note_windows": "The lit windows are what make a dark tower read as a TOWER rather than a hole in the render (the reference image is mostly windows). Deterministic per seed; density is the fraction of sockets lit. Warm is interior sodium, cool is screen-glow \u2014 two temperatures is what makes a facade look inhabited rather than printed.",
+  "windows": {
+   "lit": "#E4C87A",
+   "cool": "#8FB6C9",
+   "density": 0.16
+  },
+  "note_road": "The street dressing (playtest 5): streets are 2-lane with centre dashes, transit avenues are 4-lane with a double centre line and lane dashes, and lamp posts stand at the kerb \u2014 some lit (warm sodium or cool halide), some dead, some blinking. All deterministic per seed, all decorative: markings are paint on the ground and lamps sit OFF the cell centres, so nothing covers an agent or implies an obstacle. lampChance is per road cell; litShare/blinkShare partition the lamps (the remainder are dead \u2014 this city does not maintain its streets).",
+  "road": {
+   "marking": "#787E86",
+   "sidewalk": "#5A616C",
+   "lampPost": "#2C3138",
+   "lampWarm": "#E4C87A",
+   "lampCool": "#C9D6E8",
+   "lampOff": "#3E4650",
+   "lampChance": 0.22,
+   "litShare": 0.6,
+   "blinkShare": 0.15
+  },
+  "note_clutter": "Street furniture (playtest 3, finding 3 \u2014 the reference city is CLUTTERED at ground level). Purely cosmetic, deterministic per seed, placed only on alleys, yards and rough ground, and kept low and OFF cell centres: the honesty rule means decoration must never cover an agent or read as an obstacle the simulation does not model. density is per eligible cell.",
+  "clutter": {
+   "crate": "#4A4438",
+   "barrel": "#39414D",
+   "vent": "#23272E",
+   "tarp": "#4E3A30",
+   "density": 0.55
+  },
+  "note_districts": "District identity (playtest 5): each engine district trait styles its building mass \u2014 ramp colours, window density/temperature/size, height scale, and which decorations grow on roofs and facades. Industrial is low with big factory glazing and stacks; residential is mid-rise with warm windows, balconies, rooftop gardens and lit ground-floor shopfronts; commercial keeps the highriser canyon; government is austere and dark; research runs cool screen-glow; port is low and utilitarian. windows.scale multiplies the socket size (a factory window is a WALL of glass); warmShare splits sodium interiors from screen glow.",
+  "districtStyles": {
+   "industrial": {
+    "blockLo": "#23261F",
+    "blockHi": "#3B4030",
+    "heightScale": 0.6,
+    "windows": {
+     "density": 0.1,
+     "scale": 2,
+     "warmShare": 0.6
     }
-  },
-  "note_marks": "Carried verbatim from the pre-pipeline MARK table in scene.js so the 7a pipeline changes HOW things are built without changing what anything means. The minimap reads the same values, so the two can never disagree. `objective` (playtest 11) is the MISSION-TARGET ring/beacon colour \u2014 deliberately distinct from siteActive (which tints the site MODEL) so the where-to-go circle never blends with the what-it-is marker.",
-  "marks": {
-    "site": "#6B6250",
-    "siteOffered": "#D9A441",
-    "siteActive": "#53D6C6",
-    "objective": "#B48FE0",
-    "informant": "#3E8E8C",
-    "market": "#8A867E",
-    "coverShop": "#B5613C",
-    "holding": "#7A4A3A",
-    "patrol": "#8A867E",
-    "patrolAlert": "#C2452F",
-    "rival": "#B5613C",
-    "ownHq": "#3E8E8C",
-    "rivalHq": "#B5613C",
-    "agentUnseen": "#E8E6E0",
-    "agentNoticed": "#D9A441",
-    "agentBurned": "#C2452F",
-    "camera": "#C2452F",
-    "cameraDisabled": "#4A5058",
-    "beamLive": "#C2452F",
-    "beamDark": "#3E4650",
-    "dropZone": "#3E8E8C",
-    "dropZoneAuto": "#D9A441",
-    "junction": "#D9A441",
-    "junctionCut": "#3E4650",
-    "dropship": "#53D6C6",
-    "pinned": "#8FA7C4"
-  },
-  "note_body": "Body colours are the PAINTED part \u2014 the part a tint never touches. Keeping them separate from marks is what lets detection state stay readable: the coat stays the coat while the state band changes colour.",
-  "body": {
-    "coat": "#3C424A",
-    "coatDark": "#2C3138",
-    "trouser": "#1C1F24",
-    "skin": "#C9A98B",
-    "visor": "#141619",
-    "kiosk": "#3A3F47",
-    "kioskRoof": "#4A5058",
-    "canvas": "#3E4650",
-    "post": "#5A6068",
-    "bars": "#6E747C",
-    "plinth": "#2A2E36"
-  },
-  "note_firms": "S15 palettes. Firm identity is carried by COLOUR AND SYMBOL together \u2014 colour alone fails for a colourblind player, which is the same reason the 7a silhouette pass exists.",
-  "firms": [
-    {
-      "id": 0,
-      "name": "corporate",
-      "primary": "#5B6B7F",
-      "accent": "#8FA7C4",
-      "trim": "#E8E6E0",
-      "symbol": "bar"
+   },
+   "residential": {
+    "blockLo": "#272430",
+    "blockHi": "#403A48",
+    "heightScale": 0.85,
+    "windows": {
+     "density": 0.22,
+     "scale": 1,
+     "warmShare": 0.85
     },
-    {
-      "id": 1,
-      "name": "insurgent",
-      "primary": "#B5613C",
-      "accent": "#C9A06B",
-      "trim": "#53D6C6",
-      "symbol": "chevron"
-    },
-    {
-      "id": 2,
-      "name": "mercenary",
-      "primary": "#3A3D42",
-      "accent": "#8A867E",
-      "trim": "#D9A441",
-      "symbol": "dot"
-    }
-  ],
-  "note_terrain": "The TILE look \u2014 the other half of Q41c, retuned 2026-08-18 to the dystopian night reference (playtest 3, finding 3; debugging/dystopia-city-01.png): colder, darker, streets kept a step brighter than the mass so navigation survives the murk, warm sodium reserved for entrances and checkpoints. Values are the authored hex; consumers convert with a plain /255, NOT through THREE.Color \u2014 colour management would sRGB-decode them and darken the ground by a factor of five.",
-  "terrain": {
-    "tiles": {
-      "0": "#1E2124",
-      "1": "#49515E",
-      "2": "#2A2F36",
-      "3": "#545B67",
-      "4": "#101318",
-      "5": "#6A5B3E",
-      "6": "#4A5566",
-      "7": "#7A4A3A",
-      "8": "#2A2D28",
-      "9": "#2A2724",
-      "10": "#152028"
-    },
-    "note_block": "Building mass tone ramp. A second seeded hash draw picks a point on it, so tone and height vary independently \u2014 keying both off one value makes every tall block the same shade, which reads as authored rather than grown.",
+    "shopfront": "#E4A85A",
+    "garden": "#33472F",
+    "balcony": "#1A1D22"
+   },
+   "commercial": {
     "blockLo": "#20242F",
     "blockHi": "#3A424F",
-    "unknown": "#222222",
-    "backdrop": "#0B0E14",
-    "note_windows": "The lit windows are what make a dark tower read as a TOWER rather than a hole in the render (the reference image is mostly windows). Deterministic per seed; density is the fraction of sockets lit. Warm is interior sodium, cool is screen-glow \u2014 two temperatures is what makes a facade look inhabited rather than printed.",
+    "heightScale": 1.0,
     "windows": {
-      "lit": "#E4C87A",
-      "cool": "#8FB6C9",
-      "density": 0.16
+     "density": 0.16,
+     "scale": 1,
+     "warmShare": 0.72
     },
-    "note_road": "The street dressing (playtest 5): streets are 2-lane with centre dashes, transit avenues are 4-lane with a double centre line and lane dashes, and lamp posts stand at the kerb \u2014 some lit (warm sodium or cool halide), some dead, some blinking. All deterministic per seed, all decorative: markings are paint on the ground and lamps sit OFF the cell centres, so nothing covers an agent or implies an obstacle. lampChance is per road cell; litShare/blinkShare partition the lamps (the remainder are dead \u2014 this city does not maintain its streets).",
-    "road": {
-      "marking": "#787E86",
-      "sidewalk": "#5A616C",
-      "lampPost": "#2C3138",
-      "lampWarm": "#E4C87A",
-      "lampCool": "#C9D6E8",
-      "lampOff": "#3E4650",
-      "lampChance": 0.22,
-      "litShare": 0.6,
-      "blinkShare": 0.15
-    },
-    "note_clutter": "Street furniture (playtest 3, finding 3 \u2014 the reference city is CLUTTERED at ground level). Purely cosmetic, deterministic per seed, placed only on alleys, yards and rough ground, and kept low and OFF cell centres: the honesty rule means decoration must never cover an agent or read as an obstacle the simulation does not model. density is per eligible cell.",
-    "clutter": {
-      "crate": "#4A4438",
-      "barrel": "#39414D",
-      "vent": "#23272E",
-      "tarp": "#4E3A30",
-      "density": 0.55
-    },
-    "note_districts": "District identity (playtest 5): each engine district trait styles its building mass \u2014 ramp colours, window density/temperature/size, height scale, and which decorations grow on roofs and facades. Industrial is low with big factory glazing and stacks; residential is mid-rise with warm windows, balconies, rooftop gardens and lit ground-floor shopfronts; commercial keeps the highriser canyon; government is austere and dark; research runs cool screen-glow; port is low and utilitarian. windows.scale multiplies the socket size (a factory window is a WALL of glass); warmShare splits sodium interiors from screen glow.",
-    "districtStyles": {
-      "industrial": {
-        "blockLo": "#23261F",
-        "blockHi": "#3B4030",
-        "heightScale": 0.6,
-        "windows": {
-          "density": 0.1,
-          "scale": 2,
-          "warmShare": 0.6
-        }
-      },
-      "residential": {
-        "blockLo": "#272430",
-        "blockHi": "#403A48",
-        "heightScale": 0.85,
-        "windows": {
-          "density": 0.22,
-          "scale": 1,
-          "warmShare": 0.85
-        },
-        "shopfront": "#E4A85A",
-        "garden": "#33472F",
-        "balcony": "#1A1D22"
-      },
-      "commercial": {
-        "blockLo": "#20242F",
-        "blockHi": "#3A424F",
-        "heightScale": 1.0,
-        "windows": {
-          "density": 0.16,
-          "scale": 1,
-          "warmShare": 0.72
-        },
-        "shopfront": "#C96A8A"
-      },
-      "government": {
-        "blockLo": "#2A2D33",
-        "blockHi": "#4A4E55",
-        "heightScale": 0.9,
-        "windows": {
-          "density": 0.07,
-          "scale": 1,
-          "warmShare": 0.5
-        }
-      },
-      "research": {
-        "blockLo": "#212B2E",
-        "blockHi": "#38474C",
-        "heightScale": 0.95,
-        "windows": {
-          "density": 0.2,
-          "scale": 1,
-          "warmShare": 0.3
-        }
-      },
-      "port": {
-        "blockLo": "#212827",
-        "blockHi": "#37413E",
-        "heightScale": 0.55,
-        "windows": {
-          "density": 0.12,
-          "scale": 2,
-          "warmShare": 0.55
-        }
-      }
-    },
-    "note_roofdecor": "Roof furniture (playtest 5): antenna masts with red beacon tips on the tall towers, water tanks on the mid-rise, slimmer setback tops, gardens on residential flats. Colours here; placement is hashed in the massing.",
-    "roofDecor": {
-      "mast": "#33383F",
-      "beacon": "#C2452F",
-      "tank": "#3A4046"
+    "shopfront": "#C96A8A"
+   },
+   "government": {
+    "blockLo": "#2A2D33",
+    "blockHi": "#4A4E55",
+    "heightScale": 0.9,
+    "windows": {
+     "density": 0.07,
+     "scale": 1,
+     "warmShare": 0.5
     }
-  },
-  "note_scale": "World scale (playtest 7, D60): the engine grid is untouched \u2014 cells are cells \u2014 but FIGURES render at 1/8 of a cell (playtest 12: 1/16 figures were a few pixels \u2014 the ruled ratio is figures 8x taller on screen with roads 4x wider, i.e. figures 2x relative plus a much closer camera; the closest zoom delivers the full 8x). Applied by manifest CLASS at build time in the scene; a per-entry `scale` in the manifest overrides the class (the dropship is a vehicle, not a person). Rings that mark a CELL (HQ, pins, re-spray) stay cell-scale; the ring under a figure follows the figure.",
-  "scale": {
-    "figure": 0.125,
-    "marker": 0.5,
-    "structure": 1.0
-  },
-  "note_budget": "Triangle budgets are a MOBILE constraint, not an aesthetic one. The client already runs on a phone (7b) and a busy street draws dozens of these. Raised 2026-08-18 for the detail pass (playtest 3, finding 3: 'many more vertices'). triFloor is the other half of the same promise: a builder that quietly regresses to boxes stays under budget and green, so the floor is what makes the detail pass assertable.",
-  "triBudget": {
-    "figure": 700,
-    "marker": 420,
-    "structure": 900
-  },
-  "triFloor": {
-    "figure": 320,
-    "marker": 100,
-    "structure": 220
-  },
-  "note_light": "Lighting IS art direction, not renderer plumbing. Retuned 2026-08-18 with the dystopian pass (finding 3): the warm evening key became a cold skyglow key \u2014 the city is NIGHT now, and warmth belongs to the windows and doorways, not the sky. Retuned again 2026-08-22 for the 45-degree camera (playtest 4): the camera now looks from the south-east, so the key moved to the CAMERA side \u2014 a key behind the buildings left every visible facade in raw ambient and the whole city read as black \u2014 and the teal bounce swapped to the north-west as a rim. Keeping it in tokens means a look candidate (Q41c) can change the mood without touching scene.js.",
-  "lighting": {
-    "clear": "#0B0E14",
-    "key": {
-      "color": "#C9D6E8",
-      "intensity": 1.05,
-      "position": [
-        35,
-        60,
-        45
-      ]
-    },
-    "ambient": {
-      "color": "#3D4654",
-      "intensity": 0.8,
-      "note": "Cool and LOW, but not lower: the 7a lesson was figures reading as dark blobs, and the coats are still the same dark paint."
-    },
-    "bounce": {
-      "color": "#3E8E8C",
-      "intensity": 0.24,
-      "position": [
-        -30,
-        20,
-        -40
-      ]
+   },
+   "research": {
+    "blockLo": "#212B2E",
+    "blockHi": "#38474C",
+    "heightScale": 0.95,
+    "windows": {
+     "density": 0.2,
+     "scale": 1,
+     "warmShare": 0.3
     }
-  },
-  "note_lightingDay": "D63a. The base `lighting` IS the night look (the dystopia was authored dark); `lightingDay` is the overcast working day the cycle lerps toward \u2014 brighter and a touch warmer, never sunny: the city does not get nice weather. The scene eases between the two off view.night.",
-  "lightingDay": {
-    "clear": "#1A2027",
-    "key": {
-      "color": "#D8D2C4",
-      "intensity": 1.45,
-      "position": [
-        35,
-        60,
-        45
-      ]
-    },
-    "ambient": {
-      "color": "#6A6E76",
-      "intensity": 1.0
-    },
-    "bounce": {
-      "color": "#5E8E8A",
-      "intensity": 0.18,
-      "position": [
-        -30,
-        20,
-        -40
-      ]
+   },
+   "port": {
+    "blockLo": "#212827",
+    "blockHi": "#37413E",
+    "heightScale": 0.55,
+    "windows": {
+     "density": 0.12,
+     "scale": 2,
+     "warmShare": 0.55
     }
+   }
   },
-  "note_portrait": "D47 portrait palette. Lived as a literal PALETTE object inside portraits.js until 2026-08-07 \u2014 the last colours outside this file, and the reason V1 acceptance criterion 14 stayed PARTIAL: a look candidate (Q41c/D48) reached the world but not the faces. Now a look is genuinely one file.",
-  "portrait": {
-    "backdrop": "#22262B",
-    "skin": "#C9A98B",
-    "skinShade": "#A8886B",
-    "hair": "#2A2622",
-    "collar": "#2E3238",
-    "suit": "#1C1F24",
-    "frameLean": "#141619",
-    "hotPink": "#E45FA0",
-    "lens": "#8FA7C4",
-    "hiVis": "#D9E04A",
-    "loud": "#4AB3A0",
-    "shirtTie": "#E8E6E0",
-    "prop": "#8A867E",
-    "mouth": "#7A4A3A",
-    "pupil": "#1B1E22"
+  "note_roofdecor": "Roof furniture (playtest 5): antenna masts with red beacon tips on the tall towers, water tanks on the mid-rise, slimmer setback tops, gardens on residential flats. Colours here; placement is hashed in the massing.",
+  "roofDecor": {
+   "mast": "#33383F",
+   "beacon": "#C2452F",
+   "tank": "#3A4046"
   }
+ },
+ "note_scale": "World scale (playtest 7, D60): the engine grid is untouched \u2014 cells are cells \u2014 but FIGURES render at 1/8 of a cell (playtest 12: 1/16 figures were a few pixels \u2014 the ruled ratio is figures 8x taller on screen with roads 4x wider, i.e. figures 2x relative plus a much closer camera; the closest zoom delivers the full 8x). Applied by manifest CLASS at build time in the scene; a per-entry `scale` in the manifest overrides the class (the dropship is a vehicle, not a person). Rings that mark a CELL (HQ, pins, re-spray) stay cell-scale; the ring under a figure follows the figure.",
+ "scale": {
+  "figure": 0.125,
+  "marker": 0.5,
+  "structure": 1.0
+ },
+ "note_budget": "Triangle budgets are a MOBILE constraint, not an aesthetic one. The client already runs on a phone (7b) and a busy street draws dozens of these. Raised 2026-08-18 for the detail pass (playtest 3, finding 3: 'many more vertices'). triFloor is the other half of the same promise: a builder that quietly regresses to boxes stays under budget and green, so the floor is what makes the detail pass assertable.",
+ "triBudget": {
+  "figure": 700,
+  "marker": 420,
+  "structure": 900
+ },
+ "triFloor": {
+  "figure": 320,
+  "marker": 100,
+  "structure": 220
+ },
+ "note_light": "Lighting IS art direction, not renderer plumbing. Retuned 2026-08-18 with the dystopian pass (finding 3): the warm evening key became a cold skyglow key \u2014 the city is NIGHT now, and warmth belongs to the windows and doorways, not the sky. Retuned again 2026-08-22 for the 45-degree camera (playtest 4): the camera now looks from the south-east, so the key moved to the CAMERA side \u2014 a key behind the buildings left every visible facade in raw ambient and the whole city read as black \u2014 and the teal bounce swapped to the north-west as a rim. Keeping it in tokens means a look candidate (Q41c) can change the mood without touching scene.js.",
+ "lighting": {
+  "clear": "#0B0E14",
+  "key": {
+   "color": "#C9D6E8",
+   "intensity": 1.05,
+   "position": [
+    35,
+    60,
+    45
+   ]
+  },
+  "ambient": {
+   "color": "#3D4654",
+   "intensity": 0.8,
+   "note": "Cool and LOW, but not lower: the 7a lesson was figures reading as dark blobs, and the coats are still the same dark paint."
+  },
+  "bounce": {
+   "color": "#3E8E8C",
+   "intensity": 0.24,
+   "position": [
+    -30,
+    20,
+    -40
+   ]
+  }
+ },
+ "note_lightingDay": "D63a. The base `lighting` IS the night look (the dystopia was authored dark); `lightingDay` is the overcast working day the cycle lerps toward \u2014 brighter and a touch warmer, never sunny: the city does not get nice weather. The scene eases between the two off view.night.",
+ "lightingDay": {
+  "clear": "#1A2027",
+  "key": {
+   "color": "#D8D2C4",
+   "intensity": 1.45,
+   "position": [
+    35,
+    60,
+    45
+   ]
+  },
+  "ambient": {
+   "color": "#6A6E76",
+   "intensity": 1.0
+  },
+  "bounce": {
+   "color": "#5E8E8A",
+   "intensity": 0.18,
+   "position": [
+    -30,
+    20,
+    -40
+   ]
+  }
+ },
+ "note_portrait": "D47 portrait palette. Lived as a literal PALETTE object inside portraits.js until 2026-08-07 \u2014 the last colours outside this file, and the reason V1 acceptance criterion 14 stayed PARTIAL: a look candidate (Q41c/D48) reached the world but not the faces. Now a look is genuinely one file.",
+ "portrait": {
+  "backdrop": "#22262B",
+  "skin": "#C9A98B",
+  "skinShade": "#A8886B",
+  "hair": "#2A2622",
+  "collar": "#2E3238",
+  "suit": "#1C1F24",
+  "frameLean": "#141619",
+  "hotPink": "#E45FA0",
+  "lens": "#8FA7C4",
+  "hiVis": "#D9E04A",
+  "loud": "#4AB3A0",
+  "shirtTie": "#E8E6E0",
+  "prop": "#8A867E",
+  "mouth": "#7A4A3A",
+  "pupil": "#1B1E22"
+ },
+ "note_area": "S17 mission areas: the indoor palette, keyed by AREA tile id (0 court, 1 corridor, 4 wall, 5 door, 8 cover crate). Same dark register as the street so entering reads as the same night, one stop warmer indoors; the door is the brightest floor tile because it is the exit and the player must always be able to find it. wallTop/crate are the 3D accents area3d.js extrudes.",
+ "areaPalette": {
+  "tiles": {
+   "0": "#23252C",
+   "1": "#2E2B33",
+   "4": "#131720",
+   "5": "#6A5B3E",
+   "8": "#2A2D28"
+  },
+  "wallTop": "#1B2029",
+  "crate": "#3A4034",
+  "backdrop": "#0B0E14"
+ }
 }

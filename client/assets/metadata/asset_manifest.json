@@ -1,119 +1,141 @@
 {
-  "note": "Manifest-driven visuals (S15, D46). The renderer asks the resolver WHAT to show; this file and the factory decide HOW. No geometry decision lives in scene.js, so swapping a procedural stand-in for a painted model later is a manifest edit rather than a renderer edit.",
-  "note_tint": "`tint` names the mark token a visual takes at runtime. A visual with tint:null is fully painted and never recoloured. Meshes named \"tint\" inside a group are the only ones a tint touches \u2014 that is what keeps detection state readable without repainting the coat.",
-  "figures": {
-    "agent": {
-      "procedural": "agent",
-      "class": "figure",
-      "tint": "state",
-      "note": "tint is the DETECTION state (unseen/noticed/burned), which is gameplay information, not decoration."
-    },
-    "rival": {
-      "procedural": "rival",
-      "class": "figure",
-      "tint": "rival"
-    },
-    "patrol": {
-      "procedural": "patrol",
-      "class": "figure",
-      "tint": "patrol"
-    },
-    "patrolAlert": {
-      "procedural": "patrol",
-      "class": "figure",
-      "tint": "patrolAlert"
-    }
+ "note": "Manifest-driven visuals (S15, D46). The renderer asks the resolver WHAT to show; this file and the factory decide HOW. No geometry decision lives in scene.js, so swapping a procedural stand-in for a painted model later is a manifest edit rather than a renderer edit.",
+ "note_tint": "`tint` names the mark token a visual takes at runtime. A visual with tint:null is fully painted and never recoloured. Meshes named \"tint\" inside a group are the only ones a tint touches \u2014 that is what keeps detection state readable without repainting the coat.",
+ "figures": {
+  "agent": {
+   "procedural": "agent",
+   "class": "figure",
+   "tint": "state",
+   "note": "tint is the DETECTION state (unseen/noticed/burned), which is gameplay information, not decoration."
   },
-  "markers": {
-    "siteCache": {
-      "procedural": "siteCache",
-      "class": "marker",
-      "tint": "state"
-    },
-    "siteVault": {
-      "procedural": "siteVault",
-      "class": "marker",
-      "tint": "state"
-    },
-    "siteLab": {
-      "procedural": "siteLab",
-      "class": "marker",
-      "tint": "state"
-    },
-    "siteRelay": {
-      "procedural": "siteRelay",
-      "class": "marker",
-      "tint": "state"
-    },
-    "siteTransit": {
-      "procedural": "siteTransit",
-      "class": "marker",
-      "tint": "state"
-    },
-    "siteWarehouse": {
-      "procedural": "siteWarehouse",
-      "class": "marker",
-      "tint": "state"
-    },
-    "camera": {
-      "procedural": "camera",
-      "class": "marker",
-      "tint": "camera"
-    },
-    "cameraDisabled": {
-      "procedural": "camera",
-      "class": "marker",
-      "tint": "cameraDisabled"
-    },
-    "junction": {
-      "procedural": "junction",
-      "class": "marker",
-      "tint": "junction"
-    },
-    "junctionCut": {
-      "procedural": "junction",
-      "class": "marker",
-      "tint": "junctionCut"
-    }
+  "rival": {
+   "procedural": "rival",
+   "class": "figure",
+   "tint": "rival"
   },
-  "structures": {
-    "informant": {
-      "procedural": "kioskTall",
-      "class": "structure",
-      "tint": "informant"
-    },
-    "market": {
-      "procedural": "kioskWide",
-      "class": "structure",
-      "tint": "market"
-    },
-    "coverShop": {
-      "procedural": "kioskPeak",
-      "class": "structure",
-      "tint": "coverShop"
-    },
-    "holding": {
-      "procedural": "holdingPen",
-      "class": "structure",
-      "tint": "holding"
-    },
-    "ownHq": {
-      "procedural": "fieldHq",
-      "class": "structure",
-      "tint": "ownHq"
-    },
-    "rivalHq": {
-      "procedural": "fieldHq",
-      "class": "structure",
-      "tint": "rivalHq"
-    },
-    "dropship": {
-      "procedural": "dropship",
-      "class": "structure",
-      "tint": "dropship",
-      "scale": 0.2,
-      "note_scale": "A vehicle, not a person: overrides the class scale (see tokens note_scale)."
-    }
+  "patrol": {
+   "procedural": "patrol",
+   "class": "figure",
+   "tint": "patrol"
   },
-  "note_sites": "Playtest 5: site markers are TYPED - a vault reads as a vault, a relay as a dish - mapped from the engine's SITE_* order by models.siteVisual (guard-tested against the engine constants). tint is `state`: the caller passes the site/siteOffered/siteActive mark, so contract state still recolours the centrepiece."
+  "patrolAlert": {
+   "procedural": "patrol",
+   "class": "figure",
+   "tint": "patrolAlert"
+  },
+  "guard": {
+   "procedural": "patrol",
+   "class": "figure",
+   "tint": "guard",
+   "note": "S17 indoor guard: the patrol body, tinted with its own mark so a retune of street patrols cannot silently restyle the indoor game."
+  },
+  "guardAlert": {
+   "procedural": "patrol",
+   "class": "figure",
+   "tint": "guardAlert"
+  },
+  "guardDown": {
+   "procedural": "patrol",
+   "class": "figure",
+   "tint": "guardDown"
+  }
+ },
+ "markers": {
+  "siteCache": {
+   "procedural": "siteCache",
+   "class": "marker",
+   "tint": "state"
+  },
+  "siteVault": {
+   "procedural": "siteVault",
+   "class": "marker",
+   "tint": "state"
+  },
+  "siteLab": {
+   "procedural": "siteLab",
+   "class": "marker",
+   "tint": "state"
+  },
+  "siteRelay": {
+   "procedural": "siteRelay",
+   "class": "marker",
+   "tint": "state"
+  },
+  "siteTransit": {
+   "procedural": "siteTransit",
+   "class": "marker",
+   "tint": "state"
+  },
+  "siteWarehouse": {
+   "procedural": "siteWarehouse",
+   "class": "marker",
+   "tint": "state"
+  },
+  "camera": {
+   "procedural": "camera",
+   "class": "marker",
+   "tint": "camera"
+  },
+  "cameraDisabled": {
+   "procedural": "camera",
+   "class": "marker",
+   "tint": "cameraDisabled"
+  },
+  "junction": {
+   "procedural": "junction",
+   "class": "marker",
+   "tint": "junction"
+  },
+  "junctionCut": {
+   "procedural": "junction",
+   "class": "marker",
+   "tint": "junctionCut"
+  },
+  "terminal": {
+   "procedural": "junction",
+   "class": "marker",
+   "tint": "terminal",
+   "note": "S17: the alarm terminal is the junction box's indoor cousin, and it LOOKS like one on purpose - the player already knows what that shape does."
+  }
+ },
+ "structures": {
+  "informant": {
+   "procedural": "kioskTall",
+   "class": "structure",
+   "tint": "informant"
+  },
+  "market": {
+   "procedural": "kioskWide",
+   "class": "structure",
+   "tint": "market"
+  },
+  "coverShop": {
+   "procedural": "kioskPeak",
+   "class": "structure",
+   "tint": "coverShop"
+  },
+  "holding": {
+   "procedural": "holdingPen",
+   "class": "structure",
+   "tint": "holding"
+  },
+  "ownHq": {
+   "procedural": "fieldHq",
+   "class": "structure",
+   "tint": "ownHq"
+  },
+  "rivalHq": {
+   "procedural": "fieldHq",
+   "class": "structure",
+   "tint": "rivalHq"
+  },
+  "dropship": {
+   "procedural": "dropship",
+   "class": "structure",
+   "tint": "dropship",
+   "scale": 0.2,
+   "note_scale": "A vehicle, not a person: overrides the class scale (see tokens note_scale)."
+  }
+ },
+ "note_sites": "Playtest 5: site markers are TYPED - a vault reads as a vault, a relay as a dish - mapped from the engine's SITE_* order by models.siteVisual (guard-tested against the engine constants). tint is `state`: the caller passes the site/siteOffered/siteActive mark, so contract state still recolours the centrepiece."
 }

@@ -191,5 +191,15 @@
   "intro.board": "CONTRACTS: your offers. Accept up to two, PIN the ones you want ringed on the radar.",
   "intro.evac": "EVAC: raise the beacon and hold your HQ until the dropship arrives.",
   "intro.radar": "The radar. The ringed emblem is your HQ — that is home, and where the dropship lands.",
-  "intro.go": "UNDERSTOOD"
+  "intro.go": "UNDERSTOOD",
+  "area.beginExtraction": "BEGIN EXTRACTION",
+  "area.beginSurveillance": "BEGIN SURVEILLANCE",
+  "area.exit": "Leave compound",
+  "area.takedown": "Takedown",
+  "area.hack": "Hack terminal",
+  "toast.areaAlarm": "Compound alarm raised",
+  "toast.areaSuppressed": "Alarm suppressed",
+  "toast.guardDowned": "Guard down",
+  "toast.agentDumped": "An operative was dumped at the door",
+  "toast.areaAssetTaken": "Asset secured — get to the door"
 }

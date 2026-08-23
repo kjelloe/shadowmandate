@@ -12,7 +12,8 @@
 
 import * as THREE from "three";
 import { buildGround, buildBlocks, buildClutter, buildRoads, setTerrainTokens } from "./terrain3d.js";
-import { siteRoles, objectiveCell, buildingRole, siteVisual, burnedGuidance, pinnedCells, hqInBuilding, moveTarget, walkOffset, ARRIVE_CLAMP } from "./models.js";
+import { buildArea, setAreaTokens } from "./area3d.js";
+import { siteRoles, objectiveCell, buildingRole, siteVisual, burnedGuidance, pinnedCells, hqInBuilding, moveTarget, walkOffset, ARRIVE_CLAMP, areaView } from "./models.js";
 import { buildProcedural, applyTint } from "./asset_factory.js";
 import { resolveVisual, tintFor, detectionMark } from "./asset_resolver.js";
 import { art } from "./assets.js";
@@ -74,6 +75,7 @@ export function createScene(canvas) {
   const { tokens, manifest } = art();
   renderer.setClearColor(new THREE.Color(tokens.lighting.clear));
   setTerrainTokens(tokens.terrain);
+  setAreaTokens(tokens.areaPalette);
 
   const scene = new THREE.Scene();
   // NO FOG. The first version set Fog(colour, 40, 110) — but an orthographic
@@ -351,6 +353,34 @@ export function createScene(canvas) {
     const npcRing = figureRing * 0.7;
     // Information markers shrink to a quarter at full close-up (playtest 9).
     const markerZoom = Math.max(0.25, Math.min(1, zoomCells / 12));
+
+    // D63a: ease the lights toward the phase the VIEW reports (engine truth,
+    // no client cycle maths). Runs before the mode branch: the compound is
+    // the same night the street is having.
+    if (lightEnds) {
+      const target = view.night ? 0 : 1;
+      dayMix += (target - dayMix) * 0.05;
+      const m = Math.max(0, Math.min(1, dayMix));
+      key.color.lerpColors(lightEnds.key[0], lightEnds.key[1], m);
+      key.intensity = lightEnds.key[2] + (lightEnds.key[3] - lightEnds.key[2]) * m;
+      ambient.color.lerpColors(lightEnds.ambient[0], lightEnds.ambient[1], m);
+      ambient.intensity = lightEnds.ambient[2] + (lightEnds.ambient[3] - lightEnds.ambient[2]) * m;
+      bounce.color.lerpColors(lightEnds.bounce[0], lightEnds.bounce[1], m);
+      bounce.intensity = lightEnds.bounce[2] + (lightEnds.bounce[3] - lightEnds.bounce[2]) * m;
+      renderer.setClearColor(new THREE.Color().lerpColors(lightEnds.clear[0], lightEnds.clear[1], m));
+    }
+
+    // S17: inside a mission area the diorama IS the compound. The street
+    // stays loaded and hidden — exit is a visibility flip, not a rebuild.
+    const av = areaView(view);
+    if (av) {
+      drawAreaMode(av, view.tick);
+      renderer.render(scene, camera);
+      return;
+    }
+    if (areaGroup) areaGroup.visible = false;
+    if (terrain) terrain.visible = true;
+
     const own = view.agents?.find((a) => a.state === 1) ?? view.agents?.[0];
     const target = own
       ? { x: own.x / CELL, y: own.y / CELL }
@@ -501,21 +531,6 @@ export function createScene(canvas) {
       movePin.visible = false; movePinRing.visible = false;
     }
 
-    // D63a: ease the lights toward the phase the VIEW reports (engine truth,
-    // no client cycle maths). Slew rate gives a ~2s dawn/dusk fade at 10Hz.
-    if (lightEnds) {
-      const target = view.night ? 0 : 1;
-      dayMix += (target - dayMix) * 0.05;
-      const m = Math.max(0, Math.min(1, dayMix));
-      key.color.lerpColors(lightEnds.key[0], lightEnds.key[1], m);
-      key.intensity = lightEnds.key[2] + (lightEnds.key[3] - lightEnds.key[2]) * m;
-      ambient.color.lerpColors(lightEnds.ambient[0], lightEnds.ambient[1], m);
-      ambient.intensity = lightEnds.ambient[2] + (lightEnds.ambient[3] - lightEnds.ambient[2]) * m;
-      bounce.color.lerpColors(lightEnds.bounce[0], lightEnds.bounce[1], m);
-      bounce.intensity = lightEnds.bounce[2] + (lightEnds.bounce[3] - lightEnds.bounce[2]) * m;
-      renderer.setClearColor(new THREE.Color().lerpColors(lightEnds.clear[0], lightEnds.clear[1], m));
-    }
-
     // Faulty street lamps blink in two opposite phases off the world tick —
     // decorative, so it keys off the same clock as everything else animated.
     if (blinkGroups) {
@@ -543,6 +558,111 @@ export function createScene(canvas) {
     renderer.render(scene, camera);
   }
 
+  // ── S17: the compound diorama ────────────────────────────────────────────
+  // Built off-map so the street never shows behind it: past the map edge the
+  // backdrop is the night void, which is what "elsewhere" should look like.
+  const AREA_ORIGIN = { x: -60, z: -60 };
+  let areaGroup = null, areaGroupId = -1;
+
+  function drawAreaMode(av, tick) {
+    const { area, self } = av;
+    // Ring and marker sizes derive from the COMPOUND's own framing, not the
+    // street zoom — the street's close-up factors shrank every indoor ring to
+    // a speck. The fixed frame spans ~(w+h)/sqrt(2) cells, so the same
+    // formulas run with that as the effective zoom.
+    const areaSpan = (area.width + area.height) * Math.SQRT1_2;
+    const s = {
+      tick,
+      ringZoom: Math.max(0.4, Math.min(2, areaSpan / 12)),
+      figureRing: (tokens.scale?.figure ?? 1) * 2.6 * Math.max(0.6, Math.min(3, areaSpan / 10)),
+      markerZoom: Math.max(0.25, Math.min(1, areaSpan / 12)),
+    };
+    s.npcRing = s.figureRing * 0.7;
+    if (terrain) terrain.visible = false;
+    if (movePin) { movePin.visible = false; movePinRing.visible = false; }
+    if (areaGroupId !== area.id) {
+      if (areaGroup) scene.remove(areaGroup);
+      areaGroup = buildArea(area, AREA_ORIGIN.x, AREA_ORIGIN.z);
+      areaGroupId = area.id;
+      scene.add(areaGroup);
+    }
+    areaGroup.visible = true;
+
+    // Frame the whole compound: the indoor game is played at one scale, so
+    // the projection is fitted here rather than driven by the street zoom.
+    // Under the 45-degree azimuth the compound presents its DIAGONAL to the
+    // screen axes — the rotated w x h footprint needs (w+h)/sqrt(2) of screen
+    // width, and the pitch then foreshortens the vertical by sin(pitch). The
+    // first fit used the raw width and cropped a third of the yard.
+    const aspect = (canvas.clientWidth || 1) / (canvas.clientHeight || 1);
+    const needX = ((area.width + area.height) / 2) * Math.SQRT1_2 + 1.5;
+    const needY = needX * Math.sin(PITCH) + 1.0;
+    let halfX = needX, halfY = needX / aspect;
+    if (halfY < needY) { halfY = needY; halfX = needY * aspect; }
+    camera.left = -halfX; camera.right = halfX;
+    camera.top = halfY; camera.bottom = -halfY;
+    camera.updateProjectionMatrix();
+    const cx = AREA_ORIGIN.x + area.width / 2, cz = AREA_ORIGIN.z + area.height / 2;
+    const back = HEIGHT / Math.tan(PITCH);
+    camera.position.set(cx + back * Math.sin(AZIMUTH), HEIGHT, cz + back * Math.cos(AZIMUTH));
+    camera.lookAt(cx, 0, cz);
+
+    const at = (obj, gx, gy, h = 0) => {
+      if (obj) obj.position.set(AREA_ORIGIN.x + gx + 0.5, h, AREA_ORIGIN.z + gy + 0.5);
+      return obj;
+    };
+
+    // Guards: role carries the state (manifest tints), ring matches the radarless
+    // indoor read — same mark vocabulary as street patrols.
+    for (const g of area.guards) {
+      const role = g.down ? "guardDown" : g.alerted ? "guardAlert" : "guard";
+      const fig = at(takeVisual(role), g.x, g.y);
+      // A downed guard lies down — the one pose change that must be legible.
+      if (fig) fig.rotation.x = g.down ? -Math.PI / 2 : 0;
+      at(takeRing(tokens.marks[role], s.npcRing), g.x, g.y, 0.04);
+    }
+    for (const t of area.terminals) at(takeVisual("terminal"), t.x, t.y);
+    for (const o of area.occupants ?? []) {
+      const fig = at(takeVisual("rival"), o.x, o.y);
+      if (fig) fig.rotation.x = o.state === 2 ? -Math.PI / 2 : 0;
+      at(takeRing(tokens.marks.rival, s.npcRing), o.x, o.y, 0.04);
+    }
+    const stateMark = detectionMark(self.detection);
+    at(takeVisual("agent", stateMark), self.areaCol, self.areaRow);
+    at(takeRing(tokens.marks[stateMark], s.figureRing), self.areaCol, self.areaRow, 0.04);
+
+    // Exit affordance: a steady ring on each entry door, in the landing mark —
+    // the "where you leave" colour the player already knows from drop-in.
+    for (const d of area.doors ?? []) {
+      at(takeRing(tokens.marks.dropZone, s.ringZoom, true), d.x, d.y, 0.08);
+    }
+
+    // The objective: the same pulsing beacon the street uses, so "go here"
+    // reads identically indoors. Gone once the asset is taken — the objective
+    // is the DOOR then, and the door rings are already on.
+    ensureBeacon();
+    if (!area.assetTaken || self.carryKind !== 7) {
+      const pulse = 0.5 + 0.35 * Math.sin(s.tick / 4);
+      beacon.visible = true; halo.visible = true;
+      beacon.scale.set(s.markerZoom, 1, s.markerZoom);
+      beacon.position.set(AREA_ORIGIN.x + area.objective.x + 0.5, 4.5, AREA_ORIGIN.z + area.objective.y + 0.5);
+      beacon.material.opacity = 0.25 + 0.25 * pulse;
+      halo.position.set(AREA_ORIGIN.x + area.objective.x + 0.5, 0.08, AREA_ORIGIN.z + area.objective.y + 0.5);
+      halo.scale.setScalar(s.ringZoom * (0.85 + 0.3 * pulse));
+      halo.material.opacity = 0.5 + 0.4 * pulse;
+    } else {
+      beacon.visible = false; halo.visible = false;
+    }
+  }
+
+  // Screen -> AREA cell while indoors: the same ground-plane intersection,
+  // shifted by the compound's origin.
+  function screenToAreaCell(sx, sy) {
+    const c = screenToCell(sx, sy);
+    if (!c) return null;
+    return { x: c.x - AREA_ORIGIN.x, y: c.y - AREA_ORIGIN.z, fx: c.fx, fz: c.fz };
+  }
+
   // Screen -> cell, by intersecting the ground plane. Tap-to-move needs this
   // to be right or the game feels broken in the most basic way.
   const raycaster = new THREE.Raycaster();
@@ -565,7 +685,7 @@ export function createScene(canvas) {
   function setMoveHint(hint) { moveHint = hint; }
 
   return {
-    draw, resize, setTerrain, screenToCell, setMoveHint, drawDropship,
+    draw, resize, setTerrain, screenToCell, screenToAreaCell, setMoveHint, drawDropship,
     cameraDistance: () => CAMERA_DISTANCE,
     hasTerrain: () => terrain !== null,
     zoomBy(f) { zoomCells = Math.max(1.5, Math.min(70, zoomCells * f)); resize(); },

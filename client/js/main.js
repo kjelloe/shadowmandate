@@ -14,6 +14,7 @@ import {
   payloadForBuilding, overlayRows, disguiseFor, districtChoices, standingRows, missionBanner,
   journalLine, gameClock, evacAvailable, SPOKEN_LINES,
   cuttableJunction, liftableGuard, dropshipFlight, DROPSHIP_MS, MAX_PINS,
+  beginMission, areaView, areaActions,
   HEAT_CLASS as HEAT_CLASSES,
 } from "./models.js";
 
@@ -159,7 +160,15 @@ session.onChange((s, events) => {
     // claims, and only the browser can answer the second.
     dropship: flightStartedAt === null ? null
       : (dropshipFlight(Date.now() - flightStartedAt, flightDir) ?? null),
+    // S17 probes: is the operative indoors, and is the compound in the view.
+    insideAreaId: ownAgent(s.view)?.insideAreaId ?? -1,
+    areaCount: s.view.areas?.length ?? 0,
   };
+  // Probe seams (S17 gate): the view is already the player's own data and the
+  // socket is already theirs — a probe driving commands through the real
+  // session exercises exactly what a devtools user could.
+  window.__smView = s.view;
+  window.__smSend = (cmd) => session.send(cmd);
 });
 
 // S05: the dropship sequence, owned by the client and driven by a wall clock.
@@ -237,6 +246,7 @@ function paint(s, events) {
   // EVAC is offered only where the reducer would accept it (playtest 12).
   $("#evac-btn").hidden = !evacAvailable(view);
   renderActive(view);
+  renderArea(view);
   renderObjectiveArrow(view);
   renderBuilding(view);
   renderJunction(view);
@@ -531,10 +541,38 @@ function renderLift(view) {
   btn.dataset.patrolId = g ? String(g.id) : "";
 }
 
+// S17 mission areas. The BEGIN button is the threshold; inside, the three
+// indoor actions appear by adjacency (the same decisions the models file
+// tests headlessly). The canvas fades briefly on the mode flip so entering
+// reads as going somewhere, not as the map glitching.
+let wasInsideArea = false;
+function renderArea(view) {
+  const begin = beginMission(view);
+  const btn = $("#begin-btn");
+  btn.hidden = !begin;
+  if (begin) btn.textContent = t(begin.labelKey);
+
+  const inside = !!areaView(view);
+  if (inside !== wasInsideArea) {
+    wasInsideArea = inside;
+    const canvas = $("#view");
+    canvas.classList.remove("area-fade");
+    void canvas.offsetWidth;               // restart the animation
+    canvas.classList.add("area-fade");
+  }
+  // The street chrome makes no sense indoors: the radar shows a city you are
+  // not standing in, and the compound has no board to walk to.
+  $("#minimap").style.display = inside ? "none" : "";
+  const acts = areaActions(view);
+  $("#exit-area-btn").hidden = !acts.exit;
+  $("#takedown-btn").hidden = !acts.takedown;
+  $("#hack-btn").hidden = !acts.hack;
+}
+
 function renderBuilding(view) {
   // The "go inside" button appears only when standing on a door.
   const enter = $("#enter-btn");
-  enter.hidden = !view.atDoor || !!view.inside;
+  enter.hidden = !view.atDoor || !!view.inside || !!areaView(view);
 
   const panel = $("#building");
   if (!view.inside) {
@@ -654,6 +692,13 @@ $("#view").addEventListener("pointerdown", (ev) => {
   const isDouble = now - lastTap < 300;
   lastTap = now;
   if (isDouble) session.send({ type: 21, agentId: agent.id, stance: 2 });
+  // S17: indoors the tap is an AREA cell — same command, compound
+  // coordinates, and no kerb-lane hint (a compound has no kerbs).
+  if (areaView(session.view)) {
+    const ac = renderer.screenToAreaCell(ev.clientX - rect.left, ev.clientY - rect.top);
+    if (ac) session.send({ type: 20, agentId: agent.id, cellX: ac.x, cellY: ac.y });
+    return;
+  }
   // The tap's sub-cell position picks the walking position (playtest 9):
   // tap by the kerb and the operative takes that sidewalk. The engine still
   // receives only the cell — it is cell-granular by doctrine.
@@ -818,6 +863,24 @@ $("#enter-btn").addEventListener("click", () => {
 });
 $("#board-btn").addEventListener("click", () => { $("#board").hidden = !$("#board").hidden; });
 $("#evac-btn").addEventListener("click", () => session.send({ type: 11, firmId: session.firmId }));
+// S17: the four indoor commands. BEGIN is the enter command wearing the
+// contract's name; the rest are the compound verbs.
+$("#begin-btn").addEventListener("click", () => {
+  const a = ownAgent(session.view);
+  if (a) session.send({ type: 45, agentId: a.id });
+});
+$("#exit-area-btn").addEventListener("click", () => {
+  const a = ownAgent(session.view);
+  if (a) session.send({ type: 46, agentId: a.id });
+});
+$("#takedown-btn").addEventListener("click", () => {
+  const a = ownAgent(session.view);
+  if (a) session.send({ type: 47, agentId: a.id });
+});
+$("#hack-btn").addEventListener("click", () => {
+  const a = ownAgent(session.view);
+  if (a) session.send({ type: 48, agentId: a.id });
+});
 $("#journal-btn").addEventListener("click", () => {
   const panel = $("#journal");
   panel.hidden = !panel.hidden;

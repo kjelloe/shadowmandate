@@ -194,3 +194,12 @@ button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal)
 
 /* Pin toggle on active-contract rows (playtest 3). */
 #active-list button.pin { font-size: .68rem; padding: .15rem .5rem; }
+
+/* S17: the threshold fade — entering or leaving a compound dips the diorama
+   to black and back, so the mode flip reads as travel, not a glitch. */
+#view.area-fade { animation: areaFade 0.6s ease; }
+@keyframes areaFade {
+  0% { opacity: 1; }
+  35% { opacity: 0.05; }
+  100% { opacity: 1; }
+}

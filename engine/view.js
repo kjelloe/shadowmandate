@@ -19,7 +19,7 @@ import { cameraFacingAt, isDisabled } from "./cameras.js";
 import { beamLiveAt } from "./sensors.js";
 import { worldToCellFloor } from "../shared/fixedmath.js";
 import { lightPhase } from "./season.js";
-import { occupantsOf } from "./areas.js";
+import { occupantsOf, areaTiles, areaObjective, areaEntryDoors } from "./areas.js";
 
 const SIGHT = 10;          // what your own agent can make out, in cells
 
@@ -178,6 +178,16 @@ export function buildView(state, firmId, detCfg) {
       .filter((ar) => own.some((a) => a.insideAreaId === ar.id))
       .map((ar) => ({
         id: ar.id, siteId: ar.siteId,
+        // The grid rides along: static and derivable, but residency is
+        // transient and ~400 bytes — cheaper than a second seam for the
+        // client to fetch it through.
+        width: state.rules.areas.width | 0,
+        height: state.rules.areas.height | 0,
+        tiles: Array.from(areaTiles(state.worldSeed, ar.siteId, state.rules.areas)),
+        objective: areaObjective(state.worldSeed, ar.siteId, state.rules.areas),
+        doors: areaEntryDoors(
+          areaTiles(state.worldSeed, ar.siteId, state.rules.areas),
+          state.rules.areas.width | 0, state.rules.areas.height | 0),
         alarmStage: ar.alarmStage,
         suppressed: ar.suppressedUntil > state.tick ? 1 : 0,
         assetTaken: ar.assetTaken,
@@ -233,6 +243,9 @@ export function buildView(state, firmId, detCfg) {
         stage: c.stage, stageTicks: c.stageTicks,
         stageTarget: stageTargetTicks(c, state.rules?.contracts ?? null),
         legsDone: c.legsDone ?? 0, graceTicks: c.graceTicks ?? 0,
+        // S17: recovery extractions stay a street/persuasion job — the client
+        // must not offer BEGIN for them.
+        recovery: (c.recoverAgentId ?? -1) >= 0 ? 1 : 0,
       }));
     })(),
 
