@@ -22,11 +22,12 @@
       "metalness": 0.0
     }
   },
-  "note_marks": "Carried verbatim from the pre-pipeline MARK table in scene.js so the 7a pipeline changes HOW things are built without changing what anything means. The minimap reads the same values, so the two can never disagree.",
+  "note_marks": "Carried verbatim from the pre-pipeline MARK table in scene.js so the 7a pipeline changes HOW things are built without changing what anything means. The minimap reads the same values, so the two can never disagree. `objective` (playtest 11) is the MISSION-TARGET ring/beacon colour \u2014 deliberately distinct from siteActive (which tints the site MODEL) so the where-to-go circle never blends with the what-it-is marker.",
   "marks": {
     "site": "#6B6250",
     "siteOffered": "#D9A441",
     "siteActive": "#53D6C6",
+    "objective": "#B48FE0",
     "informant": "#3E8E8C",
     "market": "#8A867E",
     "coverShop": "#B5613C",

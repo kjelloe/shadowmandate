@@ -271,3 +271,19 @@ rival (red flash) and walks the captive off. Rules it lives under:
   `show()` the moment any other screen takes over — same rule that stopped
   the main diorama drawing behind hidden screens. A broken attract must
   never block DROP IN (wrapped, surfaces via `fatal`).
+
+## Playtest 11 additions (2026-08-23)
+
+- **Exact arrival**: on the final stretch (within two cells of the
+  destination) the drawn operative walks to the EXACT tapped point — both
+  axes, any tile, clamped inside the destination cell (`ARRIVE_CLAMP`) — and
+  the destination pin stands on that same point, so pin and arrival always
+  agree. En route the sensible-side rule is unchanged. The engine remains
+  cell-granular; this is the render layer keeping the player's intent.
+- **Mission-target circles**: a dedicated `objective` mark (violet) for the
+  beacon, world halo and the minimap's objective ring — distinct from
+  `siteActive`, which tints the site MODEL — and all mission rings are SLIM
+  now (a fat ring reads as a zone, a thin one as a destination). Pinned
+  rings slimmed too, keeping their own mark.
+- The attract scene honours `prefers-reduced-motion`: one composed still of
+  the city instead of the loop.

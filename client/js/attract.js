@@ -154,9 +154,12 @@ export function createAttract(canvas) {
   camera.position.set(target.x + back * Math.sin(AZ), H, target.z + back * Math.cos(AZ));
   camera.lookAt(target.x, 0, target.z);
 
+  // Accessibility: a reduced-motion browser gets one composed still of the
+  // city instead of the looping vignette.
+  const still = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
   let raf = null, t0 = null;
   function frame(now) {
-    raf = requestAnimationFrame(frame);
+    raf = still ? null : requestAnimationFrame(frame);
     const w = canvas.clientWidth, h = canvas.clientHeight;
     if (!w || !h) return;
     renderer.setSize(w, h, false);

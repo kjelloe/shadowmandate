@@ -12,7 +12,7 @@
 
 import * as THREE from "three";
 import { buildGround, buildBlocks, buildClutter, buildRoads, setTerrainTokens } from "./terrain3d.js";
-import { siteRoles, objectiveCell, buildingRole, siteVisual, burnedGuidance, pinnedCells, hqInBuilding, moveTarget, walkOffset } from "./models.js";
+import { siteRoles, objectiveCell, buildingRole, siteVisual, burnedGuidance, pinnedCells, hqInBuilding, moveTarget, walkOffset, ARRIVE_CLAMP } from "./models.js";
 import { buildProcedural, applyTint } from "./asset_factory.js";
 import { resolveVisual, tintFor, detectionMark } from "./asset_resolver.js";
 import { art } from "./assets.js";
@@ -123,7 +123,10 @@ export function createScene(canvas) {
   // which is the whole point — an objective you can only see when you are
   // already standing on it is not a marker.
   const beamGeo = new THREE.CylinderGeometry(0.16, 0.16, 9, 8);
-  const haloGeo = new THREE.TorusGeometry(1.25, 0.1, 6, 24);
+  // Mission-target circles are SLIM (playtest 11): a fat ring reads as a
+  // zone, a thin one as a destination.
+  const haloGeo = new THREE.TorusGeometry(1.25, 0.04, 6, 24);
+  const ringSlimGeo = new THREE.TorusGeometry(0.62, 0.03, 6, 18);
   let beacon = null, halo = null;
   // The destination pin (playtest 6): where your move order is actually
   // going — which, since taps snap to the nearest routable cell, is not
@@ -189,19 +192,20 @@ export function createScene(canvas) {
     return m.group;
   }
 
-  function takeRing(colour, scalar = 1) {
-    let m = pool.find((x) => !x.inUse && x.role === "__ring");
+  function takeRing(colour, scalar = 1, slim = false) {
+    const role = slim ? "__ringSlim" : "__ring";
+    let m = pool.find((x) => !x.inUse && x.role === role);
     if (!m) {
       // Rings are HUD affordances, not things in the world — and the 40-degree
       // camera lets a tower stand between you and your own operative. A HUD
       // marker a building can hide is not a HUD marker, so rings ignore depth
       // and draw after the world.
-      const mesh = new THREE.Mesh(ringGeo, new THREE.MeshLambertMaterial({
+      const mesh = new THREE.Mesh(slim ? ringSlimGeo : ringGeo, new THREE.MeshLambertMaterial({
         color: colour, depthTest: false,
       }));
       mesh.renderOrder = 5;
       mesh.rotation.x = -Math.PI / 2;
-      m = { role: "__ring", group: mesh, inUse: false };
+      m = { role, group: mesh, inUse: false };
       pool.push(m);
       markers.add(mesh);
     }
@@ -220,10 +224,10 @@ export function createScene(canvas) {
   function ensureBeacon() {
     if (beacon) return;
     beacon = new THREE.Mesh(beamGeo, new THREE.MeshBasicMaterial({
-      color: new THREE.Color(tokens.marks.siteActive), transparent: true, opacity: 0.5,
+      color: new THREE.Color(tokens.marks.objective), transparent: true, opacity: 0.5,
     }));
     halo = new THREE.Mesh(haloGeo, new THREE.MeshBasicMaterial({
-      color: new THREE.Color(tokens.marks.siteActive), transparent: true, opacity: 0.85,
+      color: new THREE.Color(tokens.marks.objective), transparent: true, opacity: 0.85,
     }));
     halo.rotation.x = -Math.PI / 2;
     scene.add(beacon); scene.add(halo);
@@ -439,7 +443,7 @@ export function createScene(canvas) {
     // objective, in the pinned mark — the pulse stays reserved for the
     // CURRENT objective below.
     for (const p of pinnedCells(view, pinnedIds)) {
-      at(takeRing(tokens.marks.pinned, ringZoom), p.cellX + 0.5, p.cellY + 0.5, 0.12);
+      at(takeRing(tokens.marks.pinned, ringZoom, true), p.cellX + 0.5, p.cellY + 0.5, 0.12);
     }
     // Burned (playtest 3): mark the nearest cover shop in the world with a
     // breathing ring in the shop's colour, matching the radar ping.
@@ -471,10 +475,15 @@ export function createScene(canvas) {
         scene.add(movePinRing);
       }
       const bob = 0.06 * Math.sin(view.tick / 2);
+      // The pin stands on the SPOT the player tapped (playtest 11), not the
+      // cell centre — the same clamp the arrival offset uses, so the pin and
+      // the operative's final position agree.
+      const hx = dest.cellX + 0.5 + Math.max(-ARRIVE_CLAMP, Math.min(ARRIVE_CLAMP, moveHint?.dx ?? 0));
+      const hz = dest.cellY + 0.5 + Math.max(-ARRIVE_CLAMP, Math.min(ARRIVE_CLAMP, moveHint?.dz ?? 0));
       movePin.visible = true; movePinRing.visible = true;
       movePin.scale.setScalar(markerZoom);
-      movePin.position.set(dest.cellX + 0.5, 0.45 * markerZoom + 0.3 + bob, dest.cellY + 0.5);
-      movePinRing.position.set(dest.cellX + 0.5, 0.1, dest.cellY + 0.5);
+      movePin.position.set(hx, 0.45 * markerZoom + 0.3 + bob, hz);
+      movePinRing.position.set(hx, 0.1, hz);
       movePinRing.scale.setScalar(0.55 * Math.max(markerZoom, 0.4));
     } else if (movePin) {
       movePin.visible = false; movePinRing.visible = false;

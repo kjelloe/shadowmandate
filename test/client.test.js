@@ -617,14 +617,18 @@ test("D61: the four walking positions pick the one nearest the line to the desti
   // A hint does NOT override the sensible side while still en route…
   assert.deepEqual(walkOffset(view(2, 3, 6, 7), tiles, size, { dx: 0.1, dz: -0.45 }),
     { dx: 0, dz: 0.4 }, "the tapped kerb must wait for the final stretch");
-  // …but on the FINAL stretch (within two cells) the tapped kerb takes over,
-  // so the operative ends up exactly where the player pointed.
-  assert.deepEqual(walkOffset(view(4, 3, 5, 3), tiles, size, { dx: 0, dz: -0.45 }),
-    { dx: 0, dz: -0.4 }, "the tapped kerb wins at the destination");
-  const nearLane = walkOffset(view(4, 3, 5, 3), tiles, size, { dx: 0, dz: 0.12 });
-  assert.deepEqual(nearLane, { dx: 0, dz: 0.15 },
-    "a tap just right of centre reads as the right lane on arrival");
-  assert.ok(WALK_POSITIONS.includes(nearLane.dz));
+  // …but on the FINAL stretch (within two cells) the tap is the TRUTH
+  // (playtest 11): the operative walks to the EXACT spot, both axes, clamped
+  // inside the cell — no lane snapping on arrival.
+  assert.deepEqual(walkOffset(view(4, 3, 5, 3), tiles, size, { dx: 0.2, dz: -0.45 }),
+    { dx: 0.2, dz: -0.42 }, "arrival must honour the exact tapped point");
+  assert.deepEqual(walkOffset(view(4, 3, 5, 3), tiles, size, { dx: 0, dz: 0.12 }),
+    { dx: 0, dz: 0.12 }, "a tap near the centre ends near the centre — exactly there");
+  // Exact arrival works OFF the road too: tapping into a plaza corner walks
+  // to that corner.
+  const plaza = new Uint8Array(size * size); plaza.fill(3);
+  assert.deepEqual(walkOffset(view(4, 2, 5, 2), plaza, size, { dx: -0.3, dz: 0.3 }),
+    { dx: -0.3, dz: 0.3 }, "exact arrival must not require a road tile");
   // Off the road: no offset. Standing (no order): hold (null).
   assert.deepEqual(walkOffset(view(2, 1, 6, 0), tiles, size), { dx: 0, dz: 0 });
   const standing = { agents: [{ id: 0, state: 1, x: 2 * 256 + 128, y: 3 * 256 + 128,

@@ -468,10 +468,24 @@ export const WALK_POSITIONS = [-0.4, -0.15, 0.15, 0.4];
 // cell centre, playtest 9): tapping beside a kerb walks that sidewalk, the
 // whole way. Without a hint (or an old client) the line-to-destination rule
 // decides. Either way the offset snaps to one of the four positions.
+// How far off the cell centre the drawn figure may stand (playtest 11): far
+// enough to reach the spot the player tapped, never outside the cell.
+export const ARRIVE_CLAMP = 0.42;
+const inCell = (v) => Math.max(-ARRIVE_CLAMP, Math.min(ARRIVE_CLAMP, v));
+
 export function walkOffset(view, tiles, size, hint = null) {
   const a = ownAgent(view);
   if (!a || !tiles) return { dx: 0, dz: 0 };
   const cellX = Math.floor(a.x / 256), cellY = Math.floor(a.y / 256);
+  const dest = moveTarget(view);
+  // On the FINAL stretch the tap is the truth (playtest 11): the operative
+  // walks to the EXACT spot the player pointed at — both axes, any tile —
+  // clamped inside the destination cell so the engine's cell-granular story
+  // still holds.
+  if (dest && hint
+    && Math.abs(dest.cellX - cellX) + Math.abs(dest.cellY - cellY) <= 2) {
+    return { dx: inCell(hint.dx), dz: inCell(hint.dz) };
+  }
   const t = tiles[cellY * size + cellX];
   if (t !== 1 && t !== 6) return { dx: 0, dz: 0 };
   const road = (x, y) => {
@@ -482,18 +496,13 @@ export function walkOffset(view, tiles, size, hint = null) {
   const ew = road(cellX - 1, cellY) || road(cellX + 1, cellY);
   const ns = road(cellX, cellY - 1) || road(cellX, cellY + 1);
   if (ew === ns) return { dx: 0, dz: 0 };        // intersection or orphan cell
-  const dest = moveTarget(view);
   if (!dest) return null;                         // standing: hold position
   // The SENSIBLE side (playtest 10 ruling): en route, walk the right-hand
   // sidewalk of the travel direction like a pedestrian — through turns, the
-  // side swaps with the heading. Only on the FINAL stretch (within two cells
-  // of the destination) does the tap's kerb hint take over, so the operative
-  // still ends up exactly where the player pointed.
+  // side swaps with the heading.
   const nearDest = Math.abs(dest.cellX - cellX) + Math.abs(dest.cellY - cellY) <= 2;
   let perp;
-  if (nearDest && hint) {
-    perp = ew ? hint.dz : hint.dx;
-  } else if (nearDest) {
+  if (nearDest) {
     perp = ew ? (dest.cellY + 0.5) - (a.y / 256)
               : (dest.cellX + 0.5) - (a.x / 256);
   } else {

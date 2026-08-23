@@ -61,7 +61,9 @@ export function createMinimap(canvas) {
       const objective = objectiveCell(view);
       if (objective) {
         const pulse = 3 + 1.6 * Math.sin(view.tick / 4);
-        ctx.strokeStyle = mark("siteActive"); ctx.lineWidth = 1.5;
+        // Same mark as the world's objective ring (playtest 11): the two
+        // surfaces must agree about what the mission-target colour means.
+        ctx.strokeStyle = mark("objective"); ctx.lineWidth = 1.2;
         ctx.beginPath();
         ctx.arc(objective.cellX * s, objective.cellY * s, pulse, 0, Math.PI * 2);
         ctx.stroke();
