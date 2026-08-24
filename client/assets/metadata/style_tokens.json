@@ -53,7 +53,9 @@
   "guard": "#8A867E",
   "guardAlert": "#C2452F",
   "guardDown": "#4A5566",
-  "terminal": "#D9A441"
+  "terminal": "#D9A441",
+  "civilian": "#6E6A5E",
+  "hoverCar": "#3E6E8E"
  },
  "note_body": "Body colours are the PAINTED part \u2014 the part a tint never touches. Keeping them separate from marks is what lets detection state stay readable: the coat stays the coat while the state band changes colour.",
  "body": {

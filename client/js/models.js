@@ -703,3 +703,59 @@ export function areaActions(view) {
     hack: (area.terminals ?? []).some((t) => near(t.x, t.y)),
   };
 }
+
+// ── S17 ambient life: hover-car theatre (pure, testable) ───────────────────
+// Cars are CLIENT-side decoration on the transit lanes — they react to
+// nothing, so unlike civilians they earn no engine state. Everything about
+// them derives from (tiles, tick), so every reload shows the same traffic.
+
+const T_TRANSIT_TILE = 6;
+
+// Maximal straight runs of transit lane, both axes, long enough to be worth
+// driving. Cheap enough to run once per terrain load.
+export function transitLanes(tiles, size, minLen = 12) {
+  const lanes = [];
+  const at = (x, y) => tiles[y * size + x];
+  for (let y = 0; y < size; y++) {
+    let run = 0;
+    for (let x = 0; x <= size; x++) {
+      if (x < size && at(x, y) === T_TRANSIT_TILE) { run += 1; continue; }
+      if (run >= minLen) lanes.push({ x: x - run, y, dx: 1, dy: 0, len: run });
+      run = 0;
+    }
+  }
+  for (let x = 0; x < size; x++) {
+    let run = 0;
+    for (let y = 0; y <= size; y++) {
+      if (y < size && at(x, y) === T_TRANSIT_TILE) { run += 1; continue; }
+      if (run >= minLen) lanes.push({ x, y: y - run, dx: 0, dy: 1, len: run });
+      run = 0;
+    }
+  }
+  return lanes;
+}
+
+// Where every car is RIGHT NOW. Cars ride a lane end to end, vanish off the
+// edge for a gap, and come back — the wrap is the respawn. Odd cars drive
+// the other way so a two-lane avenue reads as two-way traffic.
+export function hoverCarsAt(tick, lanes, count) {
+  const out = [];
+  if (!lanes?.length || count <= 0) return out;
+  const SPEED = 0.12, GAP = 18;
+  for (let i = 0; i < count; i++) {
+    const lane = lanes[i % lanes.length];
+    const period = lane.len + GAP;
+    const phase = (i * 7919) % period;
+    const t = (tick * SPEED + phase) % period;
+    if (t >= lane.len) continue;   // in the gap: off the map edge
+    const dir = i % 2 === 0 ? 1 : -1;
+    // Clamped to the run: the fractional param can poke one cell past either
+    // end, and a car one cell off a map-edge avenue is a car in the void.
+    const d = Math.max(0, Math.min(lane.len - 1, dir > 0 ? t : lane.len - 1 - t));
+    out.push({
+      x: lane.x + lane.dx * d, y: lane.y + lane.dy * d,
+      dx: lane.dx * dir, dy: lane.dy * dir,
+    });
+  }
+  return out;
+}

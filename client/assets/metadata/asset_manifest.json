@@ -38,6 +38,12 @@
    "procedural": "patrol",
    "class": "figure",
    "tint": "guardDown"
+  },
+  "civilian": {
+   "procedural": "rival",
+   "class": "figure",
+   "tint": "civilian",
+   "note": "S17 ambient life: the bystander. The rival body in a putty mark - unmistakably a person, unmistakably nobody."
   }
  },
  "markers": {
@@ -96,6 +102,13 @@
    "class": "marker",
    "tint": "terminal",
    "note": "S17: the alarm terminal is the junction box's indoor cousin, and it LOOKS like one on purpose - the player already knows what that shape does."
+  },
+  "hoverCar": {
+   "procedural": "hoverCar",
+   "class": "marker",
+   "tint": "hoverCar",
+   "scale": 0.25,
+   "note": "S17 ambient life: client-side transit-lane theatre. Marker class (it is set dressing, not a person - the figure detail floor has no claim on it); explicit scale so a vehicle dwarfs a pedestrian."
   }
  },
  "structures": {

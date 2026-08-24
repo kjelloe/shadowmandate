@@ -93,6 +93,12 @@ export function hashStateLocal(state) {
     w.writeI32LE(p.stunnedUntil ?? 0);
     w.writeI32LE(p.targetY);
   }
+  for (const c of (state.civilians ?? [])) {
+    w.writeI32LE(c.id); w.writeI32LE(c.districtId);
+    w.writeI32LE(c.x); w.writeI32LE(c.y);
+    w.writeI32LE(c.targetX); w.writeI32LE(c.targetY);
+    w.writeI32LE(c.wander); w.writeI32LE(c.fleeTicks); w.writeI32LE(c.facing);
+  }
   for (const h of state.holdingSites) {
     w.writeI32LE(h.id); w.writeI32LE(h.districtId);
     w.writeI32LE(h.cellX); w.writeI32LE(h.cellY);

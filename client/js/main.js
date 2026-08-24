@@ -169,6 +169,7 @@ session.onChange((s, events) => {
   // session exercises exactly what a devtools user could.
   window.__smView = s.view;
   window.__smSend = (cmd) => session.send(cmd);
+  window.__smTiles = session.tiles ?? null;
 });
 
 // S05: the dropship sequence, owned by the client and driven by a wall clock.

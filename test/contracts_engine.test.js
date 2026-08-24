@@ -46,8 +46,8 @@ test("the tick order is the documented contract", () => {
   // different way, but it is brittle about the thing it actually claims.
   const src = readFileSync(new URL("../engine/reducer.js", import.meta.url).pathname, "utf8");
   const body = src.slice(src.indexOf("function applyAdvanceTick"));
-  const order = ["stepAgent", "stepPatrol", "stepAreas", "stepDetection",
-    "stepHeat", "stepArrests", "stepHqs", "stepContracts"];
+  const order = ["stepAgent", "stepPatrol", "stepCivilians", "stepAreas",
+    "stepDetection", "stepHeat", "stepArrests", "stepHqs", "stepContracts"];
   let cursor = -1;
   for (const fn of order) {
     const at = body.indexOf(`${fn}(`);

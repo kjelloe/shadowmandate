@@ -718,3 +718,27 @@ test("S17: area actions are adjacency decisions", async () => {
   view.agents[0].insideAreaId = -1;
   assert.deepEqual(areaActions(view), { exit: false, takedown: false, hack: false });
 });
+
+test("S17: transit lanes and hover cars stay on the avenue", async () => {
+  const { transitLanes, hoverCarsAt } = await import("../client/js/models.js");
+  // A toy map: one horizontal transit avenue at y=2, one vertical at x=5.
+  const size = 24;
+  const tiles = new Uint8Array(size * size);
+  for (let x = 0; x < size; x++) tiles[2 * size + x] = 6;
+  for (let y = 0; y < size; y++) tiles[y * size + 5] = 6;
+  const lanes = transitLanes(tiles, size);
+  assert.equal(lanes.length, 2, "two avenues, two lanes");
+  // Every car, over a long window, sits ON a transit tile and inside the map.
+  for (let tick = 0; tick < 4000; tick += 7) {
+    for (const car of hoverCarsAt(tick, lanes, 6)) {
+      const x = Math.round(car.x), y = Math.round(car.y);
+      assert.ok(x >= 0 && y >= 0 && x < size && y < size, `car off-map at ${x},${y}`);
+      assert.equal(tiles[y * size + x], 6, `car off the avenue at ${x},${y} (tick ${tick})`);
+    }
+  }
+  // The traffic MOVES: the same car index is elsewhere later.
+  const a = hoverCarsAt(0, lanes, 2), b = hoverCarsAt(40, lanes, 2);
+  assert.ok(JSON.stringify(a) !== JSON.stringify(b), "traffic is frozen");
+  // No lanes, no cars — never a crash.
+  assert.deepEqual(hoverCarsAt(100, [], 6), []);
+});

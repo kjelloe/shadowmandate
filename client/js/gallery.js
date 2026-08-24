@@ -25,7 +25,7 @@ const fail = (where, err) => {
 // Same role list the pipeline test walks, so the gallery cannot quietly show
 // fewer things than the game can draw.
 const ROLES = [
-  "agent", "rival", "patrol", "patrolAlert",
+  "agent", "rival", "patrol", "patrolAlert", "civilian", "hoverCar",
   "guard", "guardAlert", "guardDown", "terminal",
   "siteCache", "siteVault", "siteLab", "siteRelay", "siteTransit", "siteWarehouse",
   "camera", "cameraDisabled", "junction", "junctionCut",

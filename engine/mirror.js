@@ -32,6 +32,7 @@ export function mirrorWorldX(worldX, width) {
 export const POSITIONAL_FIELDS = Object.freeze({
   agents: ["x", "targetX"],
   patrols: ["x", "targetX"],
+  civilians: ["x", "targetX"],
   vehicles: ["x"],
   sites: ["cellX"],
   cameras: ["cellX"],
@@ -86,6 +87,17 @@ export function mirrorState(state) {
       x: mirrorCellX(p.x, width),
       targetX: p.targetX < 0 ? p.targetX : mirrorCellX(p.targetX, width),
       route: p.route.map((s) => ({ x: mirrorCellX(s.x, width), y: s.y })),
+    })),
+    // Civilians mirror positionally, but their FUTURE wander rolls derive
+    // from unmirrored seeds, so mirrored strolls diverge from perfect
+    // reflection over time. Deliberately tolerated: civilians participate in
+    // no mechanic (never watchers, never targets, never obstacles), so no
+    // fairness metric the MIRROR battery reads can see the difference.
+    civilians: (state.civilians ?? []).map((c) => ({
+      ...c,
+      x: mirrorCellX(c.x, width),
+      targetX: mirrorCellX(c.targetX, width),
+      facing: mirrorFacing(c.facing),
     })),
     vehicles: state.vehicles.map((v) => ({
       ...v, x: mirrorWorldX(v.x, width), facing: mirrorFacing(v.facing),

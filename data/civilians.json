@@ -1,0 +1,9 @@
+{
+  "note": "S17 ambient city life (D64 delegated numbers). Civilians are ENGINE entities so every client and the AI see the same crowd, but they participate in NOTHING: never watchers, never targets (D6 has nothing to say to them). perDistrict 8 = twice the patrol count, so streets read peopled. They walk short seeded wanders and FLEE trouble - an alarmed site or a burned operative - within fleeRadius. Ticks at 10Hz.",
+  "perDistrict": 8,
+  "fleeRadius": 6,
+  "walkEveryTicks": 4,
+  "fleeEveryTicks": 2,
+  "fleeHoldTicks": 50,
+  "wanderRadius": 6
+}

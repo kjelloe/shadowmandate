@@ -405,7 +405,31 @@ function buildDropship() {
   return g;
 }
 
+
+// S17 ambient life: the sci-fi hover car. A low slab riding a glow, canopy
+// forward, headlight cone leading — pure street theatre on the transit
+// lanes. The tintable spine varies the coachwork per car.
+function buildHoverCar() {
+  const g = new THREE.Group();
+  const C = body();
+  g.add(place(box(0.34, 0.10, 0.78, C.kioskRoof), 0, 0.16, 0));           // hull
+  g.add(place(tilt(cone(0.17, 0.22, 6, C.kioskRoof), Math.PI / 2), 0, 0.16, 0.48)); // nose
+  g.add(place(box(0.26, 0.10, 0.26, C.visor), 0, 0.24, 0.10));            // canopy
+  g.add(place(box(0.30, 0.04, 0.20, C.post), 0, 0.14, -0.42));            // tail
+  g.add(place(box(0.10, 0.03, 0.55, C.bars), -0.17, 0.10, 0));            // skirts
+  g.add(place(box(0.10, 0.03, 0.55, C.bars), 0.17, 0.10, 0));
+  // The headlight: a translucent cone thrown forward at kerb height.
+  const beam = cone(0.13, 0.75, 6, "#ffffff");
+  beam.material.transparent = true; beam.material.opacity = 0.18;
+  beam.rotation.x = -Math.PI / 2;
+  beam.position.set(0, 0.13, 0.95);
+  g.add(beam);
+  g.add(place(tintable(box(0.22, 0.05, 0.60, "#ffffff", "signal")), 0, 0.235, -0.05));
+  return g;
+}
+
 const BUILDERS = {
+  hoverCar: buildHoverCar,
   camera: buildCamera,
   dropship: buildDropship,
   junction: buildJunction,

@@ -13,7 +13,7 @@
 import * as THREE from "three";
 import { buildGround, buildBlocks, buildClutter, buildRoads, setTerrainTokens } from "./terrain3d.js";
 import { buildArea, setAreaTokens } from "./area3d.js";
-import { siteRoles, objectiveCell, buildingRole, siteVisual, burnedGuidance, pinnedCells, hqInBuilding, moveTarget, walkOffset, ARRIVE_CLAMP, areaView } from "./models.js";
+import { siteRoles, objectiveCell, buildingRole, siteVisual, burnedGuidance, pinnedCells, hqInBuilding, moveTarget, walkOffset, ARRIVE_CLAMP, areaView, transitLanes, hoverCarsAt } from "./models.js";
 import { buildProcedural, applyTint } from "./asset_factory.js";
 import { resolveVisual, tintFor, detectionMark } from "./asset_resolver.js";
 import { art } from "./assets.js";
@@ -463,6 +463,21 @@ export function createScene(canvas) {
       at(takeVisual("rival"), r.x / CELL, r.y / CELL);
       at(takeRing(tokens.marks.rival, npcRing), r.x / CELL, r.y / CELL, 0.04);
     }
+    // S17 ambient life: the crowd. No rings — rings are for things that
+    // matter, and a bystander's whole message is that they do not.
+    for (const c of view.civilians ?? []) {
+      const fig = at(takeVisual("civilian"), c.x + 0.5, c.y + 0.5);
+      if (fig) fig.rotation.y = octantToRadians(c.facing);
+    }
+    // Hover cars: client-side theatre on the transit lanes, derived from the
+    // tick so every client shows the same traffic. Lanes computed once per
+    // terrain.
+    if (!lanes && terrainTiles) lanes = transitLanes(terrainTiles, mapSize);
+    const carCount = 2 * Math.max(1, view.districts?.length ?? 3);
+    for (const car of hoverCarsAt(view.tick, lanes ?? [], carCount)) {
+      const fig = at(takeVisual("hoverCar"), car.x + 0.5, car.y + 0.5);
+      if (fig) fig.rotation.y = Math.atan2(car.dx, car.dy);
+    }
     // The walking position (D61): slew the drawn offset toward the pure
     // decision, so kerb-hops and street crossings are visible movement. A
     // null decision means "standing — hold the position you have".
@@ -682,6 +697,8 @@ export function createScene(canvas) {
 
   // The lateral the player ASKED for, remembered per move order (D61).
   let moveHint = null;
+  // S17: transit lanes for the hover-car theatre, computed once per terrain.
+  let lanes = null;
   function setMoveHint(hint) { moveHint = hint; }
 
   return {

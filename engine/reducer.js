@@ -38,7 +38,8 @@ import {
   enterBuilding, exitBuilding, buyCover, payloadFor, applyEffect,
 } from "./buildings.js";
 import { stepStandoffs, submitChoice } from "./standoff.js";
-import { stepAlarms, cutJunction } from "./security.js";
+import { stepAlarms, cutJunction, alarmStageOf } from "./security.js";
+import { stepCivilians } from "./civilians.js";
 import { stepRaids } from "./raids.js";
 import { liftCredentialFromGuard } from "./access.js";
 import { applyDormancy } from "./dormancy.js";
@@ -86,6 +87,7 @@ export function copyState(state) {
     junctions: (state.junctions ?? []).map((j) => ({ ...j })),
     buildings: state.buildings.map((b) => ({ ...b })),
     patrols: state.patrols.map((p) => ({ ...p, route: p.route.slice() })),
+    civilians: (state.civilians ?? []).map((c) => ({ ...c })),
     holdingSites: state.holdingSites.map((h) => ({ ...h, heldAgentIds: h.heldAgentIds.slice() })),
     hqs: state.hqs.map((h) => ({ ...h })),
     contractPool: state.contractPool.map((c) => ({
@@ -421,6 +423,17 @@ function applyAdvanceTick(next) {
   }
   syncVehicles(next);
   for (const patrol of next.patrols) stepPatrol(next, r.detection, patrol);
+  // S17 ambient life. The alarm half of "trouble" is computed HERE — the
+  // reducer already knows the security layer, and civilians.js importing it
+  // would close a cycle back into state.js. Pure decoration in gameplay
+  // terms: civilians watch nothing and block nothing.
+  if (r.civilians && next.civilians?.length) {
+    const alarmed = [];
+    for (const s of next.sites) {
+      if (alarmStageOf(next, s.id) > 0) alarmed.push({ x: s.cellX, y: s.cellY });
+    }
+    stepCivilians(next, r.civilians, alarmed);
+  }
   // S17: the indoor layer steps after street movement and before street
   // perception — occupants move, guards see, alarms breathe; the street
   // systems below all SKIP agents who are inside an area.

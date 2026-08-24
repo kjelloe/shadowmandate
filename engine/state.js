@@ -10,6 +10,7 @@
 
 import { T_OPEN } from "./terrain.js";
 import { seedSfc32 } from "../shared/prng.js";
+import { spawnCivilians } from "./civilians.js";
 
 // ── Agent lifecycle ──────────────────────────────────────────────────────
 export const AGENT_ABSENT = 0;   // slot unused
@@ -122,7 +123,7 @@ export function createInitialState(options = {}) {
   // blank ground, which is what the era-0 fixture pins against.
   const city = options.city ?? null;
 
-  return {
+  const state = {
     tick: 0,
     worldSeed,
     size,
@@ -172,4 +173,10 @@ export function createInitialState(options = {}) {
 
     events: [],
   };
+  // S17 ambient life: the crowd seats itself from its OWN seeded streams
+  // (worldSeed + civilian id), never the shared rng — adding civilians must
+  // shift no other system's rolls.
+  state.civilians = (city && options.rules?.civilians)
+    ? spawnCivilians(state, options.rules.civilians) : [];
+  return state;
 }

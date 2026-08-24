@@ -89,6 +89,8 @@ test("the populated world actually populates — otherwise this file proves noth
     + "exactly the hole this file exists to close");
   assert.ok(s.hqs.length > 0,
     "no HQs — the twins' hq writers go uncompared (this was a real blind spot from M3 to playtest 4)");
+  assert.ok(s.civilians.length > 0,
+    "no civilians — the twins' crowd writers go uncompared");
   assert.ok(s.areas.length > 0 && s.areas[0].guards.length > 0
     && s.areas[0].terminals.length > 0,
     "no populated mission area — the twins' area writers go uncompared");

@@ -96,6 +96,16 @@ export function buildView(state, firmId, detCfg) {
         && (visible(h.cellX, h.cellY) || (firm.knownRivalHqs ?? []).includes(h.id)))
       .map((h) => ({ id: h.id, firmId: h.firmId, cellX: h.cellX, cellY: h.cellY })),
 
+    // S17 ambient life: the crowd, where you can see it. A fleeing civilian
+    // is information (something is wrong over there), so the flag crosses;
+    // nothing else about them is anyone's business.
+    civilians: (state.civilians ?? [])
+      .filter((c) => visible(c.x, c.y))
+      .map((c) => ({
+        id: c.id, x: c.x, y: c.y, facing: c.facing,
+        fleeing: c.fleeTicks > 0 ? 1 : 0,
+      })),
+
     patrols: state.patrols
       .filter((p) => visible(p.x, p.y))
       .map((p) => ({

@@ -1,20 +1,21 @@
 {
- "version": "sm-era-0",
- "note": "Era 0 \u2014 pre-gameplay skeleton. Battery baselines are pinned per era; numbers measured under a different version are void (S14 era discipline).",
- "files": [
-  "terrain.json",
-  "agents.json",
-  "detection.json",
-  "combat.json",
-  "hq.json",
-  "contracts.json",
-  "citygen.json",
-  "ai_firms.json",
-  "standoff.json",
-  "vehicles.json",
-  "firms.json",
-  "season.json",
-  "security.json",
-  "areas.json"
- ]
+  "version": "sm-era-0",
+  "note": "Era 0 \u2014 pre-gameplay skeleton. Battery baselines are pinned per era; numbers measured under a different version are void (S14 era discipline).",
+  "files": [
+    "terrain.json",
+    "agents.json",
+    "detection.json",
+    "combat.json",
+    "hq.json",
+    "contracts.json",
+    "citygen.json",
+    "ai_firms.json",
+    "standoff.json",
+    "vehicles.json",
+    "firms.json",
+    "season.json",
+    "security.json",
+    "areas.json",
+    "civilians.json"
+  ]
 }

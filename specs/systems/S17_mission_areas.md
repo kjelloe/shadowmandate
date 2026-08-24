@@ -8,9 +8,13 @@ both approaches (entry strip, wing doors) stay outside sneak sight, per the
 the street (`decayDetection`, one home) and runs indoors at heat 0. An
 alerted compound keeps stepping while empty so bail-out-and-cool works.
 Client: fixed-frame compound diorama (area3d.js), BEGIN/LEAVE/TAKEDOWN/HACK
-buttons, threshold fade, tap-to-move in area coordinates. Not yet built:
-city life (civilians, hover cars), HQ-assault areas, guard credential lifts
-indoors, area retune batteries (D42 order: opposition first). Revises D45.*
+buttons, threshold fade, tap-to-move in area coordinates. CITY LIFE BUILT
+(slice CL-1, 2026-08-24): engine civilians per the proposed numbers (8 per
+district, flee radius 6, decoration doctrine guard-enforced - never
+watchers, never emitters) and client-side hover-car theatre on the transit
+lanes (pure tick-derived, unit-tested to stay on the avenue). Not yet
+built: HQ-assault areas, guard credential lifts indoors, area retune
+batteries (D42 order: opposition first). Revises D45.*
 
 ## The ruling this implements (D63)
 
