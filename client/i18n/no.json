@@ -207,5 +207,20 @@
   "dialog.cubby.hide": "Klem deg inn til mørket faller",
   "toast.waitingForDark": "Ligger lavt til mørket faller",
   "toast.waitedForDark": "Mørket har falt — tilbake på gaten",
-  "building.cubby": "Smutthull"
+  "building.cubby": "Smutthull",
+  "dialog.respond.waitDark": "Hvil. Jeg vekker deg når det er mørkt.",
+  "dialog.respond.cubbyHide": "Du klemmer deg inn i nisjen og venter på at lyset dør.",
+  "journal.areaEntered": "Gikk inn i anlegget",
+  "journal.areaExited": "Tilbake på gaten",
+  "journal.areaAssetTaken": "Objektet sikret inne i anlegget",
+  "journal.assetExtracted": "Objektet båret rent ut",
+  "journal.surveillancePass": "Overvåkingsrunde {0} av {1} fullført",
+  "journal.areaAlarm": "Anleggsalarm — nivå {0}",
+  "journal.areaSuppressed": "Anleggsalarmen dempet ved terminalen",
+  "journal.guardDowned": "Vakt nedkjempet, stille",
+  "journal.agentDumped": "En operatør ble dumpet ved anleggsporten",
+  "journal.waitingForDark": "Ligger lavt til mørket faller",
+  "journal.waitedForDark": "Mørket falt — rykket ut",
+  "journal.contested": "En rivaliserende gruppe kjemper om denne kontrakten",
+  "journal.contractLost": "Kontrakten tapt til en rival"
 }

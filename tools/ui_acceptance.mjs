@@ -141,6 +141,19 @@ async function main() {
     // could never leave. No unit test can see that; only this flow can.
     const enterVisible = await page.evaluate(() => !document.getElementById("enter-btn").hidden);
     check("GO INSIDE is offered on the HQ door at spawn", enterVisible);
+
+    // S17: the four indoor controls exist and stay HIDDEN on the street with
+    // no workable contract — a BEGIN button that shows at spawn would be a
+    // dead control, and a missing one would be the whole indoor game
+    // unreachable. (The full enter/exit flow runs in dbg_area_look.mjs; this
+    // is the DOM contract.)
+    const areaButtons = await page.evaluate(() =>
+      ["begin-btn", "exit-area-btn", "takedown-btn", "hack-btn"].map((id) => {
+        const el = document.getElementById(id);
+        return { id, exists: !!el, hidden: el ? el.hidden : null };
+      }));
+    check("the four mission-area buttons exist and are hidden at spawn",
+      areaButtons.every((b) => b.exists && b.hidden), JSON.stringify(areaButtons));
     if (enterVisible) {
       await evalT(() => document.getElementById("enter-btn").click(), undefined, "click enter");
       let inside = false;

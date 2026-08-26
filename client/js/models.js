@@ -575,6 +575,10 @@ export const SPOKEN_LINES = {
   "dialog.informant.askRival": "dialog.respond.rival",
   "dialog.informant.askHeat": "dialog.respond.heat",
   "dialog.informant.askCredential": "dialog.respond.credential",
+  // S09 wait-for-dark. Without these the fallback spoke the REFUSE line the
+  // moment you chose to wait — a yes that sounded like a no.
+  "dialog.safehouse.waitDark": "dialog.respond.waitDark",
+  "dialog.cubby.hide": "dialog.respond.cubbyHide",
 };
 
 export function journalLine(e) {
@@ -602,6 +606,23 @@ export function journalLine(e) {
     // The transcript half: record the RESPONSE line the NPC spoke.
     case "dialogueChosen":
       return { key: SPOKEN_LINES[e.optionKey] ?? "dialog.respond.refuse", args: [], spoken: true };
+    // S17 mission areas — the indoor story belongs in the log too.
+    case "areaEntered": return { key: "journal.areaEntered", args: [] };
+    case "areaExited": return { key: "journal.areaExited", args: [] };
+    case "areaAssetTaken": return { key: "journal.areaAssetTaken", args: [] };
+    case "assetExtracted": return { key: "journal.assetExtracted", args: [] };
+    case "surveillancePass":
+      return { key: "journal.surveillancePass", args: [e.pass ?? 1, e.of ?? 1] };
+    case "areaAlarm": return { key: "journal.areaAlarm", args: [e.stage ?? 1] };
+    case "areaSuppressed": return { key: "journal.areaSuppressed", args: [] };
+    case "guardDowned": return { key: "journal.guardDowned", args: [] };
+    case "agentDumped": return { key: "journal.agentDumped", args: [] };
+    // S09 waiting for dark.
+    case "waitingForDark": return { key: "journal.waitingForDark", args: [] };
+    case "waitedForDark": return { key: "journal.waitedForDark", args: [] };
+    // S16 contested work (a pre-existing gap found in the same sweep).
+    case "contractContested": return { key: "journal.contested", args: [] };
+    case "contractLost": return { key: "journal.contractLost", args: [] };
     default: return null;
   }
 }

@@ -65,6 +65,9 @@ export function buildView(state, firmId, detCfg) {
       // pin. OWN agents only — a rival's destination would leak intent.
       targetX: a.targetX, targetY: a.targetY,
       insideAreaId: a.insideAreaId, areaCol: a.areaCol, areaRow: a.areaRow,
+      // S09: the client must SHOW that a wait is in progress — a chosen
+      // option with no visible state reads as a dead button.
+      waitUntilDark: a.waitUntilDark | 0,
       contractIds: a.contractIds.slice(),
     })),
 

@@ -42,7 +42,7 @@ retune batteries deferred behind D42.
 
 ## Read first
 
-1. `specs/00_document_index.md` — document map, rulings D1–D63
+1. `specs/00_document_index.md` — document map, rulings D1–D64
 2. `plan-version1.md` — the operational plan (milestones M0–M7, gates)
 3. `plan-implementation-order.md` — slice-by-slice execution order, per-milestone
    STATUS markers (battery runbook: `ops/BATCH_PC.md`, private ops repo)
@@ -70,6 +70,8 @@ node debugging/dbg_alarms.mjs 6 12000       # do S16 alarms actually FIRE?
 node debugging/dbg_choke.mjs 1548 64        # example one-off probe (kept)
 SEED=4711 node debugging/dbg_ai_rejections.mjs 12000  # AI rejected commands (0 = healthy)
 node debugging/dbg_look.mjs                 # drop in, photograph the live look
+node debugging/dbg_area_look.mjs            # S17: enter a compound, render, exit
+node debugging/dbg_street_life.mjs          # S17: crowd + hover cars, live shot
 node tools/repin_fixture.mjs "<reason>"     # deliberate fixture re-pin
 ```
 
@@ -331,6 +333,13 @@ is undeclared. A missed mirror field silently invalidates every future battery.
 
 Probe vs game disagree → check the instrument, then config plumbing · read the
 FAIL COUNT, not the exit code · telemetry must record failure · events are
-per-tick · WSL Playwright is SwiftShader-only (correctness yes, FPS no) · ws
-tests poll-wait, never fixed settles · era discipline: re-pin battery baselines
-when `data/ruleset.json` version changes.
+per-tick · WSL Playwright is SwiftShader-only (correctness yes, FPS no; and it
+cannot `page.screenshot` above ~640x360 — probes stay small) · ws tests
+poll-wait, never fixed settles · era discipline: re-pin battery baselines
+when `data/ruleset.json` version changes · a DISPERSAL assertion (things got
+farther away) passes under a random walk — assert the STATE the mechanism
+sets (fleeTicks, not distance), then mutation-test BOTH halves of any
+two-source condition: the civilians' burned-flee test stayed green with the
+feature deleted because an alarm CASCADE produced the same motion · a
+hand-kept key map (SPOKEN_LINES) silently falls back on new content — derive
+the requirement from the content and guard it.

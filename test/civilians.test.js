@@ -56,7 +56,16 @@ test("civilians flee an alarmed site — the street empties around trouble", () 
     Math.max(Math.abs(c.x - site.cellX), Math.abs(c.y - site.cellY))]));
 
   raiseAlarm(s, site, RULES.security.alarm, ALARM_LOCKDOWN, "test");
-  s = run(s, 120);
+  // The MECHANISM first: within a few ticks the subjects are in the fleeing
+  // state, which no amount of ordinary strolling ever sets. (The original
+  // distance-only assertion passed with flee disabled — wandering also
+  // disperses a cluster, so it proved nothing.)
+  s = run(s, 10);
+  const fleeing = subjects.filter((id) =>
+    s.civilians.find((x) => x.id === id).fleeTicks > 0).length;
+  assert.ok(fleeing > subjects.length / 2,
+    `only ${fleeing}/${subjects.length} near the alarm entered the fleeing state`);
+  s = run(s, 110);
 
   let fledFarther = 0;
   for (const id of subjects) {
@@ -96,4 +105,41 @@ test("the view sends the crowd as position + flight, nothing else", async () => 
   // Out of sight, out of view: a firm with no eyes sees no crowd.
   const blind = buildView(s, 1, RULES.detection);
   assert.equal(blind.civilians.length, 0, "the crowd leaked through the fog");
+});
+
+test("civilians also flee a BURNED operative in the open — the other trouble half", () => {
+  // The alarm half was tested from day one; this half (troubleSpots reads
+  // agent.detection) shipped untested. It must be tested AWAY from sites:
+  // near one, a burned operative trips the S16 alarm cascade and civilians
+  // flee THAT, so the first version of this test stayed green with the
+  // burned half deleted — passing for the wrong reason, again.
+  let s = makeWorld({ seed: 4711 });
+  const radius = RULES.civilians.fleeRadius;
+  const farFromSites = (x, y) => s.sites.every((site) =>
+    Math.abs(site.cellX - x) + Math.abs(site.cellY - y) > radius * 2 + 4);
+  let spot = null;
+  outer: for (let y = 2; y < s.size - 2; y++) {
+    for (let x = 2; x < s.size - 2; x++) {
+      if (farFromSites(x, y) && speedMultiplier(tileAt(s.map, x, y)) > 0) {
+        spot = { x, y }; break outer;
+      }
+    }
+  }
+  assert.ok(spot, "fixture: no site-free ground on this seed");
+  // Stage three civilians around the spot — the scenario, not the geography.
+  const subjects = s.civilians.slice(0, 3).map((c) => {
+    c.x = spot.x; c.y = spot.y;
+    c.targetX = spot.x; c.targetY = spot.y; c.fleeTicks = 0;
+    return c.id;
+  });
+  const agent = s.agents[0];
+  agent.state = 1; agent.firmId = 0;
+  agent.x = spot.x * 256 + 128; agent.y = spot.y * 256 + 128;
+  agent.detection = 2;   // BURNED, in the open
+  s.firms[0].state = 1;
+  s = run(s, 10);
+  const fleeing = subjects.filter((id) =>
+    s.civilians.find((x) => x.id === id).fleeTicks > 0).length;
+  assert.equal(fleeing, subjects.length,
+    `only ${fleeing}/${subjects.length} civilians fled the burned operative`);
 });

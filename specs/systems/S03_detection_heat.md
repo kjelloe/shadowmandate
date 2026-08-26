@@ -91,12 +91,17 @@ relationship in mind.
 `⚙ tune` every radius/window against the M5 battery — initial values copied
 from Fireline alarm radii. (Patrol arrests ruled: D27.)
 
-## SPEC DRAFT — the day-night cycle (Q45, owner-directed 2026-08-23; NOT BUILT)
+## The day-night cycle (Q45) — BUILT 2026-08-24 (DN-1); night 30% RULED (D63a)
 
 The owner's direction: buildings light up at night; sneaking is easier in the
 dark; safehouses offer "stay until nightfall"; paid cubby holes (cost 10,
 ruled) hold you until dark. This section is the S03 half of the contract —
-S09 carries the building actions. Nothing below exists in code yet.
+S09 carries the building actions (both BUILT: DN-1 here, WD-1 in S09).
+As built: `lightPhase`/`sightPctAt` in engine/season.js; `dayNight
+{dayTicks 10800, nightTicks 7200, nightSightPct 70}` in data/season.json —
+a compressed 30-minute cycle; the WATCHER factor applies at exactly two
+seams (`effectiveSightRadius`, `cameraCoversCell`) and, since AR-1, at the
+indoor guards' sight through the same `sightPctAt`.
 
 ### The clock is DERIVED, never stored
 
@@ -144,4 +149,5 @@ tokens and the new `lightingDay` set and shows a DAY/NIGHT chip.
 test/daynight.test.js pins the real promise: a patrol that sees you by day
 MISSES you at night at the same distance. Still open from the draft: the
 night-aware AI scorer (a battery question — night changes burn probability,
-not any rule the AI must obey), and the S09 waiting actions.
+not any rule the AI must obey; the AI also does not USE the waiting actions
+yet, same follow-up). The S09 waiting actions are BUILT (WD-1).

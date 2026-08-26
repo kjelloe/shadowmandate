@@ -594,10 +594,14 @@ function renderBuilding(view) {
   // seconds after a refusal it carries the in-character answer, then falls
   // back to the greeting. Runs every frame, BEFORE the rebuild early-return,
   // because the response must appear without the list rebuilding.
+  // S09: while a wait is in progress the greet line IS the state — without
+  // this, choosing "until nightfall" looked like a button that did nothing.
   $("#building-greet").textContent =
-    dialogResponse && Date.now() < dialogResponse.until
-      ? t(dialogResponse.key)
-      : (payload ? t(payload.quiet ? payload.quietKey : payload.greetKey) : "");
+    agent?.waitUntilDark
+      ? t("toast.waitingForDark")
+      : dialogResponse && Date.now() < dialogResponse.until
+        ? t(dialogResponse.key)
+        : (payload ? t(payload.quiet ? payload.quietKey : payload.greetKey) : "");
   if (dialogResponse && Date.now() >= dialogResponse.until) dialogResponse = null;
   if (signature === buildingSignature) return;    // do not rebuild under the cursor
   buildingSignature = signature;

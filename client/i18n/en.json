@@ -207,5 +207,20 @@
   "dialog.cubby.hide": "Wedge in until nightfall",
   "toast.waitingForDark": "Lying low until nightfall",
   "toast.waitedForDark": "Night has fallen — back on the street",
-  "building.cubby": "Cubby hole"
+  "building.cubby": "Cubby hole",
+  "dialog.respond.waitDark": "Rest. I'll wake you when it's dark.",
+  "dialog.respond.cubbyHide": "You fold into the recess and wait for the light to die.",
+  "journal.areaEntered": "Went inside the compound",
+  "journal.areaExited": "Back on the street",
+  "journal.areaAssetTaken": "Asset secured inside the compound",
+  "journal.assetExtracted": "Asset carried out clean",
+  "journal.surveillancePass": "Surveillance pass {0} of {1} complete",
+  "journal.areaAlarm": "Compound alarm — stage {0}",
+  "journal.areaSuppressed": "Compound alarm suppressed at the terminal",
+  "journal.guardDowned": "Guard put down, quietly",
+  "journal.agentDumped": "An operative was dumped at the compound door",
+  "journal.waitingForDark": "Lying low until nightfall",
+  "journal.waitedForDark": "Night fell — moved out",
+  "journal.contested": "A rival crew is racing this contract",
+  "journal.contractLost": "Contract lost to a rival crew"
 }

@@ -11,6 +11,17 @@ Remaining in M7: the VM deploy itself (7e, needs the box) and native GPU perf
 far as it can be taken solo.** M8 added for S16 opposition: the difficulty layer D42/D43 say the contract
 balance is waiting on.**
 
+**STATUS 2026-08-26: suite 482/482.** M8 8a–8k built. Post-playtest-12 the
+plan grew a second floor, all landed on `dev_night`: **DN-1** day-night
+(D63a, night sneak 30% ruled), **AR-1/AR-2** mission areas (S17 — the
+playable inside for extraction and surveillance, engine + client),
+**CL-1** ambient city life (engine civilians, client hover cars),
+**WD-1** waiting for dark (S09/Q45 — free safehouse wait, paid-10 cubby
+holes). plan-version2 (M9–M14) is the road ahead; the pre-M9 remainder is
+the D42/D43 balance verdict, which waits on a `pacing 300` re-run of the
+batteries against THIS build (the n=24 patrol sweeps predate all of the
+above — reading recorded in dev-questions.md).
+
 *Written 2026-08-04, for the implementing agent (me). The operational plan is
 `plan-version1.md`; specs are `specs/systems/S01–S15`; this file is HOW the
 milestones execute: slice breakdown, order, dependencies, and the battery/sim

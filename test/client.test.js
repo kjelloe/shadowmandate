@@ -742,3 +742,38 @@ test("S17: transit lanes and hover cars stay on the avenue", async () => {
   // No lanes, no cars — never a crash.
   assert.deepEqual(hoverCarsAt(100, [], 6), []);
 });
+
+test("every dialogue option in the CONTENT has a spoken response line", async () => {
+  // Found in the S17 sweep: choosing "wait until nightfall" spoke the REFUSE
+  // line, because SPOKEN_LINES is a hand-kept map and the new option was not
+  // in it — a yes that sounded like a no. Derive the requirement from the
+  // content itself so the next option cannot repeat it.
+  const { SPOKEN_LINES } = await import("../client/js/models.js");
+  const payloads = JSON.parse(readFileSync(
+    join(ROOT, "data/buildings/payloads.json"), "utf8"));
+  for (const d of payloads.dialogues) {
+    for (const o of d.options) {
+      assert.ok(SPOKEN_LINES[o.key],
+        `dialogue option "${o.key}" has no SPOKEN_LINES entry — choosing it speaks the refuse line`);
+      assert.ok(EN[SPOKEN_LINES[o.key]] && NO[SPOKEN_LINES[o.key]],
+        `response key "${SPOKEN_LINES[o.key]}" missing from a catalog`);
+    }
+  }
+});
+
+test("the journal covers the indoor game and the waiting actions (playtest 12)", async () => {
+  const { journalLine } = await import("../client/js/models.js");
+  // Every event a player would ask "when did that happen?" about must map.
+  const covered = [
+    "areaEntered", "areaExited", "areaAssetTaken", "assetExtracted",
+    "areaAlarm", "areaSuppressed", "guardDowned", "agentDumped",
+    "waitingForDark", "waitedForDark", "contractContested", "contractLost",
+  ];
+  for (const type of covered) {
+    const line = journalLine({ type });
+    assert.ok(line, `event "${type}" writes nothing to the journal`);
+    assert.ok(EN[line.key] && NO[line.key], `journal key "${line.key}" missing from a catalog`);
+  }
+  assert.deepEqual(journalLine({ type: "surveillancePass", pass: 2, of: 3 }),
+    { key: "journal.surveillancePass", args: [2, 3] });
+});
