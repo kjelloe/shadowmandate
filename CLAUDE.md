@@ -4,34 +4,41 @@ Drop-in/drop-out covert-ops game. Sibling of Fireline Command
 (`~/GIT/firepower` — the fork source, never modified from here).
 
 **Status: M0–M6 complete; M7 done as far as it can go solo, and PLAYABLE in a
-browser. `npm test` = 448 green**, plus four browser gates (`smoke`, `ui`,
+browser. `npm test` = 482 green**, plus four browser gates (`smoke`, `ui`,
 `mobile`, `gallery`). Batch lane verified (`ops/BATCH_PC.md`). **Remaining in M7**:
 the VM deploy (7e) and native GPU perf (7f) — both need the owner's hardware.
-**M8 — opposition and site security — IS IN PROGRESS** (8a–8k done: alarms, cameras,
-beams, junctions, credentials, secured facilities, contested contracts, raids
-and the Defend contract). **8h re-run after 8k**: five of six contract types now
-read in a 0.75–1.21x preference band and extraction is no longer dominant.
-Credentials are still rare, pacing is still short, and one seed shows
-unexplained accept churn — all flagged in S16. It is what the contract balance is waiting
-on (D42/D43). **Playtests 4–9 (2026-08-22/23, D54–D61)**: fixed 45°/45°
-dimetric camera with block massing (D54/D55); the HQ auto-establishes in the
-nearest CLEAR safehouse — clear of patrols AND cameras (`hqLandingFor`, the
-single home of the rule); the session economy works end to end (starting
-bank 200, real debits keyed on command TYPE at the socket layer, bank in the
-HUD and splash, throwaway `LEDGER_PATH` for every gate — `reports/ledger.json`
-holds REAL progression); streets are 4-lane with sidewalks, lamps and
-per-district identity (`districtMap` on the wire); typed site markers and
-the prison block; the mission banner; **D61: figures render at 1/16 of a
-cell** (engine grid untouched), street-level default zoom, zoom-adaptive HUD
-rings, taps snap to routable cells with a destination pin, and the tap's
-sub-cell fraction picks one of the FOUR walking positions (sidewalks/lanes).
-**Playtest 10 (D62)**: title diorama + wordmark on the splash,
-sensible-side walking with the tapped kerb on the final stretch, the drop
-picker shows server-predicted landings (a promise, not an estimate), Q44
-closed (HQ/informant stay one building), day-night SPEC drafts in S03/S09
-(cubby holes cost 10), plan-version2 renumbered **M9–M14**. **Open: Q45
-remainders** — the night sneak percentage, and the patrol-density verdict
-from the commissioned batteries (`reports/sweeps/patrol_base{3,4}.csv`).
+**M8 — opposition and site security — 8a–8k done** (alarms, cameras, beams,
+junctions, credentials, secured facilities, contested contracts, raids, the
+Defend contract); the contract balance verdict still waits on D42/D43.
+**Playtests 4–12 (2026-08-22/24, D54–D64)** turned the client into a game:
+45°/45° dimetric camera, HQ auto-landing (`hqLandingFor`), the session
+economy end to end (bank 200, debits keyed on command TYPE at the socket
+layer, throwaway `LEDGER_PATH` for every gate — `reports/ledger.json` holds
+REAL progression), 4-lane streets with the four walking positions, mission
+banner, title diorama, server-predicted drop landings. **Built 2026-08-24/26
+(post-playtest-12, all on `dev_night`):**
+- **DN-1 day-night** (D63a): 30-min compressed cycle, watchers see at 70%
+  after dark (the ruled "night sneak 30%") through the single `sightPctAt`;
+  client eases night↔day lighting; DAY/NIGHT HUD chip.
+- **AR-1/AR-2 mission areas** (S17, D63c/D64): derived 24x16 compounds with
+  guards, flank takedowns, terminals, PvP dumping; extraction carries the
+  asset OUT, surveillance holds unseen at the vantage; the AI plays them
+  with player commands (stage → cross-when-clear → cool off outside); the
+  client renders the compound (area3d.js) with BEGIN/LEAVE/TAKEDOWN/HACK.
+  The 8f credential gate moved to the ASSET; detection decay has ONE home
+  (`decayDetection`). Live probe: `debugging/dbg_area_look.mjs`.
+- **CL-1 city life**: engine civilians (8/district, flee trouble, never
+  watchers — guard-enforced) + client hover-car theatre on transit lanes.
+  Probe: `debugging/dbg_street_life.mjs`.
+- **WD-1 waiting for dark** (S09/Q45): free at the safehouse, 10 at the new
+  cubby holes (building kind 3, own rng stream, layout undisturbed);
+  `waitForDark` is a dialogue effect, the reducer pops agents out at
+  nightfall, early exit cancels.
+**Open**: patrol-density verdict — the commissioned n=24 batteries are read
+in `dev-questions.md` (density stays 4; both caveated pre-day-night, so the
+real verdict needs a `pacing 300` re-run on the current build); the AI does
+not yet wait for dark or price night approaches (S07 follow-up); area
+retune batteries deferred behind D42.
 
 ## Read first
 
