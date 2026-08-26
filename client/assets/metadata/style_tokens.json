@@ -319,5 +319,19 @@
   "wallTop": "#1B2029",
   "crate": "#3A4034",
   "backdrop": "#0B0E14"
+ },
+ "note_splash": "SP-1 (owner-directed, ref debugging/cyperpunk-example.png): the loadscreen's cyberpunk-dystopia grade. Street-level perspective camera; three depth layers (foreground street stage, tower skyline silhouettes, haze sky); neon signage on the facades. skyTop->skyGlow is the vertical haze gradient; skyline holds the two parallax silhouette layers (near darker, far pinker); neon is the sign palette - pink, cyan, amber, in the reference's proportions (pink dominant, cyan secondary, amber sparse).",
+ "splash": {
+  "skyTop": "#12102E",
+  "skyGlow": "#B0298C",
+  "skylineNear": "#221E44",
+  "skylineFar": "#4A2560",
+  "windowWarm": "#F5C36A",
+  "windowCool": "#7FE8F0",
+  "neonPink": "#FF3FA4",
+  "neonCyan": "#3FE8FF",
+  "neonAmber": "#FFB13F",
+  "hazeFog": "#3A1A4E",
+  "rim": "#C24BFF"
  }
 }

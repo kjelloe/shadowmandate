@@ -90,6 +90,84 @@ export function createAttract(canvas) {
   scene.add(key);
   scene.add(new THREE.AmbientLight(new THREE.Color(L.ambient.color), L.ambient.intensity));
 
+  // ── SP-1: the cyberpunk grade (tokens.splash; ref cyperpunk-example.png) ──
+  // Three depth layers behind the stage: a vertical haze gradient sky, a FAR
+  // skyline washed toward the glow, a NEAR skyline darker and sharper. Both
+  // silhouettes are canvas-painted textures — towers with pinprick windows —
+  // because at splash distance a skyline IS a texture, not geometry.
+  const SP = tokens.splash;
+  const skylineTexture = (hex, seedBase, litDensity) => {
+    const c = document.createElement("canvas");
+    c.width = 512; c.height = 160;
+    const g = c.getContext("2d");
+    // Deterministic little LCG so the skyline is the same every load.
+    let r = seedBase >>> 0;
+    const rnd = () => ((r = (r * 1664525 + 1013904223) >>> 0) / 2 ** 32);
+    g.fillStyle = hex;
+    let x = 0;
+    while (x < c.width) {
+      const w = 18 + Math.trunc(rnd() * 40);
+      const h = 40 + Math.trunc(rnd() * 110);
+      g.fillRect(x, c.height - h, w, h);
+      // Rooftop masts on a few towers — the reference's antenna line.
+      if (rnd() < 0.3) g.fillRect(x + w / 2, c.height - h - 14, 2, 14);
+      // Lit windows: two temperatures, warm dominant (the game's own rule).
+      for (let wy = c.height - h + 4; wy < c.height - 6; wy += 7) {
+        for (let wx = x + 3; wx < x + w - 3; wx += 6) {
+          if (rnd() < litDensity) {
+            g.fillStyle = rnd() < 0.7 ? SP.windowWarm : SP.windowCool;
+            g.globalAlpha = 0.5 + rnd() * 0.5;
+            g.fillRect(wx, wy, 2, 3);
+            g.globalAlpha = 1;
+            g.fillStyle = hex;
+          }
+        }
+      }
+      x += w + 2 + Math.trunc(rnd() * 10);
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.magFilter = THREE.NearestFilter;   // crisp pixel windows, per the ref
+    return tex;
+  };
+  const layer = (tex, w, h, y, z) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, fog: false }));
+    m.position.set(4.6, y, z);
+    scene.add(m);
+    return m;
+  };
+  // The sky: a tall gradient quad, magenta glow pooling at the horizon.
+  {
+    const c = document.createElement("canvas");
+    c.width = 4; c.height = 256;
+    const g = c.getContext("2d");
+    const grad = g.createLinearGradient(0, 0, 0, 256);
+    grad.addColorStop(0, SP.skyTop);
+    grad.addColorStop(0.72, SP.skyGlow);
+    grad.addColorStop(1, SP.skyGlow);
+    g.fillStyle = grad; g.fillRect(0, 0, 4, 256);
+    layer(new THREE.CanvasTexture(c), 60, 26, 6, -12);
+  }
+  layer(skylineTexture(SP.skylineFar, 0xfa7, 0.5), 44, 9.6, 3.4, -8);
+  layer(skylineTexture(SP.skylineNear, 0xb33, 0.35), 34, 7.2, 2.4, -4.5);
+
+  // Haze: real fog, its range DERIVED from the layout (camera z 9.2, near
+  // skyline z -4.5 => distances ~5..14) — the fog-bug lesson says never
+  // guess these numbers against an unknown camera distance.
+  scene.fog = new THREE.Fog(new THREE.Color(SP.hazeFog), 6, 17);
+
+  // The magenta rim light from behind the mass: what separates dark towers
+  // from a dark sky in the reference.
+  const rim = new THREE.DirectionalLight(new THREE.Color(SP.rim), 0.55);
+  rim.position.set(2, 6, -10);
+  scene.add(rim);
+  // A faint magenta FILL from the camera side: the near mass read as a
+  // featureless black wall without it — the reference's towers are dark,
+  // never void.
+  const fill = new THREE.DirectionalLight(new THREE.Color(SP.skyGlow), 0.22);
+  fill.position.set(5, 3, 12);
+  scene.add(fill);
+
   const tiles = stageTiles();
   const SEED = 20260823;
   scene.add(buildGround(tiles, STAGE_W, SEED));
@@ -97,6 +175,36 @@ export function createAttract(canvas) {
   if (blocks) scene.add(blocks);
   const roads = buildRoads(tiles, STAGE_W, SEED);
   if (roads) scene.add(roads);
+
+  // Neon signage on the north facades (the mass front sits at z = 5): two
+  // vertical sign strips, one marquee, in the reference's proportions —
+  // pink dominant, cyan second, amber sparse. Emissive-flat quads; the
+  // flicker runs in the frame loop off wall-clock, like everything else on
+  // this stage.
+  const neonSigns = [];
+  const sign = (hex, wq, hq, x, y, phase) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(wq, hq),
+      new THREE.MeshBasicMaterial({
+        color: new THREE.Color(hex), transparent: true, opacity: 0.92, fog: false,
+      }));
+    m.position.set(x, y, 5.015);
+    m.userData.phase = phase;
+    scene.add(m);
+    neonSigns.push(m);
+    // The glow halo: a bigger, fainter twin right behind.
+    const halo = new THREE.Mesh(new THREE.PlaneGeometry(wq * 1.9, hq * 1.35),
+      new THREE.MeshBasicMaterial({
+        color: new THREE.Color(hex), transparent: true, opacity: 0.22, fog: false,
+      }));
+    halo.position.set(x, y, 5.008);
+    scene.add(halo);
+  };
+  // Placed at the FRAME EDGES: the splash terminal owns the centre of the
+  // screen, and a sign behind frosted glass is a sign that does not exist.
+  sign(tokens.splash.neonPink, 0.26, 1.7, 1.0, 1.75, 0.0);
+  sign(tokens.splash.neonCyan, 0.22, 1.25, 8.25, 1.6, 1.7);
+  sign(tokens.splash.neonPink, 1.25, 0.3, 1.05, 2.85, 3.1);
+  sign(tokens.splash.neonAmber, 0.62, 0.24, 8.2, 0.7, 4.6);
 
   // The crates the operative hides behind — placed FOR the choreography, in
   // the clutter tokens' paint.
@@ -146,13 +254,12 @@ export function createAttract(canvas) {
   flashRing.renderOrder = 5;
   scene.add(flashRing);
 
-  // Same dimetric framing as the game, tight on the street.
-  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 200);
-  const PITCH = 45 * (Math.PI / 180), AZ = 45 * (Math.PI / 180), H = 60;
-  const back = H / Math.tan(PITCH);
-  const target = { x: 4.6, z: 3.3 };   // the action strip, low-left, clear of the terminal
-  camera.position.set(target.x + back * Math.sin(AZ), H, target.z + back * Math.cos(AZ));
-  camera.lookAt(target.x, 0, target.z);
+  // SP-1: STREET LEVEL. The game plays dimetric; the splash stands on the
+  // pavement like the reference — a low perspective camera looking north
+  // across the street at the lit mass, skyline and haze stacked behind.
+  const camera = new THREE.PerspectiveCamera(44, 1, 0.1, 200);
+  camera.position.set(4.6, 1.05, 10.6);
+  camera.lookAt(4.6, 1.7, 0.0);
 
   // Accessibility: a reduced-motion browser gets one composed still of the
   // city instead of the looping vignette.
@@ -163,10 +270,15 @@ export function createAttract(canvas) {
     const w = canvas.clientWidth, h = canvas.clientHeight;
     if (!w || !h) return;
     renderer.setSize(w, h, false);
-    const zoom = 6.8, halfX = zoom / 2, halfY = halfX / (w / h);
-    camera.left = -halfX; camera.right = halfX;
-    camera.top = halfY; camera.bottom = -halfY;
+    camera.aspect = w / h;
     camera.updateProjectionMatrix();
+    // Neon flicker: mostly steady, one sign stuttering at a time — the
+    // faulty-lamp register the streets already speak.
+    for (const m of neonSigns) {
+      const tt = now / 1000 + m.userData.phase;
+      const stutter = Math.sin(tt * 13) > 0.92 && Math.sin(tt * 0.7) > 0.3;
+      m.material.opacity = stutter ? 0.35 : 0.92;
+    }
 
     if (t0 === null) t0 = now;
     const s = attractScript((now - t0) / 1000);
