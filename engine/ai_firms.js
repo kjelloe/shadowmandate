@@ -29,6 +29,7 @@ import { findPath } from "./pathfind.js";
 import { inStandoff, aiStandoffChoice, CHOICE_NONE } from "./standoff.js";
 import { worldToCellFloor } from "../shared/fixedmath.js";
 import { sfc32Next } from "../shared/prng.js";
+import { ticksUntilNight } from "./season.js";
 import { areaObjective, areaTiles, areaEntryDoors, CARRY_AREA_ASSET, AT_WALL } from "./areas.js";
 
 export const P_CAUTIOUS = 0;
@@ -79,6 +80,29 @@ export function aiLawfulView(state, firmId) {
     }
   }
   return { firm, hq, agent, offered, myContracts, visibleRivalHqs };
+}
+
+// S16 8f follow-up (2026-08-27, owner-ruled): the cheapest PURCHASABLE
+// credential source that covers the needed tier, DERIVED from the payload
+// content — restating costs or tiers here is how an instrument measures the
+// wrong game. kind: which building sells it (0 safehouse dialogue, 1 market
+// shop); cmd/idx: the exact command a player would issue.
+export function credentialSourceFor(payloads, need) {
+  const out = [];
+  const d = payloads?.dialogues?.find((x) => x.id === "informant");
+  (d?.options ?? []).forEach((o, idx) => {
+    if (o.effect?.type === "credential" && (o.effect.tier | 0) >= need) {
+      out.push({ buildingKind: 0, cmd: 36, idx, cost: o.cost ?? 0,
+        quietAtHeat: d.quietAtHeat ?? 99 });
+    }
+  });
+  const v = payloads?.shops?.find((x) => x.id === "vendor");
+  (v?.catalog ?? []).forEach((o, idx) => {
+    if (o.effect?.type === "credential" && (o.effect.tier | 0) >= need) {
+      out.push({ buildingKind: 1, cmd: 37, idx, cost: o.cost ?? 0, quietAtHeat: 99 });
+    }
+  });
+  return out.sort((a, b) => a.cost - b.cost)[0] ?? null;
 }
 
 export function personalityOf(rules, idx) {
@@ -153,10 +177,28 @@ export function scoreContract(state, view, contract, personality, rules, agent =
   // contracts are player-only, and the honest consequence is that the AI's
   // supply of easy extraction and acquisition work is reduced rather than made
   // dangerous — which is a real D42 effect, just a smaller one than intended.
-  if (requiresCredential(contract.kind)
-    && (site.securityTier | 0) > 0
-    && !(agent && hasCredential(state, agent.id, site.securityTier | 0))) {
-    return -1;
+  // 2026-08-27 (owner-ruled 4A): the AI can BUY a pass now — the payBail
+  // cache route reached dialogue/shop purchases, which was the whole reason
+  // the vendor path was rejected in 8k. A secured contract is no longer
+  // declined outright: if the cheapest purchasable source covering the tier
+  // is affordable from the HQ cache, its price simply comes off the reward,
+  // and the errand happens on the way (aiDecide). Unaffordable or
+  // unpurchasable still declines — a job you cannot open the door on is the
+  // acquisition-0% defect waiting to happen again.
+  // THE TIER COMES FROM THE REAL SITE. `site` above is a synthetic
+  // {cellX, cellY, districtId} built from objectiveCellOf (D51), and reading
+  // securityTier off it always gave 0 — the 8f decline had been DEAD since
+  // that refactor, silently accepting secured work the AI could not finish.
+  // Found by the 4A test the moment it asserted the broke case.
+  const realSite = state.sites.find((x) => x.id === contract.siteId);
+  const needTier = realSite ? (realSite.securityTier | 0) : 0;
+  let credentialCost = 0;
+  if (requiresCredential(contract.kind) && needTier > 0
+    && !(agent && hasCredential(state, agent.id, needTier))) {
+    const source = credentialSourceFor(rules?.payloads, needTier);
+    const cache = view.hq?.cacheResources | 0;
+    if (!source || (source.cost | 0) > cache) return -1;
+    credentialCost = source.cost | 0;
   }
   let distance = Math.abs(view.hq.cellX - site.cellX) + Math.abs(view.hq.cellY - site.cellY);
   // A second site is a second journey, not a free stop on the way.
@@ -169,7 +211,10 @@ export function scoreContract(state, view, contract, personality, rules, agent =
   const workCells = Math.trunc(workTicksFor(spec) / ticksPerCell);
   const heat = state.districts[contract.districtId]?.heat ?? 0;
   const risk = 1 + distance + workCells + (heat * personality.riskWeight) / 32;
-  const score = Math.trunc((contract.reward * 256) / Math.max(1, risk));
+  // The badge's price comes straight off the payout: a 120 pass on a 150
+  // contract makes it nearly worthless, which is the truth.
+  const netReward = Math.max(0, contract.reward - credentialCost);
+  const score = Math.trunc((netReward * 256) / Math.max(1, risk));
   // D51: GOING BACK FOR YOUR OWN OPERATIVE OUTRANKS ORDINARY WORK. Priced on
   // extraction's reward, a recovery scored below a courier run and the AI never
   // took one — 13 debts raised across eight world-days, none collected. That is
@@ -265,7 +310,40 @@ export function aiDecide(state, firmId, rules) {
     return { command: null, telemetry };
   }
   if (agent.state === AGENT_DOWNED) { debug("agent_downed"); return { command: null, telemetry }; }
-  if (agent.state === AGENT_INSIDE) return { command: { type: 35, agentId: agent.id }, telemetry };  // EXIT_BUILDING
+  if (agent.state === AGENT_INSIDE) {
+    // Inside ON PURPOSE? The credential errand buys here — this early rule
+    // ("indoors → leave") predates any reason for an AI to be indoors, and
+    // it fired before the errand's own buy branch could ever run: 536
+    // enter/exit pairs and zero purchases on the first probe. The buy lives
+    // AT the rule now, because this is the one place an indoor decide is
+    // guaranteed to pass through.
+    const contract = view.myContracts[0];
+    if (contract) {
+      const cSite = state.sites.find((x) => x.id === contract.siteId);
+      const need = cSite ? cSite.securityTier | 0 : 0;
+      if (requiresCredential(contract.kind) && need > 0
+        && !hasCredential(state, agent.id, need)) {
+        const source = credentialSourceFor(rules?.payloads, need);
+        const b = state.buildings.find((x) => x.id === agent.insideBuildingId);
+        if (source && b && b.kind === source.buildingKind) {
+          // Affordability is re-checked at the COUNTER, not just at accept:
+          // the cache resets on extraction and drains on bail, and the first
+          // live run had a firm sitting in the safehouse spamming a buy it
+          // could no longer pay for, for ten thousand ticks.
+          if ((view.hq?.cacheResources | 0) >= (source.cost | 0)) {
+            debug("buying_credential", { tier: need, cost: source.cost });
+            return { command: source.cmd === 36
+              ? { type: 36, agentId: agent.id, optionIdx: source.idx }
+              : { type: 37, agentId: agent.id, itemIdx: source.idx }, telemetry };
+          }
+          debug("credential_unaffordable", { tier: need, cost: source.cost,
+            cache: view.hq?.cacheResources | 0 });
+          return { command: { type: 41, agentId: agent.id, contractId: contract.id }, telemetry };
+        }
+      }
+    }
+    return { command: { type: 35, agentId: agent.id }, telemetry };  // EXIT_BUILDING
+  }
 
   // ── In a standoff: answer it. Nothing else matters for these ten seconds. ──
   const standoff = inStandoff(state, agent.id);
@@ -679,6 +757,46 @@ export function aiDecide(state, firmId, rules) {
   // ── Working a contract: walk to whatever it wants next ──
   if (view.myContracts.length) {
     const contract = view.myContracts[0];
+
+    // ── The credential errand (owner-ruled 4A, 2026-08-27) ──
+    // A secured contract accepted without the badge detours through the
+    // cheapest source the CONTENT sells — same buildings, same commands,
+    // same prices as a player; the cache route in the reducer is the purse.
+    // The scorer already netted the cost, so being here means it was worth it.
+    const cSite = state.sites.find((x) => x.id === contract.siteId);
+    const need = cSite ? (cSite.securityTier | 0) : 0;
+    if (requiresCredential(contract.kind) && need > 0
+      && !hasCredential(state, agent.id, need)) {
+      const source = credentialSourceFor(rules?.payloads, need);
+      if (!source || (view.hq?.cacheResources | 0) < (source.cost | 0)) {
+        // Unpurchasable — or no longer affordable (see the counter re-check):
+        // hand the job back rather than walking to a counter you cannot pay.
+        return { command: { type: 41, agentId: agent.id, contractId: contract.id }, telemetry };
+      }
+      // (The BUY itself happens at the AGENT_INSIDE early rule above — an
+      // indoor decide never reaches this section.)
+      // Walk to the nearest source building whose seller is actually open —
+      // an informant in a locked-down district offers NOTHING, and standing
+      // in front of a quiet one forever is the acquisition-0% shape again.
+      const here0 = agentCell(agent);
+      const shop = state.buildings
+        .filter((b) => b.kind === source.buildingKind
+          && (state.districts[b.districtId]?.heat ?? 0) < source.quietAtHeat)
+        .sort((a, b) =>
+          (Math.abs(a.entranceX - here0.x) + Math.abs(a.entranceY - here0.y))
+          - (Math.abs(b.entranceX - here0.x) + Math.abs(b.entranceY - here0.y)))[0];
+      if (!shop) {
+        return { command: { type: 41, agentId: agent.id, contractId: contract.id }, telemetry };
+      }
+      if (here0.x === shop.entranceX && here0.y === shop.entranceY) {
+        return { command: { type: 34, agentId: agent.id }, telemetry };   // ENTER_BUILDING
+      }
+      if ((agent.route ?? []).length === 0 || (agent.routeIdx ?? 0) >= (agent.route ?? []).length) {
+        return { command: { type: 20, agentId: agent.id,
+          cellX: shop.entranceX, cellY: shop.entranceY }, telemetry };
+      }
+      return { command: null, telemetry };
+    }
     const target = targetCellFor(state, contract, view, rules);
     if (target) {
       const here = agentCell(agent);
@@ -695,6 +813,21 @@ export function aiDecide(state, firmId, rules) {
           && (contract.recoverAgentId ?? -1) < 0 && contract.stage === 2) {
           if (contract.kind === 1 && agent.detection !== DET_UNSEEN) {
             return { command: null, telemetry };
+          }
+          // ── Wait for dark (owner-ruled 4A) ── Night cuts every watcher's
+          // sight to the ruled 70%, indoors included. With night close, a
+          // short hold at the door prices cheaper than a lit approach; a
+          // LONG wait is never taken — contract clocks keep running.
+          const dn = rules.season?.dayNight;
+          if (dn) {
+            const until = ticksUntilNight(state.tick, dn);
+            if (until > 0 && until <= (rules.ai_firms.waitForNightTicks ?? 0)) {
+              debug("waiting_for_dark", { until });
+              if (agent.stance !== STANCE_SNEAK) {
+                return { command: { type: 21, agentId: agent.id, stance: STANCE_SNEAK }, telemetry };
+              }
+              return { command: null, telemetry };
+            }
           }
           return { command: { type: 45, agentId: agent.id }, telemetry };   // ENTER_AREA
         }

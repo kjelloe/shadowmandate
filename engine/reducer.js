@@ -283,18 +283,29 @@ function applyBuyItem(next, command) {
   if (!payload || payload.kind !== "shop") return reject(next, command, "not_a_shop");
   const item = payload.catalog[command.itemIdx];
   if (!item) return reject(next, command, "no_such_item");
-  if ((command.bank ?? 0) < item.cost) return reject(next, command, "cannot_afford");
+  // The payBail cache route, AI-only (see applyDialogueChoice): D30 keeps
+  // player purchases bank-only.
+  const firm = next.firms[agent.firmId];
+  const hqForCache = firm?.isAi ? hqOf(next, agent.firmId) : null;
+  const fromCache = firm?.isAi && (command.bank ?? 0) <= 0 && hqForCache;
+  const bank = fromCache ? (hqForCache.cacheResources | 0) : (command.bank ?? 0);
+  if (bank < item.cost) return reject(next, command, "cannot_afford");
 
   if (item.effect.type === "cover") {
-    const result = buyCover(next, agent, next.rules.combat, command.bank ?? 0);
+    const result = buyCover(next, agent, next.rules.combat, bank);
     if (result.error) return reject(next, command, result.error);
+    if (fromCache) {
+      hqForCache.cacheResources = Math.max(0, (hqForCache.cacheResources | 0) - (result.cost | 0));
+    }
     return next;
   }
-  const firm = next.firms[agent.firmId];
   const err = applyEffect(next, agent, firm, item.effect, {
     districtId: building.districtId, conditionMax: next.rules.agents.conditionMax,
   });
   if (err) return reject(next, command, err);
+  if (fromCache) {
+    hqForCache.cacheResources = Math.max(0, (hqForCache.cacheResources | 0) - (item.cost | 0));
+  }
   next.events.push({
     type: "itemBought", agentId: agent.id, firmId: firm.id,
     itemKey: item.key, cost: item.cost,
@@ -321,13 +332,25 @@ function applyDialogueChoice(next, command) {
   // Leaving is CMD_EXIT_BUILDING, always — dialogue exit options were cut in
   // playtest 5 (they duplicated the overlay's Leave button), and a mechanism
   // no content can express is a feature that silently does nothing.
-  if ((option.cost ?? 0) > (command.bank ?? 0)) return reject(next, command, "cannot_afford");
-
+  //
+  // TWO FUNDING ROUTES, the payBail pattern (S16 8k follow-up, 2026-08-27):
+  // a player pays from the BANK the socket injected; an AI Firm has no
+  // ledger and pays from its HQ CACHE. Scoped to isAi EXPLICITLY — D30 rules
+  // vendor/dialogue purchases bank-only for PLAYERS, and a broke player must
+  // never silently spend the at-risk cache instead.
   const firm = next.firms[agent.firmId];
+  const hqForCache = firm?.isAi ? hqOf(next, agent.firmId) : null;
+  const fromCache = firm?.isAi && (command.bank ?? 0) <= 0 && hqForCache;
+  const bank = fromCache ? (hqForCache.cacheResources | 0) : (command.bank ?? 0);
+  if ((option.cost ?? 0) > bank) return reject(next, command, "cannot_afford");
+
   const err = applyEffect(next, agent, firm, option.effect, {
     districtId: building.districtId, conditionMax: next.rules.agents.conditionMax,
   });
   if (err) return reject(next, command, err);
+  if (fromCache) {
+    hqForCache.cacheResources = Math.max(0, (hqForCache.cacheResources | 0) - (option.cost ?? 0));
+  }
   next.events.push({
     type: "dialogueChosen", agentId: agent.id, firmId: firm.id,
     optionKey: option.key, cost: option.cost ?? 0,

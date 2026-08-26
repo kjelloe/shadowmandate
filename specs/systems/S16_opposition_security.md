@@ -480,6 +480,19 @@ a rule the actor does not know is a rule nobody follows. The rule now lives in
 ONE place (`requiresCredential`) that both the contract machine and the AI
 scorer import.
 
+**CLOSED 2026-08-27 (owner-ruled, slice AI-1).** The AI BUYS credentials now:
+the payBail cache route reached dialogue/shop purchases (isAi-scoped — D30
+keeps players bank-only), the scorer nets the content's badge price off the
+reward and declines only unaffordable/unpurchasable work, and aiDecide runs
+the errand with player commands (walk, enter, buy, leave). Reachability was
+the whole battle, twice: a pre-existing "indoors → leave" early rule fired
+before the buy branch (536 enter/exit pairs, zero purchases), and the SCORER
+gate itself had been dead since D51 — it read securityTier off a synthetic
+objective object that never carried one, silently accepting secured work all
+along. Both found by driving decides through the real reducer. The guard-lift
+source remains OFF (measured pure cost); the AI also waits at the door for
+NIGHT when it is at most waitForNightTicks away (D63a follow-up).
+
 The honest consequence is that secured work is currently **player-only**, so the
 AI experiences 8f as *reduced supply* of easy extraction rather than as danger.
 That is a real D42 effect but a smaller one than intended, and teaching the AI

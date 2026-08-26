@@ -72,6 +72,18 @@ export function lightPhase(tick, dn) {
     : { night: 1, phaseMille: Math.trunc(((pos - day) * 1000) / nightLen) };
 }
 
+// How long until the dark, in ticks: 0 when it is already night. The AI's
+// wait-for-night decision and any future countdown both read THIS, so
+// nobody re-derives the cycle arithmetic and gets the wrap wrong.
+export function ticksUntilNight(tick, dn) {
+  const phase = lightPhase(tick, dn);
+  if (!dn || phase.night) return 0;
+  const day = Math.max(1, dn.dayTicks | 0);
+  const cycle = day + Math.max(1, dn.nightTicks | 0);
+  const pos = ((tick | 0) % cycle + cycle) % cycle;
+  return day - pos;
+}
+
 // The watcher-side sight percentage for this tick: 100 by day, the ruled
 // nightSightPct after dark. ONE home — detection and cameras both read this,
 // so the two watcher classes can never disagree about what night means.
