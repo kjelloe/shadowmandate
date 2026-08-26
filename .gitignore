@@ -15,3 +15,4 @@ reports/
 # No trailing slash: ops is a SYMLINK into the private repo checkout, and
 # "ops/" would only match a real directory, leaving the link unignored.
 ops
+*:Zone.Identifier
