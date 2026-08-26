@@ -15,6 +15,12 @@ export function hashState(state) {
   w.writeU32LE(state.tick);
   w.writeU32LE(state.worldSeed);
   w.writeU32LE(state.size);
+  // The ERA. The rules object itself is never hashed (config, shared by
+  // reference) — but its VERSION must be, or two hosts running different
+  // eras hash identically and a battery cannot tell which game it measured.
+  // The documented contract said this since M0; the bytes only landed with
+  // the sm-era-1 bump, when the missing write was finally noticed.
+  for (const ch of String(state.rules?.version ?? "")) w.writeU8(ch.charCodeAt(0) & 0xff);
   w.writeU32LE(state.rng.a); w.writeU32LE(state.rng.b);
   w.writeU32LE(state.rng.c); w.writeU32LE(state.rng.d);
 

@@ -36,6 +36,15 @@ const SHARD = Number(process.env.SHARD ?? 0);
 const AI_COUNT = Number(process.env.AI ?? 3);
 
 const RULES = loadRuleset();
+// Instrument-side override for the patrol-density batteries. Lives HERE, not
+// in the server ruleset loader: the game never reads it, only the battery
+// does — and the earlier base3/base4 sweeps existed only as a hand-edited
+// dirty worktree on the worker, which is how numbers stop being reproducible.
+const PATROL_BASE = process.env.PATROL_BASE ? Number(process.env.PATROL_BASE) : null;
+if (PATROL_BASE !== null) {
+  RULES.citygen = { ...RULES.citygen,
+    patrols: { ...RULES.citygen.patrols, perDistrictBase: PATROL_BASE } };
+}
 
 function commitName() {
   try {
@@ -163,7 +172,7 @@ export function runWorldDay(seed, { size = SIZE, ticks = TICKS, mirror = MIRROR,
 if (import.meta.url === `file://${process.argv[1]}`) {
   // The config self-check: print what world-day 1 ACTUALLY starts with. When a
   // probe and a sweep disagree, this line is where the answer usually is.
-  console.log(`# ruleset ${RULES.version} commit ${commitName()} size ${SIZE} ` +
+  console.log(`# ruleset ${RULES.version} commit ${commitName()}${PATROL_BASE !== null ? ` patrolBase ${PATROL_BASE}` : ""} size ${SIZE} ` +
     `ticks ${TICKS} ai ${AI_COUNT} mirror ${MIRROR ? 1 : 0} firmswap ${FIRMSWAP ? 1 : 0}`);
   console.log(COLUMNS.join(","));
   for (let i = 0; i < COUNT; i++) {

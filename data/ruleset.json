@@ -1,6 +1,6 @@
 {
-  "version": "sm-era-0",
-  "note": "Era 0 \u2014 pre-gameplay skeleton. Battery baselines are pinned per era; numbers measured under a different version are void (S14 era discipline).",
+  "version": "sm-era-1",
+  "note": "Era 1 (2026-08-27, Q47 ruled): the world after day-night, mission areas, civilians and the waiting actions. Every battery baseline measured under sm-era-0 is VOID - the pacing 300 re-run defines this era's baselines (S14 era discipline).",
   "files": [
     "terrain.json",
     "agents.json",
