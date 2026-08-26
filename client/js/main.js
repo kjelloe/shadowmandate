@@ -321,7 +321,11 @@ function renderBanner(view, events) {
   $("#mission-kind").textContent = t(b.kindKey);
   const pct = b.progress !== null ? ` ${Math.round(b.progress * 100)}%` : "";
   const more = b.others > 0 ? ` (+${b.others})` : "";
-  $("#mission-stage").textContent = `${t(b.stageKey)}${pct}${more}`;
+  // OB-1: the hint outranks the bare stage word — "work" tells a new player
+  // nothing; "get to the site and press BEGIN" is the actual next input.
+  $("#mission-stage").textContent = b.hintKey
+    ? `${t(b.hintKey)}${more}`
+    : `${t(b.stageKey)}${pct}${more}`;
 }
 
 // ── The journal overlay (playtest 12) ──────────────────────────────────────
@@ -596,9 +600,13 @@ function renderBuilding(view) {
   // because the response must appear without the list rebuilding.
   // S09: while a wait is in progress the greet line IS the state — without
   // this, choosing "until nightfall" looked like a button that did nothing.
+  // WD-2: the countdown makes the wait legible — minutes to nightfall,
+  // engine-computed (view.ticksUntilNight), ticking down in the greet line.
+  const nightEta = Math.ceil((view.ticksUntilNight ?? 0) / 10);
+  const nightClock = `${Math.floor(nightEta / 60)}:${String(nightEta % 60).padStart(2, "0")}`;
   $("#building-greet").textContent =
     agent?.waitUntilDark
-      ? t("toast.waitingForDark")
+      ? `${t("toast.waitingForDark")} · ${nightClock}`
       : dialogResponse && Date.now() < dialogResponse.until
         ? t(dialogResponse.key)
         : (payload ? t(payload.quiet ? payload.quietKey : payload.greetKey) : "");

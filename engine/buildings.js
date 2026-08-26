@@ -71,7 +71,12 @@ export function payloadFor(building, payloads, districtHeat) {
   // A quiet informant offers NOTHING — the overlay's Leave button is the way
   // out (playtest 5: the dialogue's own leave row duplicated it and was cut).
   if (dialogue && districtHeat >= (dialogue.quietAtHeat ?? 99)) {
-    return { ...dialogue, quiet: true, options: [] };
+    // WD-2: the informant stops TALKING under lockdown, but the safehouse
+    // does not stop being a safehouse — the wait-for-dark option survives.
+    // Its own rule (the cubby's) says a lockdown is exactly when you need
+    // somewhere to lie low, and the two must not contradict each other.
+    return { ...dialogue, quiet: true,
+      options: dialogue.options.filter((o) => o.effect?.type === "waitForDark") };
   }
   return dialogue;
 }

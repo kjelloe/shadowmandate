@@ -134,3 +134,35 @@ test("dayOnly rows vanish from the overlay at night (client models)", async () =
   assert.equal(overlayRows(payload, false).length, 1, "by day the option shows");
   assert.equal(overlayRows(payload, true).length, 0, "by night it is pointless and hidden");
 });
+
+test("WD-2: a locked-down safehouse still shelters — the wait survives the quiet", () => {
+  const { s } = insideBuilding(BUILDING_SAFEHOUSE);
+  const building = s.buildings.find((b) => b.kind === BUILDING_SAFEHOUSE);
+  const quiet = payloadFor(building, RULES.payloads, 5);   // lockdown heat
+  assert.ok(quiet.quiet, "fixture: this heat must silence the informant");
+  assert.equal(quiet.options.length, 1, "exactly the wait option must survive");
+  assert.equal(quiet.options[0].effect.type, "waitForDark",
+    "the survivor must be the shelter, not a paid intel row");
+  // And choosing it under lockdown still works end to end.
+  s.districts[building.districtId].heat = 5;
+  const idx = 0;   // the only surviving option, by the assertion above
+  const out = apply(s, { type: CMD_DIALOGUE_CHOICE, agentId: 5,
+    optionIdx: idx, bank: 0 });
+  assert.ok(out.events.some((e) => e.type === "waitingForDark")
+    || out.events.some((e) => e.type === "rejected" && e.reason === "already_dark"),
+  "choosing the surviving option must start the wait (or refuse only for darkness)");
+});
+
+test("WD-2: the view carries the nightfall countdown, engine-computed", async () => {
+  const { buildView } = await import("../engine/view.js");
+  const { ticksUntilNight } = await import("../engine/season.js");
+  const s = makeWorld({ seed: 4711 });
+  s.firms[0].state = 1;
+  s.tick = 500;
+  const view = buildView(s, 0, RULES.detection);
+  assert.equal(view.ticksUntilNight, ticksUntilNight(500, DN),
+    "the view's countdown must be season.js's own number");
+  s.tick = DN.dayTicks + 5;   // night
+  assert.equal(buildView(s, 0, RULES.detection).ticksUntilNight, 0,
+    "at night there is nothing to count down to");
+});

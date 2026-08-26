@@ -93,8 +93,12 @@ test("the informant goes quiet in a locked-down district (S03)", () => {
 
   const hot = payloadFor(building, payloads, quietAt);
   assert.ok(hot.quiet, "the informant kept talking through a lockdown");
-  assert.equal(hot.options.length, 0,
-    "a quiet informant offers nothing — leaving is the overlay button, not a row (playtest 5)");
+  // WD-2: the informant stops SELLING, but the safehouse keeps sheltering —
+  // exactly the wait-for-dark option survives the quiet. Leaving is still
+  // the overlay button, never a row (playtest 5).
+  assert.ok(hot.options.every((o) => o.effect?.type === "waitForDark"),
+    "a quiet informant sells nothing — only the shelter survives");
+  assert.equal(hot.options.length, 1, "and the shelter DOES survive");
 });
 
 test("the vendor sells upgrades, and will not sell the same one twice", () => {

@@ -235,11 +235,12 @@ export function payloadForBuilding(content, building, heatBand) {
   }
   const dialogue = payloads.dialogues.find((d) => d.id === "informant") ?? null;
   if (!dialogue) return null;
-  // heatBand 2 is lockdown (D20 fuzz bands); the informant stops talking.
-  // Quiet means NOTHING to offer — the overlay's Leave button is the way out
-  // (playtest 5), matching engine payloadFor.
+  // heatBand 2 is lockdown (D20 fuzz bands); the informant stops talking —
+  // but the safehouse keeps sheltering: the wait-for-dark option survives
+  // the quiet (WD-2), matching engine payloadFor.
   if (heatBand >= 2) {
-    return { ...dialogue, quiet: true, options: [] };
+    return { ...dialogue, quiet: true,
+      options: dialogue.options.filter((o) => o.effect?.type === "waitForDark") };
   }
   return dialogue;
 }
@@ -448,9 +449,24 @@ export function missionBanner(view) {
   const rows = activeRows(view);
   if (!rows.length) return null;
   const r = rows[0];
+  // OB-1: the indoor game must be DISCOVERABLE. For an area contract at its
+  // work stage, the banner says the next verb outright — "get to the site
+  // and BEGIN" while outside, and once BEGIN is available it says press it.
+  // Without this a new player stands on the site waiting for a timer that
+  // no longer exists.
+  const c = (view?.active ?? [])[0];
+  let hintKey = null;
+  if (c && (c.kind === 1 || c.kind === 2) && c.stage === 2 && !c.recovery
+    && Array.isArray(view?.agents)) {
+    const a = ownAgent(view);
+    if (a && a.insideAreaId < 0) {
+      hintKey = beginMission(view) ? "banner.pressBegin" : "banner.goBegin";
+    }
+  }
   return {
     kindKey: r.kindKey,
     stageKey: r.stageKey,
+    hintKey,
     progress: r.working ? r.progress : null,
     atRisk: r.atRisk,
     others: rows.length - 1,

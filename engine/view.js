@@ -18,7 +18,7 @@ import { alarmStageOf } from "./security.js";
 import { cameraFacingAt, isDisabled } from "./cameras.js";
 import { beamLiveAt } from "./sensors.js";
 import { worldToCellFloor } from "../shared/fixedmath.js";
-import { lightPhase } from "./season.js";
+import { lightPhase, ticksUntilNight } from "./season.js";
 import { occupantsOf, areaTiles, areaObjective, areaEntryDoors } from "./areas.js";
 
 const SIGHT = 10;          // what your own agent can make out, in cells
@@ -48,6 +48,9 @@ export function buildView(state, firmId, detCfg) {
     // lets it ease around the boundary.
     night: phase.night,
     phaseMille: phase.phaseMille,
+    // WD-2: how long until dark, engine-computed (season.js is the single
+    // home of the cycle maths) — the waiting overlay's countdown reads this.
+    ticksUntilNight: ticksUntilNight(state.tick, state.rules?.season?.dayNight),
 
     firm: {
       id: firm.id, nameId: firm.nameId, state: firm.state,

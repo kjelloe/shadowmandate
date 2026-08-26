@@ -452,9 +452,15 @@ test("the informant visibly goes quiet in a lockdown, not just silently", async 
   const hot = payloadForBuilding(content, { kind: BUILDING_KIND.SAFEHOUSE }, 2);
   assert.ok(hot.quiet, "the informant kept talking through a lockdown");
   // Playtest 5: no leave ROW anywhere — leaving is the overlay's own Leave
-  // button. A quiet informant simply has nothing to sell.
+  // button. A quiet informant has nothing to SELL — but the safehouse keeps
+  // sheltering (WD-2): exactly the wait-for-dark option survives, because
+  // the cubby's own rule says a lockdown is when you need somewhere to hide,
+  // and two shelters must not contradict each other.
   const rows = overlayRows(hot);
-  assert.equal(rows.length, 0, "a quiet informant should offer nothing at all");
+  assert.equal(rows.length, 1, "only the shelter should survive the quiet");
+  const survivor = hot.options[rows[0].idx];
+  assert.equal(survivor.effect?.type, "waitForDark",
+    "the survivor must be the wait, never a paid intel row");
   assert.ok(!overlayRows(payloadForBuilding(content, { kind: BUILDING_KIND.SAFEHOUSE }, 0))
     .some((r) => r.kind === "leave"),
     "a leave row crept back into the dialogue — the overlay button is the ONLY leave");

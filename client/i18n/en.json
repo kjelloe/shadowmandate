@@ -222,5 +222,8 @@
   "journal.waitingForDark": "Lying low until nightfall",
   "journal.waitedForDark": "Night fell — moved out",
   "journal.contested": "A rival crew is racing this contract",
-  "journal.contractLost": "Contract lost to a rival crew"
+  "journal.contractLost": "Contract lost to a rival crew",
+  "intro.begin": "Extraction and surveillance happen INSIDE — walk to the contract site and press BEGIN.",
+  "banner.goBegin": "Get to the site — BEGIN awaits",
+  "banner.pressBegin": "You are here — press BEGIN"
 }

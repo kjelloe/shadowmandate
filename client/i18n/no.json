@@ -222,5 +222,8 @@
   "journal.waitingForDark": "Ligger lavt til mørket faller",
   "journal.waitedForDark": "Mørket falt — rykket ut",
   "journal.contested": "En rivaliserende gruppe kjemper om denne kontrakten",
-  "journal.contractLost": "Kontrakten tapt til en rival"
+  "journal.contractLost": "Kontrakten tapt til en rival",
+  "intro.begin": "Uthenting og overvåking skjer INNENDØRS — gå til kontraktstedet og trykk START.",
+  "banner.goBegin": "Kom deg til stedet — START venter",
+  "banner.pressBegin": "Du er fremme — trykk START"
 }
