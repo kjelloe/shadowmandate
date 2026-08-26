@@ -62,6 +62,7 @@ export function createAgent(id) {
     // area's own local space — deliberately not world fixed-point).
     insideAreaId: -1,
     areaCol: 0, areaRow: 0, areaCool: 0,
+    waitUntilDark: 0,         // S09/Q45: parked inside until nightfall
     disguiseId: 0,            // D38 cover-shop appearance
     downTicks: 0,
     holdingSiteId: -1,

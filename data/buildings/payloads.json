@@ -31,6 +31,30 @@
       "type": "credential",
       "tier": 1
      }
+    },
+    {
+     "key": "dialog.safehouse.waitDark",
+     "cost": 0,
+     "dayOnly": true,
+     "effect": {
+      "type": "waitForDark"
+     }
+    }
+   ]
+  },
+  {
+   "id": "cubby",
+   "kind": "dialogue",
+   "portrait": null,
+   "greetKey": "dialog.cubby.greet",
+   "options": [
+    {
+     "key": "dialog.cubby.hide",
+     "cost": 10,
+     "dayOnly": true,
+     "effect": {
+      "type": "waitForDark"
+     }
     }
    ]
   }

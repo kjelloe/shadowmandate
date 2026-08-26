@@ -214,7 +214,7 @@ export function districtChoices(districts) {
     .sort((a, b) => (b.contracts - a.contracts) || (a.heatBand - b.heatBand) || (a.id - b.id));
 }
 
-export const BUILDING_KIND = { SAFEHOUSE: 0, MARKET: 1, COVERSHOP: 2 };
+export const BUILDING_KIND = { SAFEHOUSE: 0, MARKET: 1, COVERSHOP: 2, CUBBY: 3 };
 
 // What conversation or catalogue this building is offering right now. Mirrors
 // engine/buildings.js payloadFor — an informant goes quiet in a locked-down
@@ -224,6 +224,11 @@ export function payloadForBuilding(content, building, heatBand) {
   const { payloads } = content;
   if (building.kind === BUILDING_KIND.COVERSHOP) {
     return payloads.shops.find((s) => s.id === "covershop") ?? null;
+  }
+  // S09/Q45: the cubby — no person, no heat gate (a lockdown is exactly when
+  // you want a hole to hide in). Mirrors engine payloadFor.
+  if (building.kind === BUILDING_KIND.CUBBY) {
+    return payloads.dialogues.find((d) => d.id === "cubby") ?? null;
   }
   if (building.kind === BUILDING_KIND.MARKET) {
     return payloads.shops.find((s) => s.id === "vendor") ?? null;
@@ -242,16 +247,19 @@ export function payloadForBuilding(content, building, heatBand) {
 // The rows an overlay renders, whether it is a conversation or a shop.
 // No "leave" rows: leaving is the overlay's own Leave button (playtest 5 —
 // two Leave controls that did different things, and the dialogue one won).
-export function overlayRows(payload) {
+export function overlayRows(payload, night = false) {
   if (!payload) return [];
   if (payload.kind === "shop") {
     return payload.catalog.map((item, idx) => ({
       idx, key: item.key, cost: item.cost, kind: "buy",
     }));
   }
-  return payload.options.map((o, idx) => ({
-    idx, key: o.key, cost: o.cost ?? 0, kind: "talk",
-  }));
+  // dayOnly options (S09 wait-for-dark) vanish after nightfall — cosmetic
+  // here; the ENGINE gate in applyEffect is the rule's single home, and a
+  // client that shows the row anyway just earns the rejection toast.
+  return payload.options
+    .map((o, idx) => ({ idx, key: o.key, cost: o.cost ?? 0, kind: "talk", dayOnly: !!o.dayOnly }))
+    .filter((r) => !(night && r.dayOnly));
 }
 
 export function disguiseFor(content, disguiseId) {
@@ -289,6 +297,9 @@ const TOASTS = {
   guardDowned: { key: "toast.guardDowned" },
   agentDumped: { key: "toast.agentDumped", alarm: true },
   areaAssetTaken: { key: "toast.areaAssetTaken" },
+  // S09/Q45 wait-for-dark.
+  waitingForDark: { key: "toast.waitingForDark" },
+  waitedForDark: { key: "toast.waitedForDark" },
 };
 
 export function toastsFor(events) {
@@ -328,7 +339,8 @@ export function markerShape(role) {
 }
 
 export function buildingRole(kind) {
-  return kind === 0 ? "informant" : kind === 1 ? "market" : "coverShop";
+  return kind === 0 ? "informant" : kind === 1 ? "market"
+    : kind === BUILDING_KIND.CUBBY ? "cubby" : "coverShop";
 }
 
 export function siteRole(role) {

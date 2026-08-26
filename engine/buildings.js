@@ -14,7 +14,8 @@ import { AGENT_ACTIVE, AGENT_INSIDE, DET_UNSEEN, DET_BURNED } from "./state.js";
 import { agentCell } from "./detection.js";
 import { grantCredential } from "./access.js";
 import { cellToWorld } from "../shared/fixedmath.js";
-import { BUILDING_COVERSHOP } from "./citygen.js";
+import { BUILDING_COVERSHOP, BUILDING_CUBBY } from "./citygen.js";
+import { lightPhase } from "./season.js";
 
 // Disguise variants. Deliberately comic: the fantasy of a back-room cover shop
 // is that you walk out looking like someone your own mother would query, and
@@ -36,6 +37,7 @@ export const EFFECT_CREDENTIAL = "credential";   // S16 8e
 export const EFFECT_UPGRADE = "upgrade";
 export const EFFECT_HEAL = "heal";
 export const EFFECT_COVER = "cover";
+export const EFFECT_WAIT_DARK = "waitForDark";   // S09/Q45 — park until nightfall
 
 // What a Firm currently knows that it had to buy. Kept on the Firm because it
 // survives the agent (intel outlives the operative who paid for it).
@@ -58,6 +60,11 @@ export function hasHeatIntel(state, firm, districtId) {
 export function payloadFor(building, payloads, districtHeat) {
   if (building.kind === BUILDING_COVERSHOP) {
     return payloads.shops.find((s) => s.id === "covershop") ?? null;
+  }
+  // S09/Q45: a cubby is a recess, not a person — one paid option, no heat
+  // gate (a lockdown is exactly when you want a hole to hide in).
+  if (building.kind === BUILDING_CUBBY) {
+    return payloads.dialogues.find((d) => d.id === "cubby") ?? null;
   }
   if (building.kind === 1) return payloads.shops.find((s) => s.id === "vendor") ?? null;
   const dialogue = payloads.dialogues.find((d) => d.id === "informant") ?? null;
@@ -102,6 +109,18 @@ export function applyEffect(state, agent, firm, effect, ctx) {
     case EFFECT_HEAL: {
       agent.condition = ctx.conditionMax;
       state.events.push({ type: "agentTreated", agentId: agent.id });
+      return null;
+    }
+    case EFFECT_WAIT_DARK: {
+      // S09/Q45. The world cannot skip time — the agent is parked inside
+      // until the phase crosses into night (the reducer pops them out). The
+      // gate lives HERE, the one place both the player and any future AI
+      // path go through: by night the option is pointless and refused.
+      const phase = lightPhase(state.tick, state.rules?.season?.dayNight);
+      if (phase.night) return "already_dark";
+      if (agent.waitUntilDark) return "already_waiting";
+      agent.waitUntilDark = 1;
+      state.events.push({ type: "waitingForDark", agentId: agent.id });
       return null;
     }
     case EFFECT_UPGRADE: {
@@ -157,6 +176,7 @@ export function exitBuilding(state, agent, viaExit = false) {
   if (agent.insideBuildingId < 0) return "not_inside";
   const building = state.buildings.find((b) => b.id === agent.insideBuildingId);
   agent.insideBuildingId = -1;
+  agent.waitUntilDark = 0;   // stepping out is changing your mind — one home, both exits
   agent.state = AGENT_ACTIVE;
   if (building && viaExit && building.exitX >= 0) {
     agent.x = cellToWorld(building.exitX);

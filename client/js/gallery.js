@@ -29,7 +29,7 @@ const ROLES = [
   "guard", "guardAlert", "guardDown", "terminal",
   "siteCache", "siteVault", "siteLab", "siteRelay", "siteTransit", "siteWarehouse",
   "camera", "cameraDisabled", "junction", "junctionCut",
-  "informant", "market", "coverShop", "holding", "ownHq", "rivalHq", "dropship",
+  "informant", "market", "coverShop", "cubby", "holding", "ownHq", "rivalHq", "dropship",
 ];
 
 async function main() {

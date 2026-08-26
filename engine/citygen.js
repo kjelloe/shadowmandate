@@ -38,11 +38,13 @@ export const SITE_TYPE_COUNT = 6;
 export const BUILDING_SAFEHOUSE = 0;
 export const BUILDING_MARKET = 1;
 export const BUILDING_COVERSHOP = 2;   // D38 — the re-spray, for people
+export const BUILDING_CUBBY = 3;       // S09/Q45 — paid hide-until-dark recess
 
 const SALT_LAYOUT = 0x5ade;
 const SALT_DISTRICT = 0x0d15;
 const SALT_SITES = 0x51e5;
 const SALT_PATROL = 0x9a70;
+const SALT_CUBBY = 0xc0bb;   // S09 wait-for-dark: cubby placements, OWN stream
 
 // A mutable cursor over the pure sfc32 step — generation-local convenience.
 // The engine's runtime PRNG lives in state.rng and is never touched here.
@@ -493,6 +495,25 @@ export function generateCity(seed, size, cfg) {
       site.securityTier = both ? 2 : (watched.has(site.id) || beamed.has(site.id)) ? 1 : 0;
     }
   }
+  // S09 cubby holes (Q45): small paid recesses, several per district. Placed
+  // LAST and on their OWN derived stream — drawing them from siteRng between
+  // the existing passes would shift every holding site, camera and beam a
+  // seed had already decided, which is a different world wearing the same
+  // seed number.
+  {
+    const cubbyRng = derive(seed, SALT_CUBBY);
+    for (const d of districts) {
+      for (let n = 0; n < (cfg.buildings.cubbiesPerDistrict ?? 0); n++) {
+        const e = placeEntrance(map, cubbyRng, size, owner, d.id, taken, reachable);
+        if (e) buildings.push({
+          id: buildings.length, kind: BUILDING_CUBBY, districtId: d.id,
+          entranceX: e.x, entranceY: e.y, payloadIdx: 0,
+          exitX: -1, exitY: -1,
+        });
+      }
+    }
+  }
+
   return {
     map, districtOwner: owner, districts, sites, buildings, holdingSites, patrols,
     // S16 cameras (8b). Placed here because world LAYOUT belongs in one place;

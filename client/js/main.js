@@ -585,10 +585,10 @@ function renderBuilding(view) {
   const agent = ownAgent(view);
   const district = view.districts.find((d) => d.id === view.inside.districtId);
   const payload = payloadForBuilding(session.content, view.inside, district?.heatBand ?? 0);
-  const rows = overlayRows(payload);
+  const rows = overlayRows(payload, !!view.night);
   // The bank is part of the signature: affordability greys rows, so a balance
   // change must re-render the list (and only then — see boardSignature).
-  const signature = `${view.inside.id}:${payload?.quiet ? 1 : 0}:${rows.length}:${agent?.disguiseId ?? 0}:${view.bank ?? 0}`;
+  const signature = `${view.inside.id}:${payload?.quiet ? 1 : 0}:${rows.length}:${agent?.disguiseId ?? 0}:${view.bank ?? 0}:${view.night ? 1 : 0}`;
   panel.hidden = false;
   // The greeting line doubles as the NPC's mouth (playtest 8): for a few
   // seconds after a refusal it carries the in-character answer, then falls
@@ -608,15 +608,20 @@ function renderBuilding(view) {
   const disguiseId = agent?.disguiseId ?? 0;
   const disguise = disguiseFor(session.content, disguiseId);
   const canvas = $("#portrait");
-  try {
-    drawPortrait(canvas.getContext("2d"), disguiseId, canvas.width);
-  } catch (err) {
-    fatal("portrait", err);
+  // S09: a cubby has no person in it — no portrait to compose.
+  canvas.hidden = payload?.portrait === null;
+  if (!canvas.hidden) {
+    try {
+      drawPortrait(canvas.getContext("2d"), disguiseId, canvas.width);
+    } catch (err) {
+      fatal("portrait", err);
+    }
   }
   canvas.title = disguise ? t(disguise.key) : "";
   $("#building-title").textContent = t(
     view.inside.kind === 0 ? "building.informant"
-      : view.inside.kind === 1 ? "building.market" : "building.coverShop");
+      : view.inside.kind === 1 ? "building.market"
+        : view.inside.kind === 3 ? "building.cubby" : "building.coverShop");
 
   const list = $("#building-options");
   list.textContent = "";

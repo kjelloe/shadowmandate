@@ -30,7 +30,7 @@ export function renderCity(world, { marks = true } = {}) {
     for (const s of world.sites) overlay.set(s.cellY * map.width + s.cellX, "S");
     for (const h of world.holdingSites) overlay.set(h.cellY * map.width + h.cellX, "H");
     for (const b of world.buildings) {
-      const mark = b.kind === 0 ? "i" : b.kind === 1 ? "$" : "c";
+      const mark = b.kind === 0 ? "i" : b.kind === 1 ? "$" : b.kind === 3 ? "u" : "c";
       overlay.set(b.entranceY * map.width + b.entranceX, mark);
       // A cover shop's second door is the whole point of it (D38).
       if (b.kind === 2 && b.exitX >= 0) overlay.set(b.exitY * map.width + b.exitX, "x");
@@ -54,7 +54,7 @@ export function cityLegend() {
   return [
     "legend: . open  = street  : alley  P plaza  # block  D door  T transit",
     "        ! checkpoint  y yard  , rough  ~ water",
-    "marks:  S site  H holding  i informant  $ market  c cover shop  x its back door",
+    "marks:  S site  H holding  i informant  $ market  c cover shop  x its back door  u cubby",
     "        p patrol  0-4 district core",
   ].join("\n");
 }

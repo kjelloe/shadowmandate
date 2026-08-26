@@ -201,5 +201,11 @@
   "toast.areaSuppressed": "Alarm suppressed",
   "toast.guardDowned": "Guard down",
   "toast.agentDumped": "An operative was dumped at the door",
-  "toast.areaAssetTaken": "Asset secured — get to the door"
+  "toast.areaAssetTaken": "Asset secured — get to the door",
+  "dialog.safehouse.waitDark": "Lie low until nightfall (free)",
+  "dialog.cubby.greet": "A narrow service recess. Dark enough, if you fold yourself in.",
+  "dialog.cubby.hide": "Wedge in until nightfall",
+  "toast.waitingForDark": "Lying low until nightfall",
+  "toast.waitedForDark": "Night has fallen — back on the street",
+  "building.cubby": "Cubby hole"
 }

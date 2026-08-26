@@ -1,6 +1,6 @@
 {
   "era": "sm-era-0",
-  "reason": "D35/D38/D39/D40: near-HQ site seeding, cover shops with back doors, disguiseId, contract grace+burn fields",
+  "reason": "S09/Q45 wait-for-dark: agent gains waitUntilDark (hashed in both twins) and citygen places 3 cubby holes per district on an independent stream — layout and agent bytes both legitimately change; no event drift expected",
   "seed": 20260804,
   "size": 64,
   "steps": [

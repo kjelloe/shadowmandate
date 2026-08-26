@@ -109,6 +109,12 @@
    "tint": "hoverCar",
    "scale": 0.25,
    "note": "S17 ambient life: client-side transit-lane theatre. Marker class (it is set dressing, not a person - the figure detail floor has no claim on it); explicit scale so a vehicle dwarfs a pedestrian."
+  },
+  "cubby": {
+   "procedural": "kioskPeak",
+   "class": "marker",
+   "tint": "cubby",
+   "note": "S09/Q45: the paid hide-until-dark recess. Kiosk silhouette on purpose - street furniture, not a destination, until you need it."
   }
  },
  "structures": {

@@ -39,7 +39,7 @@ export function hashStateLocal(state) {
     w.writeU8(a.detection); w.writeI32LE(a.detectTimer);
     w.writeI32LE(a.carryKind); w.writeI32LE(a.carryRef);
     w.writeI32LE(a.insideBuildingId); w.writeU8(a.disguiseId ?? 0);
-    w.writeI32LE(a.insideAreaId); w.writeI32LE(a.areaCol); w.writeI32LE(a.areaRow);
+    w.writeI32LE(a.insideAreaId); w.writeI32LE(a.areaCol); w.writeI32LE(a.areaRow); w.writeI32LE(a.waitUntilDark);
     w.writeI32LE(a.areaCool);
     w.writeI32LE(a.downTicks);
     w.writeI32LE(a.holdingSiteId); w.writeI32LE(a.vehicleId);

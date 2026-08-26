@@ -201,5 +201,11 @@
   "toast.areaSuppressed": "Alarmen er dempet",
   "toast.guardDowned": "Vakt nedkjempet",
   "toast.agentDumped": "En operatør ble dumpet ved porten",
-  "toast.areaAssetTaken": "Objektet sikret — kom deg til porten"
+  "toast.areaAssetTaken": "Objektet sikret — kom deg til porten",
+  "dialog.safehouse.waitDark": "Ligg lavt til mørket faller (gratis)",
+  "dialog.cubby.greet": "En trang servicenisje. Mørk nok, hvis du klemmer deg inn.",
+  "dialog.cubby.hide": "Klem deg inn til mørket faller",
+  "toast.waitingForDark": "Ligger lavt til mørket faller",
+  "toast.waitedForDark": "Mørket har falt — tilbake på gaten",
+  "building.cubby": "Smutthull"
 }

@@ -40,6 +40,7 @@ import {
 import { stepStandoffs, submitChoice } from "./standoff.js";
 import { stepAlarms, cutJunction, alarmStageOf } from "./security.js";
 import { stepCivilians } from "./civilians.js";
+import { lightPhase } from "./season.js";
 import { stepRaids } from "./raids.js";
 import { liftCredentialFromGuard } from "./access.js";
 import { applyDormancy } from "./dormancy.js";
@@ -419,6 +420,20 @@ function applyAdvanceTick(next) {
   for (const agent of next.agents) {
     if (agent.state === AGENT_ACTIVE || agent.state === AGENT_DOWNED) {
       stepAgent(next, r.agents, agent);
+    }
+  }
+  // S09/Q45: agents parked "until dark" step back onto the street the tick
+  // the phase crosses into night. The flag clears inside exitBuilding — the
+  // one home shared with the change-your-mind manual exit.
+  {
+    const dn = r.season?.dayNight;
+    if (dn && lightPhase(next.tick, dn).night) {
+      for (const agent of next.agents) {
+        if (agent.waitUntilDark && agent.insideBuildingId >= 0) {
+          exitBuilding(next, agent, false);
+          next.events.push({ type: "waitedForDark", agentId: agent.id });
+        }
+      }
     }
   }
   syncVehicles(next);

@@ -132,7 +132,7 @@ button — the only leave control. What changed and why:
   Leave a no-op (fails by name, with the downstream checks collapsing behind
   it exactly as a trapped agent would).
 
-## SPEC DRAFT — waiting for dark (Q45, owner-directed 2026-08-23; NOT BUILT)
+## Waiting for dark (Q45) — BUILT 2026-08-26 (slice WD-1)
 
 The S09 half of the day-night contract (S03 has the clock and the detection
 factor). Two ways to skip to nightfall, neither built yet:
@@ -150,6 +150,16 @@ factor). Two ways to skip to nightfall, neither built yet:
   the manifest, shipped in the same slice as the mechanic (a mechanic the
   player cannot see is an ambush).
 
-Open before build: the night sneak factor NN% (S03), and whether an AI Firm
-also waits for dark (proposed: yes, when its scorer prices a night approach
-meaningfully cheaper — same decision path as the player's).
+Built as specced: `waitForDark` is a declarative dialogue EFFECT (the gate
+— refused after dark — lives in applyEffect, the one place every path
+crosses); the safehouse informant carries the free option, cubbies
+(BUILDING_CUBBY, 3 per district, placed LAST on their OWN derived rng
+stream so no pre-existing placement moved) carry the paid one at the ruled
+10. The agent is parked `waitUntilDark` and the reducer pops them out the
+tick the phase crosses into night (`waitedForDark`); stepping out early
+cancels (one home: exitBuilding). `dayOnly` on an option hides it from the
+client overlay at night — cosmetic; the engine gate is the rule.
+
+Still open: the night sneak factor is RULED (30% — nightSightPct 70, built
+in DN-1); whether an AI Firm also waits for dark stays deferred until the
+scorer prices night approaches (S07 follow-up).

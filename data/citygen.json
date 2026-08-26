@@ -25,7 +25,8 @@
   "buildings": {
     "safeHousesPerDistrict": 1,
     "marketsPerDistrict": 1,
-    "coverShopsPerDistrict": 1
+    "coverShopsPerDistrict": 1,
+    "cubbiesPerDistrict": 3
   },
   "holdingSitePerDistrict": true,
   "dropZones": {
