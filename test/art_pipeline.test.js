@@ -85,6 +85,48 @@ test("triangle budgets hold — the client runs on a phone", () => {
   }
 });
 
+test("PLAYTEST 13: figures stand tall and lean enough for a trench coat", async () => {
+  // Finding 5: "all figures need to be 40% taller and sleeker, need to fit a
+  // trench coat". The old figure stood 1.03 model units and its bounding box
+  // was 0.58 wide — ratio 1.78, a stocky little person.
+  //
+  // MEASURE THE WHOLE BOUNDING BOX. The first cut of this test compared height
+  // against the COAT width and reported a flattering 2.7, missing that the
+  // splayed arms and hands were the widest part of the figure by a long way —
+  // and they were the actual reason it read as stocky. A silhouette test that
+  // measures the part you were thinking about instead of the part that decides
+  // the outline is measuring the wrong thing.
+  //
+  // These bounds are the design promise expressed as geometry, and they are the
+  // only thing standing between this pass and a silent regression: nothing else
+  // in the suite can tell a tall figure from a short one, and neither can a
+  // green render.
+  const THREE = await import("three");
+  // Derived from the manifest, never a second hand-kept list (D46) — a new
+  // figure role must meet the silhouette too, or it is not the same cast.
+  const figures = ROLES.filter((r) => manifestEntry(manifest, r).class === "figure");
+  assert.ok(figures.length >= 3, "expected the manifest to carry several figures");
+  for (const role of figures) {
+    const entry = manifestEntry(manifest, role);
+    const group = buildProcedural(entry.procedural);
+    const box3 = new THREE.Box3().setFromObject(group);
+    const height = box3.max.y - box3.min.y;
+    const width = Math.max(box3.max.x - box3.min.x, box3.max.z - box3.min.z);
+    assert.ok(height >= 1.40,
+      `${role} (${entry.procedural}) stands ${height.toFixed(2)} — the pre-playtest-13 figure was 1.03, and the ruling was 40% taller`);
+    // Sleekness is a RATIO, not a width: a figure could meet the height bound
+    // by growing in every direction at once, which is the same stocky person
+    // scaled up and is exactly what the finding was complaining about.
+    assert.ok(height / width >= 3.0,
+      `${role} (${entry.procedural}) is ${(height / width).toFixed(2)} tall per unit wide — the old stocky figure was 1.78`);
+    // Standing ON the ground, not floating above it or sunk into it. A figure
+    // whose feet are at y=0.1 hovers; at a 1/8 cell scale that is invisible on
+    // the street and obvious in the gallery.
+    assert.ok(Math.abs(box3.min.y) < 0.02,
+      `${role} (${entry.procedural}) does not stand on the ground (feet at ${box3.min.y.toFixed(3)})`);
+  }
+});
+
 test("anything the manifest says is tintable actually has a tint slot", () => {
   for (const role of ROLES) {
     const entry = manifestEntry(manifest, role);

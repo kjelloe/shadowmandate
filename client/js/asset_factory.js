@@ -71,35 +71,61 @@ function place(mesh, x, y, z) { mesh.position.set(x, y, z); return mesh; }
 function tilt(mesh, rx = 0, ry = 0, rz = 0) { mesh.rotation.set(rx, ry, rz); return mesh; }
 
 // ── Figures ────────────────────────────────────────────────────────────────
-// The shared humanoid: legs, boots, a coat with a flared hem, arms, hands.
+// The shared humanoid: boots, long legs, a full-length coat, arms, hands.
 // Agent and rival share it deliberately — they ARE the same kind of thing, and
 // the tint plus the coat shade carry the difference (see buildRival).
+//
+// PROPORTIONS (playtest 13, finding 5: "40% taller and sleeker, need to fit a
+// trench coat"). The old figure was a 1.03-tall stack that was 0.38 wide at the
+// hem — a ratio of 2.7, which is a stocky little person, not the long genre
+// silhouette. This one stands 1.45 and is 0.34 at its widest, a ratio of ~4.3.
+//
+// The height comes from the LEGS and the COAT, not from scaling everything up:
+// a uniformly enlarged figure is just a bigger stocky person. The coat skirt
+// now hangs from mid-thigh to below the knee as its own flared panel, which is
+// what actually reads as a trench coat from a 45-degree camera — a long
+// unbroken vertical mass with the legs showing beneath it.
+//
+// The numbers are laid out so the parts CONNECT rather than float: boots
+// 0.00-0.08, legs 0.08-0.44, coat skirt 0.30-0.72 (overlapping the thigh),
+// coat body 0.70-1.04, head crown at 1.45.
 function personCore(coatHex) {
   const g = new THREE.Group();
   const C = body();
-  g.add(place(box(0.12, 0.26, 0.14, C.trouser), -0.08, 0.13, 0));
-  g.add(place(box(0.12, 0.26, 0.14, C.trouser), 0.08, 0.13, 0));
-  g.add(place(box(0.13, 0.07, 0.18, C.visor), -0.08, 0.035, 0.01));
-  g.add(place(box(0.13, 0.07, 0.18, C.visor), 0.08, 0.035, 0.01));
-  g.add(place(box(0.34, 0.28, 0.24, coatHex), 0, 0.42, 0));
-  g.add(place(box(0.38, 0.12, 0.27, coatHex), 0, 0.29, 0));      // coat hem
-  g.add(place(tilt(box(0.09, 0.30, 0.13, coatHex), 0, 0, 0.10), -0.235, 0.42, 0));
-  g.add(place(tilt(box(0.09, 0.30, 0.13, coatHex), 0, 0, -0.10), 0.235, 0.42, 0));
-  g.add(place(box(0.08, 0.07, 0.10, C.skin), -0.25, 0.25, 0.02));
-  g.add(place(box(0.08, 0.07, 0.10, C.skin), 0.25, 0.25, 0.02));
+  // Boots, then long narrow legs. Narrower than before: "sleeker" is mostly a
+  // width decision, and the legs are the part a coat does not hide.
+  g.add(place(box(0.11, 0.08, 0.16, C.visor), -0.075, 0.04, 0.01));
+  g.add(place(box(0.11, 0.08, 0.16, C.visor), 0.075, 0.04, 0.01));
+  g.add(place(box(0.10, 0.36, 0.13, C.trouser), -0.075, 0.26, 0));
+  g.add(place(box(0.10, 0.36, 0.13, C.trouser), 0.075, 0.26, 0));
+  // The coat: a long flared skirt below, a fitted body above. Two masses
+  // rather than one box — that break at the waist is what stops a tall figure
+  // reading as a plank.
+  g.add(place(box(0.34, 0.42, 0.26, coatHex), 0, 0.51, 0));       // skirt, to the knee
+  g.add(place(box(0.30, 0.34, 0.22, coatHex), 0, 0.87, 0));       // coat body
+  // Arms hang long and CLOSE. The old figure splayed them to +/-0.25 with a
+  // 0.09 tilt, which put the hands 0.58 apart — wider than the figure was
+  // anything else, and the real reason it read as stocky. Measure the whole
+  // bounding box, not the coat: sleekness is decided by the widest thing.
+  g.add(place(tilt(box(0.085, 0.44, 0.115, coatHex), 0, 0, 0.05), -0.175, 0.85, 0));
+  g.add(place(tilt(box(0.085, 0.44, 0.115, coatHex), 0, 0, -0.05), 0.175, 0.85, 0));
+  g.add(place(box(0.07, 0.07, 0.09, C.skin), -0.19, 0.62, 0.02));
+  g.add(place(box(0.07, 0.07, 0.09, C.skin), 0.19, 0.62, 0.02));
   return g;
 }
 
 // An upright person. The tintable band sits at the shoulders where it reads
-// from a 52-degree camera without being the whole figure.
+// from a 45-degree camera without being the whole figure.
 function buildAgent() {
   const C = body();
   const g = personCore(C.coat);
   // A full shoulder yoke, not a pinstripe: this is the detection readout.
-  g.add(place(tintable(box(0.40, 0.20, 0.28, "#ffffff", "firmPanel")), 0, 0.64, 0));
-  g.add(place(box(0.20, 0.06, 0.20, C.coatDark), 0, 0.755, -0.01));  // collar
-  g.add(place(sphere(0.125, 12, 9, C.skin), 0, 0.87, 0));
-  g.add(place(sphere(0.115, 10, 6, C.visor), 0, 0.915, -0.025));     // hair cap
+  g.add(place(tintable(box(0.36, 0.18, 0.25, "#ffffff", "firmPanel")), 0, 1.08, 0));
+  // A POPPED collar, standing proud of the shoulders. On a long coat this is
+  // the single detail that says trench rather than overcoat.
+  g.add(place(box(0.24, 0.11, 0.20, C.coatDark), 0, 1.21, -0.015));
+  g.add(place(sphere(0.115, 12, 9, C.skin), 0, 1.31, 0));
+  g.add(place(sphere(0.105, 10, 6, C.visor), 0, 1.35, -0.025));     // hair cap
   return g;
 }
 
@@ -108,10 +134,10 @@ function buildAgent() {
 function buildRival() {
   const C = body();
   const g = personCore(C.coatDark);
-  g.add(place(tintable(box(0.40, 0.20, 0.28, "#ffffff", "firmPanel")), 0, 0.64, 0));
-  g.add(place(box(0.20, 0.06, 0.20, C.trouser), 0, 0.755, -0.01));
-  g.add(place(sphere(0.125, 12, 9, C.skin), 0, 0.87, 0));
-  g.add(place(sphere(0.115, 10, 6, C.visor), 0, 0.915, -0.025));
+  g.add(place(tintable(box(0.36, 0.18, 0.25, "#ffffff", "firmPanel")), 0, 1.08, 0));
+  g.add(place(box(0.24, 0.11, 0.20, C.trouser), 0, 1.21, -0.015));
+  g.add(place(sphere(0.115, 12, 9, C.skin), 0, 1.31, 0));
+  g.add(place(sphere(0.105, 10, 6, C.visor), 0, 1.35, -0.025));
   return g;
 }
 
@@ -122,13 +148,13 @@ function buildPatrol() {
   const g = personCore(C.coatDark);
   // Tinted torso AND cap: an alerted patrol has to be unmissable across a
   // street, which a hat brim alone is not.
-  g.add(place(tintable(box(0.40, 0.20, 0.30, "#ffffff", "firmPanel")), 0, 0.62, 0));
-  g.add(place(sphere(0.125, 12, 9, C.skin), 0, 0.83, 0));
-  g.add(place(tintable(cone(0.20, 0.22, 10, "#ffffff", "firmPanel")), 0, 1.00, 0));
-  g.add(place(box(0.26, 0.05, 0.11, C.visor), 0, 0.87, 0.13));
+  g.add(place(tintable(box(0.36, 0.18, 0.27, "#ffffff", "firmPanel")), 0, 1.05, 0));
+  g.add(place(sphere(0.115, 12, 9, C.skin), 0, 1.26, 0));
+  g.add(place(tintable(cone(0.18, 0.20, 10, "#ffffff", "firmPanel")), 0, 1.43, 0));
+  g.add(place(box(0.24, 0.05, 0.10, C.visor), 0, 1.30, 0.12));
   // A shoulder lamp: the working-kit detail that separates uniform from coat.
-  g.add(place(box(0.07, 0.06, 0.07, C.bars), -0.20, 0.735, 0.06));
-  g.add(place(cyl(0.02, 0.02, 0.05, 6, C.visor), -0.20, 0.78, 0.06));
+  g.add(place(box(0.07, 0.06, 0.07, C.bars), -0.18, 1.16, 0.06));
+  g.add(place(cyl(0.02, 0.02, 0.05, 6, C.visor), -0.18, 1.20, 0.06));
   return g;
 }
 

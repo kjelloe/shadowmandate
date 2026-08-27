@@ -63,13 +63,16 @@ async function main() {
   // standing on a street in the game, and judging them any other way is
   // judging something the player never sees.
   const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(40, 12),
+    new THREE.PlaneGeometry(40, 40),
     new THREE.MeshStandardMaterial({ color: new THREE.Color(tokens.body.plinth), roughness: 0.95 }));
   ground.rotation.x = -Math.PI / 2;
   scene.add(ground);
 
   const labels = document.getElementById("stage-labels");
-  const COLS = 7, SPACING = 1.9;
+  // Row pitch had to grow with the figures (playtest 13, finding 5): at 1.455
+  // model units a standing figure now overlaps the row behind it at the old
+  // 2.4, and a gallery where the art collides with itself cannot be reviewed.
+  const COLS = 7, SPACING = 1.9, ROW_DEPTH = 3.1;
   ROLES.forEach((role, i) => {
     try {
       const resolved = resolveVisual(manifest, role);
@@ -78,7 +81,7 @@ async function main() {
       const tint = tintFor(tokens, resolved.entry, detectionMark(0));
       if (tint) applyTint(group, tint);
       const col = i % COLS, row = Math.floor(i / COLS);
-      group.position.set((col - (COLS - 1) / 2) * SPACING, 0, (row - 0.5) * 2.4);
+      group.position.set((col - (COLS - 1) / 2) * SPACING, 0, (row - 0.5) * ROW_DEPTH);
       scene.add(group);
 
       const li = document.createElement("li");
@@ -90,13 +93,30 @@ async function main() {
   });
 
   // The diorama's own camera angle. Reviewing art from an angle the player
-  // never uses is how art gets approved and then looks wrong in game.
+  // never uses is how art gets approved and then looks wrong in game — and this
+  // page had quietly drifted into doing exactly that: it kept PITCH 52 after
+  // playtest 4 moved the diorama to 45, so every figure has been reviewed from
+  // seven degrees above where anyone actually sees it.
   const aspect = canvas.width / canvas.height;
-  const halfX = 7.6, halfY = halfX / aspect;
+  const PITCH = 45 * (Math.PI / 180), HEIGHT = 9;
+  // FIT THE FRAME TO THE CAST, never to a constant. halfX was hardcoded at 7.6,
+  // which silently cropped the last rows off the stage — roles that exist, that
+  // the labels list, and that nobody could actually look at. "Look at the
+  // gallery" is the whole art-review procedure here, so a gallery that quietly
+  // omits visuals is worse than no gallery. Derived from the layout, so adding
+  // a role reframes the page instead of pushing one off the bottom.
+  const rows = Math.ceil(ROLES.length / COLS);
+  const zNear = -0.5 * ROW_DEPTH - 1.0, zFar = (rows - 1.5) * ROW_DEPTH + 1.0;
+  const centreZ = (zNear + zFar) / 2;
+  const needX = (COLS * SPACING) / 2 + 0.4;
+  // The ground span foreshortens by sin(pitch); the extra 1.6 is headroom for
+  // the tallest structure standing at the back row.
+  const needY = ((zFar - zNear) * Math.sin(PITCH)) / 2 + 1.6;
+  let halfX = Math.max(needX, needY * aspect);
+  const halfY = halfX / aspect;
   const camera = new THREE.OrthographicCamera(-halfX, halfX, halfY, -halfY, 0.1, 200);
-  const PITCH = 52 * (Math.PI / 180), HEIGHT = 9;
-  camera.position.set(0, HEIGHT, HEIGHT / Math.tan(PITCH) + 1.2);
-  camera.lookAt(0, 0.4, 0.6);
+  camera.position.set(0, HEIGHT, centreZ + HEIGHT / Math.tan(PITCH));
+  camera.lookAt(0, 0.55, centreZ);
   renderer.render(scene, camera);
 
   // ── Portraits ────────────────────────────────────────────────────────────
