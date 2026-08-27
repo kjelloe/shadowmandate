@@ -117,7 +117,30 @@ async function main() {
     });
     console.log("AREA:", JSON.stringify(areaDump));
     await sleep(700);   // let the fade finish before the screenshot
+    // Freeze first: since the frame loop moved to rAF (PT13-A) a live diorama
+    // starves SwiftShader and the capture times out.
+    await page.evaluate(() => window.__smFreeze?.(true));
+    await sleep(250);
     await page.screenshot({ path: "debugging/area-look-01.png", timeout: 30000, animations: "disabled" });
+    await page.evaluate(() => window.__smFreeze?.(false));
+
+    // A second framing, zoomed out, so the FLOOR PLAN can be reviewed. The
+    // close shot answers "is the operative readable" (playtest 13, finding 6's
+    // "a few pixels"); only the wide one answers "does this look like a
+    // warehouse", which is the other half of the same finding.
+    for (let i = 0; i < 8; i++) {
+      await page.evaluate(() => document.getElementById("zoom-out").click());
+      await sleep(90);
+    }
+    await sleep(600);
+    await page.evaluate(() => window.__smFreeze?.(true));
+    await sleep(250);
+    await page.screenshot({ path: "debugging/area-look-03-plan.png", timeout: 30000, animations: "disabled" });
+    await page.evaluate(() => window.__smFreeze?.(false));
+    for (let i = 0; i < 8; i++) {
+      await page.evaluate(() => document.getElementById("zoom-in").click());
+      await sleep(90);
+    }
 
     // The EXIT button must be visible at the entry door, and must work.
     const exitVisible = await page.isVisible("#exit-area-btn");
@@ -131,6 +154,8 @@ async function main() {
       }
       if (out >= 0) failures.push("EXIT click did not leave the compound");
     }
+    await page.evaluate(() => window.__smFreeze?.(true));
+    await sleep(250);
     await page.screenshot({ path: "debugging/area-look-02-street.png", timeout: 30000, animations: "disabled" });
     if (errors.length) failures.push("page errors: " + errors.join(" | "));
   } catch (e) {

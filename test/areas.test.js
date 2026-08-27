@@ -14,7 +14,9 @@ import {
 } from "../engine/commands.js";
 import {
   areaTiles, areaObjective, areaDoors, areaEntryDoors, guardRoute,
-  AT_WALL, AT_DOOR, CARRY_AREA_ASSET,
+  areaGridFor, areaTemplateFor, buildAreaGrid,
+  AREA_WAREHOUSE, AREA_OFFICE, AREA_INDUSTRIAL, AREA_TRANSIT,
+  AT_WALL, AT_DOOR, AT_COVER, CARRY_AREA_ASSET,
 } from "../engine/areas.js";
 import { findPath } from "../engine/pathfind.js";
 import { grantCredential } from "../engine/access.js";
@@ -40,26 +42,186 @@ function insideWorld({ seed = 4711, siteIdx = 0 } = {}) {
   return { s, agent, site };
 }
 
+const TEMPLATES = [AREA_WAREHOUSE, AREA_OFFICE, AREA_INDUSTRIAL, AREA_TRANSIT];
+
 test("every template is playable: doors exist, objective reachable, all in bounds", () => {
   // The area RNG NaN defect produced a template with NO doors and no
   // objective — and typed-array writes with fractional indices no-op
   // silently, so nothing crashed. Assert the geometry across seeds and sites.
+  //
+  // This test has been called "every template" since D63c while only ever
+  // exercising ONE. With four real floor plans (playtest 13, finding 6) it now
+  // means what it says: a plan that walls its own objective in is a contract
+  // that cannot be completed anywhere in the world, and it must be impossible
+  // to ship one.
   for (const seed of [1000, 1411, 4711, 90210]) {
     for (const siteId of [0, 3, 7]) {
-      const tiles = areaTiles(seed, siteId, CFG);
-      const entries = areaEntryDoors(tiles, W, H);
-      const doors = areaDoors(tiles, W, H);
-      assert.equal(entries.length, 2, `seed ${seed} site ${siteId}: entry doors`);
-      assert.ok(doors.length > entries.length,
-        `seed ${seed} site ${siteId}: no wing doors — the objective is walled in`);
-      const obj = areaObjective(seed, siteId, CFG);
-      assert.ok(obj.x > 0 && obj.x < W - 1 && obj.y > 0 && obj.y < H - 1,
-        `seed ${seed} site ${siteId}: objective out of bounds`);
-      const path = findPath(areaMap(tiles), entries[0].x, entries[0].y, obj.x, obj.y);
-      assert.ok(path.length > 0,
-        `seed ${seed} site ${siteId}: no path from the entry door to the objective`);
+      for (const template of TEMPLATES) {
+        const where = `seed ${seed} site ${siteId} template ${template}`;
+        const { tiles, objective: obj } = buildAreaGrid(seed, siteId, CFG, template);
+        const entries = areaEntryDoors(tiles, W, H);
+        const doors = areaDoors(tiles, W, H);
+        assert.equal(entries.length, 2, `${where}: entry doors`);
+        assert.ok(doors.length > entries.length,
+          `${where}: no interior doors — the objective is walled in`);
+        assert.ok(obj.x > 0 && obj.x < W - 1 && obj.y > 0 && obj.y < H - 1,
+          `${where}: objective out of bounds`);
+        assert.notEqual(tiles[obj.y * W + obj.x], AT_WALL, `${where}: objective is a wall`);
+        const path = findPath(areaMap(tiles), entries[0].x, entries[0].y, obj.x, obj.y);
+        assert.ok(path.length > 0, `${where}: no path from the entry door to the objective`);
+      }
     }
   }
+});
+
+test("PLAYTEST 13: the four plans are actually DIFFERENT buildings", () => {
+  // A template set that quietly collapses to one plan passes every playability
+  // check above and delivers nothing — "a feature can silently do nothing" is
+  // this project's signature failure, and four names over one floor plan is
+  // exactly that shape. Compare the grids.
+  const seed = 4711, siteId = 0;
+  const grids = TEMPLATES.map((t) => buildAreaGrid(seed, siteId, CFG, t).tiles);
+  for (let i = 0; i < grids.length; i++) {
+    for (let j = i + 1; j < grids.length; j++) {
+      let same = 0;
+      for (let k = 0; k < grids[i].length; k++) if (grids[i][k] === grids[j][k]) same++;
+      const pct = (same / grids[i].length) * 100;
+      assert.ok(pct < 85,
+        `templates ${i} and ${j} are ${pct.toFixed(1)}% identical — they are the same building`);
+    }
+  }
+  // Each plan must carry BOTH structure and cover: an interior with no walls is
+  // a field, and one with no cover is a corridor you cannot survive.
+  TEMPLATES.forEach((t, i) => {
+    const tiles = buildAreaGrid(seed, siteId, CFG, t).tiles;
+    const walls = [...tiles].filter((c) => c === AT_WALL).length;
+    const cover = [...tiles].filter((c) => c === AT_COVER).length;
+    const perimeter = 2 * (W + H) - 4;
+    assert.ok(walls > perimeter + 12, `template ${i} has no interior structure (${walls} walls)`);
+    assert.ok(cover >= 6, `template ${i} has no cover to break sight behind (${cover})`);
+  });
+});
+
+test("PLAYTEST 13: no guard waypoint is a wall, a sealed room, or the objective", () => {
+  // THREE defects, all introduced the moment there was more than one floor plan
+  // for the ring to be drawn around, and all three cost pinned seeds in the M5
+  // gate. The ring's geometry was safe against ONE hand-checked layout; nothing
+  // asserted it stayed safe against any other.
+  //
+  //  1. A waypoint inside a WALL parks the guard forever — the route advances
+  //     only on arrival. The office plan put 25% of its waypoints inside the
+  //     objective room's north wall.
+  //  2. A waypoint in a SEALED room parks it just as permanently. Legalising
+  //     against "not a wall" alone moved waypoints inside cellular rooms.
+  //  3. A waypoint within sight of the OBJECTIVE is the 8a camera-on-the-site
+  //     defect indoors: surveillance needs an unseen hold there, so the
+  //     contract becomes impossible at every site using that plan. Snapping
+  //     naively put office waypoints at Chebyshev 1 of the objective.
+  const sight = CFG.guardSightRadius | 0;
+  for (const seed of [1000, 1411, 4711, 90210, 2026]) {
+    for (const siteId of [0, 3, 7, 11]) {
+      for (const template of TEMPLATES) {
+        const grid = buildAreaGrid(seed, siteId, CFG, template);
+        const where = `seed ${seed} site ${siteId} template ${template}`;
+        for (let gi = 0; gi < (CFG.guardsPerArea | 0); gi++) {
+          for (const wp of guardRoute(seed, siteId, CFG, gi, grid)) {
+            const i = wp.y * W + wp.x;
+            assert.notEqual(grid.tiles[i], AT_WALL, `${where} guard ${gi}: waypoint in a wall`);
+            assert.equal(grid.open[i], 1,
+              `${where} guard ${gi}: waypoint ${wp.x},${wp.y} is sealed off — the guard parks there`);
+            const d = Math.max(Math.abs(wp.x - grid.objective.x), Math.abs(wp.y - grid.objective.y));
+            assert.ok(d > sight,
+              `${where} guard ${gi}: waypoint ${wp.x},${wp.y} sits ${d} from the objective — it covers the work`);
+          }
+        }
+        // The objective must itself be on the connected floor. `passable` and
+        // `reachable` are different claims and only one of them is playable.
+        assert.equal(grid.open[grid.objective.y * W + grid.objective.x], 1,
+          `${where}: the objective is walled off from the entry`);
+        // NO SEALED POCKETS ANYWHERE. Every floor cell must be reachable from
+        // the entry strip — a pocket of floor nothing can walk to is somewhere
+        // a guard waypoint or a terminal can land and never be used, and it
+        // reads to a player as a room whose door the game forgot. This is the
+        // assertion that gives `grid.open` teeth: the waypoint checks above pass
+        // on today's plans whether reachability is enforced or not, so without
+        // this the machinery would be guarding nothing it could prove.
+        let sealed = 0;
+        for (let i = 0; i < grid.tiles.length; i++) {
+          if (grid.tiles[i] !== AT_WALL && !grid.open[i]) sealed++;
+        }
+        assert.equal(sealed, 0, `${where}: ${sealed} floor cells are sealed off from the entry`);
+      }
+    }
+  }
+});
+
+test("PLAYTEST 13: the objective room has two ways in", () => {
+  // "Every mechanism must have a usable gap" (S16 8b) is a rule about floor
+  // plans too. A room with one door is a choke a single guard seals by standing
+  // in it, and it is the room holding the thing the contract is about. Adding
+  // the second door is what took the M5 gate's last red seed green.
+  for (const seed of [1000, 1411, 4711, 90210, 2026]) {
+    for (const siteId of [0, 3, 7]) {
+      for (const template of TEMPLATES) {
+        const { tiles, objective } = buildAreaGrid(seed, siteId, CFG, template);
+        // Flood the objective's ROOM — treating doors as boundaries — then count
+        // the doors touching it. Walking outward from the objective in four
+        // directions was the first attempt and it measured door ALIGNMENT, not
+        // doors: it only ever found an exit that happened to share the
+        // objective's own row or column, and reported a two-door room as having
+        // none. Measure the thing, not a proxy for it.
+        const room = new Set([objective.y * W + objective.x]);
+        const stack = [objective];
+        while (stack.length) {
+          const c = stack.pop();
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+            const x = c.x + dx, y = c.y + dy;
+            if (x < 0 || y < 0 || x >= W || y >= H) continue;
+            const i = y * W + x;
+            if (room.has(i)) continue;
+            const cell = tiles[i];
+            if (cell === AT_WALL || cell === AT_DOOR) continue;
+            room.add(i);
+            stack.push({ x, y });
+          }
+        }
+        let ways = 0;
+        for (const i of room) {
+          const x = i % W, y = (i / W) | 0;
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+            const nx = x + dx, ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+            if (tiles[ny * W + nx] === AT_DOOR) ways++;
+          }
+        }
+        assert.ok(ways >= 2,
+          `seed ${seed} site ${siteId} template ${template}: the objective room has ${ways} way(s) in`);
+      }
+    }
+  }
+});
+
+test("PLAYTEST 13: the plan is derived from the SITE, and every reader agrees", () => {
+  // The bug this makes impossible: the client drawing an office while the
+  // reducer paths through a warehouse. Both would look completely correct on
+  // their own, and the player would walk into walls that are not on screen.
+  const s = makeWorld({ seed: 4711 });
+  const seen = new Set();
+  for (const site of s.sites) seen.add(areaTemplateFor(s, site.id));
+  assert.ok(seen.size >= 2,
+    `a whole city produced only template(s) ${[...seen]} — site type is not reaching the plan`);
+
+  // The single entry point and the raw builder must agree for every site.
+  for (const site of s.sites.slice(0, 12)) {
+    const viaState = areaGridFor(s, site.id, CFG);
+    const direct = buildAreaGrid(s.worldSeed, site.id, CFG, areaTemplateFor(s, site.id));
+    assert.deepEqual(viaState.objective, direct.objective, `site ${site.id}: objectives disagree`);
+    assert.deepEqual([...viaState.tiles], [...direct.tiles], `site ${site.id}: grids disagree`);
+  }
+
+  // And a caller who forgets the template must be stopped loudly rather than
+  // silently handed a warehouse.
+  assert.throws(() => buildAreaGrid(4711, 0, CFG), /no template/);
 });
 
 test("the guard ring never covers an approach unconditionally (8a, indoors)", () => {
@@ -70,7 +232,7 @@ test("the guard ring never covers an approach unconditionally (8a, indoors)", ()
   const sneakSight = (CFG.guardSightRadius | 0) - 1;
   for (const seed of [1000, 1411, 4711]) {
     for (const siteId of [0, 7]) {
-      const tiles = areaTiles(seed, siteId, CFG);
+      const tiles = areaTiles(seed, siteId, CFG, AREA_WAREHOUSE);
       for (const d of areaEntryDoors(tiles, W, H)) {
         for (let gi = 0; gi < (CFG.guardsPerArea | 0); gi++) {
           for (const wp of guardRoute(seed, siteId, CFG, gi)) {
@@ -86,7 +248,7 @@ test("the guard ring never covers an approach unconditionally (8a, indoors)", ()
 
 test("enter places you at the entry door; exit puts you back on the street", () => {
   const { s, agent, site } = insideWorld();
-  const tiles = areaTiles(s.worldSeed, site.id, CFG);
+  const tiles = areaGridFor(s, site.id, CFG).tiles;
   const door = areaEntryDoors(tiles, W, H)[0];
   assert.equal(agent.areaCol, door.x);
   assert.equal(agent.areaRow, door.y);
@@ -112,7 +274,7 @@ test("8f indoors: the ASSET is credential-gated at a secured site, the door is n
   assert.ok(s.agents[0].insideAreaId >= 0,
     "the door must open without a badge — surveillance needs no credential");
   // Walk onto the objective without the credential: nothing moves.
-  const obj = areaObjective(s.worldSeed, site.id, CFG);
+  const obj = areaGridFor(s, site.id, CFG).objective;
   const area = s.areas.find((a) => a.siteId === site.id);
   s.agents[0].areaCol = obj.x; s.agents[0].areaRow = obj.y - 1;
   s = apply(s, { type: CMD_MOVE, agentId: 0, cellX: obj.x, cellY: obj.y });

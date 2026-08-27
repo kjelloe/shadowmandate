@@ -8,7 +8,7 @@ import {
   CMD_ADVANCE_TICK, CMD_DROP_IN, CMD_ACCEPT_CONTRACT, CMD_ABANDON_CONTRACT,
   CMD_ENTER_AREA,
 } from "../engine/commands.js";
-import { areaObjective, areaTiles, AT_WALL } from "../engine/areas.js";
+import { areaGridFor, AT_WALL } from "../engine/areas.js";
 import {
   refillPool, rebuildOffers, poolTarget, completeContract,
   KIND_COURIER, KIND_SURVEILLANCE, KIND_EXTRACTION, KIND_ACQUISITION,
@@ -194,8 +194,9 @@ test("SCENARIO: surveillance only counts while the agent is unseen", () => {
   assert.ok(s.agents[agent.id].insideAreaId >= 0, "agent did not enter the area");
   const area = s.areas.find((a) => a.siteId === site.id);
   const cfgA = RULES.areas;
-  const vantage = areaObjective(s.worldSeed, site.id, cfgA);
-  const tiles = areaTiles(s.worldSeed, site.id, cfgA);
+  const grid = areaGridFor(s, site.id, cfgA);
+  const vantage = grid.objective;
+  const tiles = grid.tiles;
   const w = cfgA.width | 0;
   // Hold a cell SHORT of the objective (standing on it is the theft, not the
   // vantage) — the same spot the AI uses.

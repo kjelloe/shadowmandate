@@ -306,6 +306,27 @@ test("the 2.5D camera clamps to the map instead of showing the void", async () =
   assert.deepEqual(tiny, { x: 5, y: 5 }, "a small map should centre");
 });
 
+test("PLAYTEST 13: the compound camera clamps per-axis, not against one size", async () => {
+  const { clampCameraRect, clampCamera } = await import("../client/js/scene.js");
+  // A compound is 24x16. Clamping both axes against a single size is what the
+  // square-map helper does, and on a rectangle it either crops the long axis or
+  // shows void past the short one — which is the playtest-2 defect indoors.
+  const w = 24, h = 16, half = 3;
+  assert.deepEqual(clampCameraRect({ x: 1, y: 1 }, w, h, half, half), { x: half, y: half });
+  assert.deepEqual(clampCameraRect({ x: 23, y: 15 }, w, h, half, half),
+    { x: w - half, y: h - half });
+  assert.deepEqual(clampCameraRect({ x: 12, y: 8 }, w, h, half, half), { x: 12, y: 8 },
+    "the camera should follow freely in the middle of the compound");
+  // The SHORT axis must clamp against ITS OWN size. With a half-span of 9 the
+  // 16-tall compound is narrower than the view, so it centres — while the
+  // 24-wide axis still clamps. Passing one size for both gets this wrong.
+  const wide = clampCameraRect({ x: 2, y: 2 }, w, h, 9, 9);
+  assert.equal(wide.y, h / 2, "the short axis should centre when the view is taller than it");
+  assert.equal(wide.x, 9, "the long axis should still clamp");
+  // And the square helper must stay exactly what it always was.
+  assert.deepEqual(clampCamera({ x: 6, y: 9 }, 64, 17, 11), { x: 17, y: 11 });
+});
+
 test("PLAYTEST 13: a captured Firm is told what its options are", async () => {
   const { captureSituation } = await import("../client/js/models.js");
   const hq = { cellX: 5, cellY: 5, evacActive: 0, perimeterRadius: 4 };

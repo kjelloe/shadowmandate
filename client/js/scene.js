@@ -73,14 +73,25 @@ export function clampMargin(halfX, halfY, pitch, azimuth) {
   return Math.min(halfX, halfYg) / (c + s);
 }
 
-// Clamp so the visible frustum stays inside the map when the map is larger
-// than the view, and centre it when it is smaller.
-export function clampCamera(target, size, halfSpanX, halfSpanY) {
-  const clampAxis = (v, half) => {
+// Clamp so the visible frustum stays inside the bounds when they are larger
+// than the view, and centre it when they are smaller. Per-axis extents, because
+// a mission compound is 24x16: clamping both axes against a single size would
+// crop the long one or show void past the short one.
+export function clampCameraRect(target, sizeX, sizeY, halfSpanX, halfSpanY) {
+  const clampAxis = (v, size, half) => {
     if (size <= half * 2) return size / 2;
     return Math.min(size - half, Math.max(half, v));
   };
-  return { x: clampAxis(target.x, halfSpanX), y: clampAxis(target.y, halfSpanY) };
+  return {
+    x: clampAxis(target.x, sizeX, halfSpanX),
+    y: clampAxis(target.y, sizeY, halfSpanY),
+  };
+}
+
+// The square case — the city map — kept as its own name because that is what
+// every street caller means.
+export function clampCamera(target, size, halfSpanX, halfSpanY) {
+  return clampCameraRect(target, size, size, halfSpanX, halfSpanY);
 }
 
 // The four sanctioned camera azimuths (playtest 13, finding 3). Quarter turns
@@ -719,16 +730,23 @@ export function createScene(canvas) {
 
   function drawAreaMode(av, tick) {
     const { area, self } = av;
-    // Ring and marker sizes derive from the COMPOUND's own framing, not the
-    // street zoom — the street's close-up factors shrank every indoor ring to
-    // a speck. The fixed frame spans ~(w+h)/sqrt(2) cells, so the same
-    // formulas run with that as the effective zoom.
-    const areaSpan = (area.width + area.height) * Math.SQRT1_2;
+    // THE COMPOUND IS PLAYED AT STREET SCALE (playtest 13, finding 6: "size of
+    // the map has to be scaled up at least 8 times... figures were only a few
+    // pixels"). That factor is not a guess — it is exactly what the old framing
+    // cost. Fitting the whole 24x16 compound put ~28 cells across the screen
+    // while the street plays at 3.5, so every figure indoors rendered at an
+    // EIGHTH of its street size. Following the operative at the same zoomCells
+    // is the missing 8x, and it comes with the zoom control working indoors
+    // like it does outside.
+    //
+    // Ring and marker factors therefore use the same formulas as the street,
+    // off the same zoomCells, so a figure and its ring are the same size on
+    // both sides of the door.
     const s = {
       tick,
-      ringZoom: Math.max(0.4, Math.min(2, areaSpan / 12)),
-      figureRing: (tokens.scale?.figure ?? 1) * 2.6 * Math.max(0.6, Math.min(3, areaSpan / 10)),
-      markerZoom: Math.max(0.25, Math.min(1, areaSpan / 12)),
+      ringZoom: Math.max(0.4, Math.min(2, zoomCells / 12)),
+      figureRing: (tokens.scale?.figure ?? 1) * 2.6 * Math.max(0.6, Math.min(3, zoomCells / 10)),
+      markerZoom: Math.max(0.25, Math.min(1, zoomCells / 12)),
     };
     s.npcRing = s.figureRing * 0.7;
     if (terrain) terrain.visible = false;
@@ -741,21 +759,22 @@ export function createScene(canvas) {
     }
     areaGroup.visible = true;
 
-    // Frame the whole compound: the indoor game is played at one scale, so
-    // the projection is fitted here rather than driven by the street zoom.
-    // Under the 45-degree azimuth the compound presents its DIAGONAL to the
-    // screen axes — the rotated w x h footprint needs (w+h)/sqrt(2) of screen
-    // width, and the pitch then foreshortens the vertical by sin(pitch). The
-    // first fit used the raw width and cropped a third of the yard.
+    // FOLLOW THE OPERATIVE, exactly as the street does. `resize()` has already
+    // set the projection from zoomCells; all that is left is where to stand.
+    // Clamped to the compound so the camera never drifts off the walls into the
+    // void — the same promise the street makes about the map edge, and the
+    // reason `clampCameraRect` exists: a compound is 24x16, not square, and
+    // clamping both axes against one size would either crop the long axis or
+    // let the short one show black.
     const aspect = (canvas.clientWidth || 1) / (canvas.clientHeight || 1);
-    const needX = ((area.width + area.height) / 2) * Math.SQRT1_2 + 1.5;
-    const needY = needX * Math.sin(PITCH) + 1.0;
-    let halfX = needX, halfY = needX / aspect;
-    if (halfY < needY) { halfY = needY; halfX = needY * aspect; }
-    camera.left = -halfX; camera.right = halfX;
-    camera.top = halfY; camera.bottom = -halfY;
-    camera.updateProjectionMatrix();
-    const cx = AREA_ORIGIN.x + area.width / 2, cz = AREA_ORIGIN.z + area.height / 2;
+    const halfX = zoomCells / 2, halfY = halfX / aspect;
+    const margin = clampMargin(halfX, halfY, PITCH, drawnAzimuth);
+    const follow = smoothPos(`acam:${area.id}`, self.areaCol + 0.5, self.areaRow + 0.5);
+    const want = pan
+      ? { x: follow.x + pan.dx, y: follow.z + pan.dy }
+      : { x: follow.x, y: follow.z };
+    const c = clampCameraRect(want, area.width, area.height, margin, margin);
+    const cx = AREA_ORIGIN.x + c.x, cz = AREA_ORIGIN.z + c.y;
     const back = HEIGHT / Math.tan(PITCH);
     camera.position.set(cx + back * Math.sin(drawnAzimuth), HEIGHT, cz + back * Math.cos(drawnAzimuth));
     camera.lookAt(cx, 0, cz);

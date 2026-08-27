@@ -30,7 +30,7 @@ import { inStandoff, aiStandoffChoice, CHOICE_NONE } from "./standoff.js";
 import { worldToCellFloor } from "../shared/fixedmath.js";
 import { sfc32Next } from "../shared/prng.js";
 import { ticksUntilNight } from "./season.js";
-import { areaObjective, areaTiles, areaEntryDoors, CARRY_AREA_ASSET, AT_WALL } from "./areas.js";
+import { areaGridFor, areaEntryDoors, CARRY_AREA_ASSET, AT_WALL, AT_COVER } from "./areas.js";
 
 export const P_CAUTIOUS = 0;
 export const P_GREEDY = 1;
@@ -416,7 +416,7 @@ export function aiDecide(state, firmId, rules) {
     const goTo = (x, y) =>
       ({ command: { type: 20, agentId: agent.id, cellX: x, cellY: y }, telemetry });
     if (!area) return { command: { type: 46, agentId: agent.id }, telemetry };
-    const doors = areaEntryDoors(areaTiles(state.worldSeed, area.siteId, cfgA),
+    const doors = areaEntryDoors(areaGridFor(state, area.siteId, cfgA).tiles,
       cfgA.width | 0, cfgA.height | 0);
     const door = doors[0] ?? { x: 1, y: (cfgA.height | 0) - 1 };
     const atDoor = Math.max(Math.abs(agent.areaCol - door.x),
@@ -428,7 +428,7 @@ export function aiDecide(state, firmId, rules) {
       if (routeDone) return goTo(door.x, door.y);
       return { command: null, telemetry };
     }
-    const obj = areaObjective(state.worldSeed, area.siteId, cfgA);
+    const obj = areaGridFor(state, area.siteId, cfgA).objective;
     // Surveillance holds a cell SHORT of the objective: stepping onto it
     // takes the asset (that is theft, a deliberate act, not a vantage), and
     // the vantage check in contracts.js accepts Chebyshev 1.
@@ -458,7 +458,7 @@ export function aiDecide(state, firmId, rules) {
     }
     let goal = obj;
     if (surv) {
-      const tiles = areaTiles(state.worldSeed, area.siteId, cfgA);
+      const tiles = areaGridFor(state, area.siteId, cfgA).tiles;
       const w = cfgA.width | 0, h = cfgA.height | 0;
       for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
         const x = obj.x + dx, y = obj.y + dy;
@@ -476,14 +476,45 @@ export function aiDecide(state, firmId, rules) {
     // guard is close to the crossing, and never stop mid-run.
     const w2 = cfgA.width | 0, h2 = cfgA.height | 0;
     const stagingY = h2 - 2;
-    if (agent.areaRow >= stagingY - 1 && agent.areaRow < h2
+    // STAGE ONLY IF THE RING IS ACTUALLY IN THE WAY. The guard ring runs rows 8
+    // to h-6, and this whole manoeuvre exists to time a crossing of it. The old
+    // single floor plan always put the objective north of the ring, so "am I
+    // inside" and "must I cross" were the same question and nobody had to ask
+    // the second one.
+    //
+    // Per-type templates (playtest 13, finding 6) broke that: the office plan
+    // puts its objective room in the SOUTHERN half, on the same side of the ring
+    // as the door. The AI stood in the entry strip waiting for a crossing it did
+    // not need to make, on a floor it could have walked straight across — one of
+    // the two seeds where the M5 gate went red with "the world is not alive".
+    const mustCrossRing = goal.y < h2 - 6;
+    if (mustCrossRing && agent.areaRow >= stagingY - 1 && agent.areaRow < h2
       && !(agent.areaCol === goal.x && agent.areaRow === goal.y)) {
-      const tiles2 = areaTiles(state.worldSeed, area.siteId, cfgA);
+      const tiles2 = areaGridFor(state, area.siteId, cfgA).tiles;
       let sx = Math.min(Math.max(goal.x, 1), w2 - 2);
       while (sx < w2 - 1 && tiles2[stagingY * w2 + sx] === AT_WALL) sx++;
-      const ringClear = !area.guards.some((g) => (g.downedUntil | 0) <= state.tick
-        && Math.max(Math.abs(g.x - sx), Math.abs(g.y - stagingY))
-          <= (cfgA.guardSightRadius | 0) + 2);
+      // WHAT COUNTS AS "CLEAR" IS A PERCEPTION QUESTION, and it must be able to
+      // become true. This used to add +2 to the guard's sight radius, which was
+      // survivable only because the old objective happened to sit away from the
+      // ring's legs. Per-type templates (playtest 13, finding 6) moved the
+      // objective, the staging column landed under the ring's east leg, and a
+      // guard was within the padded radius FOREVER — every AI Firm froze in the
+      // south strip and the M5 gate went red with "the world is not alive".
+      //
+      // This file's own comment already warned that freezing on "near" made
+      // everyone freeze forever. The padding is gone: the question is whether a
+      // guard can actually SEE the crossing, on the same radius the guard's own
+      // perception uses.
+      const sight = cfgA.guardSightRadius | 0;
+      const watched = area.guards.some((g) => (g.downedUntil | 0) <= state.tick
+        && Math.max(Math.abs(g.x - sx), Math.abs(g.y - stagingY)) <= sight);
+      // ...and a backstop, because a compound is allowed to be genuinely hard.
+      // If a plan never offers a gap at this column the AI must still act rather
+      // than stand in the doorway for the rest of the season: a periodic commit
+      // window, derived from the tick so it stays pure and needs no new state
+      // (and therefore no four-places entry).
+      const forced = (state.tick % 200) < 80;
+      const ringClear = !watched || forced;
       if (!ringClear) {
         const atStaging = agent.areaRow === stagingY
           && Math.abs(agent.areaCol - sx) <= 1;

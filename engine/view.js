@@ -19,7 +19,7 @@ import { cameraFacingAt, isDisabled } from "./cameras.js";
 import { beamLiveAt } from "./sensors.js";
 import { worldToCellFloor } from "../shared/fixedmath.js";
 import { lightPhase, ticksUntilNight } from "./season.js";
-import { occupantsOf, areaTiles, areaObjective, areaEntryDoors } from "./areas.js";
+import { occupantsOf, areaGridFor, areaTemplateFor, areaEntryDoors } from "./areas.js";
 
 const SIGHT = 10;          // what your own agent can make out, in cells
 
@@ -199,11 +199,23 @@ export function buildView(state, firmId, detCfg) {
         // client to fetch it through.
         width: state.rules.areas.width | 0,
         height: state.rules.areas.height | 0,
-        tiles: Array.from(areaTiles(state.worldSeed, ar.siteId, state.rules.areas)),
-        objective: areaObjective(state.worldSeed, ar.siteId, state.rules.areas),
-        doors: areaEntryDoors(
-          areaTiles(state.worldSeed, ar.siteId, state.rules.areas),
-          state.rules.areas.width | 0, state.rules.areas.height | 0),
+        // ONE grid computation feeding all three fields (playtest 13, finding
+        // 6). This used to build the compound three separate times and, worse,
+        // the objective came from a different function than the tiles — with
+        // per-type templates that is precisely how a client ends up drawing one
+        // building and pathing through another.
+        ...(() => {
+          const grid = areaGridFor(state, ar.siteId, state.rules.areas);
+          const w = state.rules.areas.width | 0, h = state.rules.areas.height | 0;
+          return {
+            tiles: Array.from(grid.tiles),
+            objective: grid.objective,
+            doors: areaEntryDoors(grid.tiles, w, h),
+            // Which PLAN this is, so the renderer can dress a warehouse
+            // differently from an office without re-deriving the mapping.
+            template: areaTemplateFor(state, ar.siteId),
+          };
+        })(),
         alarmStage: ar.alarmStage,
         suppressed: ar.suppressedUntil > state.tick ? 1 : 0,
         assetTaken: ar.assetTaken,

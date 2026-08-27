@@ -13,7 +13,7 @@ import { releaseAgent } from "./combat.js";
 import { hqOf } from "./hq.js";
 import { sfc32Next } from "../shared/prng.js";
 import { worldToCellFloor } from "../shared/fixedmath.js";
-import { areaObjective, CARRY_AREA_ASSET } from "./areas.js";
+import { areaGridFor, CARRY_AREA_ASSET } from "./areas.js";
 
 export const KIND_COURIER = 0;
 export const KIND_SURVEILLANCE = 1;
@@ -653,7 +653,7 @@ export function stepContracts(state, cfg, detCfg) {
           // area resets the current pass, exactly like the old street hold.
           const sArea = state.areas.find((x) => x.siteId === contract.siteId);
           const vantage = sArea
-            ? areaObjective(state.worldSeed, contract.siteId, state.rules.areas) : null;
+            ? areaGridFor(state, contract.siteId, state.rules.areas).objective : null;
           const atVantage = sArea && agent.insideAreaId === sArea.id
             && Math.max(Math.abs(agent.areaCol - vantage.x),
               Math.abs(agent.areaRow - vantage.y)) <= 1;
