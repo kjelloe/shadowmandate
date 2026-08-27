@@ -783,3 +783,52 @@ test("the journal covers the indoor game and the waiting actions (playtest 12)",
   assert.deepEqual(journalLine({ type: "surveillancePass", pass: 2, of: 3 }),
     { key: "journal.surveillancePass", args: [2, 3] });
 });
+
+test("OB-1: the banner says the next INPUT for an area contract", async () => {
+  const { missionBanner } = await import("../client/js/models.js");
+  const base = {
+    agents: [{ id: 0, state: 1, x: 20 * 256, y: 20 * 256, insideAreaId: -1, insideBuildingId: -1 }],
+    sites: [{ id: 7, cellX: 10, cellY: 10 }],
+    active: [{ id: 1, kind: 2, stage: 2, siteId: 7, recovery: 0, tier: 1, reward: 100 }],
+  };
+  assert.equal(missionBanner(base).hintKey, "banner.goBegin",
+    "traveling to an area contract must say GO");
+  const there = { ...base,
+    agents: [{ ...base.agents[0], x: 10 * 256 + 128, y: 10 * 256 + 128 }] };
+  assert.equal(missionBanner(there).hintKey, "banner.pressBegin",
+    "standing at the site must say PRESS BEGIN");
+  const inside = { ...base, agents: [{ ...base.agents[0], insideAreaId: 3 }] };
+  assert.equal(missionBanner(inside).hintKey, null, "inside, the hint is done");
+  const courier = { ...base,
+    active: [{ ...base.active[0], kind: 0 }] };
+  assert.equal(missionBanner(courier).hintKey, null, "a courier has no BEGIN");
+  for (const key of ["banner.goBegin", "banner.pressBegin"]) {
+    assert.ok(EN[key] && NO[key], `${key} missing from a catalog`);
+  }
+});
+
+test("DC-2: neon and pipes are EMITTED for the districts that own them", async () => {
+  const t3 = await import("../client/js/terrain3d.js");
+  const { generateCity } = await import("../engine/citygen.js");
+  const { RULES } = await import("./helpers.js");
+  const tokens = JSON.parse(readFileSync(
+    join(ROOT, "client/assets/metadata/style_tokens.json"), "utf8"));
+  t3.setTerrainTokens(tokens.terrain);
+  const city = generateCity(4711, 64, RULES.citygen);
+  const districts = { owner: Array.from(city.districtOwner),
+    traits: city.districts.map((d) => d.trait) };
+  const { decor } = t3.blockMassing(Array.from(city.map.cells), 64, 4711, districts);
+  const neon = decor.filter((d) => d.kind === "neon");
+  const pipes = decor.filter((d) => d.kind === "pipes");
+  // Emission, not intent: a decor kind the massing never pushes is a feature
+  // that silently does nothing (this project's signature failure).
+  assert.ok(neon.length > 20, `only ${neon.length} neon signs emitted`);
+  assert.ok(pipes.length > 5, `only ${pipes.length} pipe runs emitted`);
+  // Ownership: pipes belong to industrial; neon never grows on government.
+  assert.ok(pipes.every((d) => d.style === "industrial"), "pipes crept off the works");
+  assert.ok(neon.every((d) => d.style !== "government"),
+    "government facades must stay dark — no neon token, no neon");
+  // Determinism: same inputs, same signs.
+  const again = t3.blockMassing(Array.from(city.map.cells), 64, 4711, districts);
+  assert.equal(again.decor.filter((d) => d.kind === "neon").length, neon.length);
+});

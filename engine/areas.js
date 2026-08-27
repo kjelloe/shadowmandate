@@ -254,7 +254,7 @@ export function takedown(state, agent, cfg, combatCfg) {
       area.assetTaken = 0;   // the asset falls; the mission is open again
     }
     exitArea(state, rival, cfg);   // dumped at the door for the street to find
-    bumpAlarm(state, area, cfg);
+    bumpAlarm(state, area, cfg, agent.firmId);
     state.events.push({ type: "agentDumped", areaId: area.id,
       agentId: rival.id, firmId: rival.firmId, byFirmId: agent.firmId });
     return null;
@@ -284,11 +284,14 @@ export function hackTerminal(state, agent, cfg) {
   return null;
 }
 
-function bumpAlarm(state, area, cfg) {
+function bumpAlarm(state, area, cfg, firmId = -1) {
   if (area.suppressedUntil > state.tick) return;
   if (area.alarmStage < (cfg.alarmMaxStage | 0)) {
     area.alarmStage += 1;
-    state.events.push({ type: "areaAlarm", areaId: area.id, stage: area.alarmStage });
+    // firmId: whose action tripped it — the wire drops firm-less events, and
+    // an alarm nobody is told about is the invisible difficulty D45 forbids.
+    state.events.push({ type: "areaAlarm", areaId: area.id,
+      stage: area.alarmStage, firmId });
   }
   area.alarmTicks = 0;
 }
@@ -426,7 +429,7 @@ function stepGuards(state, area, map, occupants, cfg, detCfg) {
       } else if (a.detection === DET_NOTICED && a.detectTimer >= detCfg.burnTicks) {
         const site = state.sites.find((s) => s.id === area.siteId);
         burnAgent(state, a, detCfg, site?.districtId ?? -1);
-        bumpAlarm(state, area, cfg);
+        bumpAlarm(state, area, cfg, a.firmId);
       }
     } else {
       decayDetection(state, a, detCfg, 0);

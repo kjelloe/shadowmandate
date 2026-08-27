@@ -669,6 +669,7 @@ export function stepContracts(state, cfg, detCfg) {
             } else {
               state.events.push({
                 type: "surveillancePass", contractId: contract.id,
+                firmId: contract.acceptedBy,
                 pass: contract.legsDone, of: spec.passes ?? 1,
               });
             }

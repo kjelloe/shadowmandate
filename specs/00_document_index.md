@@ -178,6 +178,7 @@ M7 in progress and playable in a browser (updated 2026-08-06)
 | # | Decision | Ruling |
 |---:|---|---|
 | D64 | Mission-area shape | **Compound scale** (~24x16 with courtyards). **Burned inside: play on** under escalating lockdown (D44's worsening-situation doctrine, indoors). **PvP takedowns inside: yes** — a rival can put you down and leave you for the guards; that IS sabotage. Ambient city-life numbers delegated (proposals in S17) |
+| D65 | Era 1, AI purchases, the cyberpunk grade | **Era bump ruled** (Q47-A): `sm-era-1`; every era-0 battery baseline void; the version now actually reaches the hash (it never had). **AI buys credentials** from its HQ cache through player commands and **waits for dark** when night is close (owner 4A). **Visual direction** (ref `debugging/cyperpunk-example.png`): the splash goes street-level with haze skylines and edge neon; districts gain facade neon (commercial pink-dominant) and industrial pipe runs. Avenue density deferred (owner: note for later). Waiting polish: the shelter survives lockdown; nightfall countdown in the overlay |
 
 **Open owner questions: Q45 remainders** (the night sneak percentage; the
 patrol-density verdict once the batteries read) in `../dev-questions.md`.

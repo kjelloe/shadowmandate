@@ -80,3 +80,29 @@ but not yet consulted (S08 is slice 5d), and AI Firms do not use vehicles
 
 `⚙ tune` all personality/threshold numbers by battery. (AI vehicles ruled,
 D34: motorbikes only in V1 — courier flavor; full vehicle use in V2.)
+
+
+## AI-1 — the AI buys its way in, and waits for dark (2026-08-27, owner-ruled 4A)
+
+- **Purchases from the CACHE**: the payBail funding split now covers dialogue
+  and shop purchases (reducer, isAi-scoped — D30 keeps players bank-only; the
+  server's ledger settle skips AI events for the same reason). The AI buys
+  the cheapest credential source covering a site's tier, DERIVED from the
+  payload content (`credentialSourceFor`, exported and tested).
+- **The scorer prices the badge** instead of declining secured work: cost off
+  the reward, decline only when unpurchasable or unaffordable from cache.
+  The old 8f decline had been DEAD since D51 (synthetic objective object
+  carried no securityTier) — secured work was silently accepted all along,
+  which taints the 8h-era readings of extraction/acquisition shares.
+- **The errand** runs on player commands (walk → enter → buy → leave), with
+  affordability re-checked at the counter (cache resets on extract) and
+  ABANDON as the honest way out. The buy decision lives at the AGENT_INSIDE
+  early rule — a pre-existing "indoors → leave" rule made any later branch
+  unreachable (536 enter/exit pairs, zero purchases, in the first probe).
+- **Wait for dark**: entry into a mission area defers while night is at most
+  `waitForNightTicks` (2400) away — sneak-hold at the door, then in. A long
+  wait is never taken; contract clocks keep running.
+- **Still off**: the guard-lift errand (measured pure cost, see S16); the
+  scorer has no general night term (burn probability by phase) — battery
+  question, era-1.
+- Probe: `debugging/dbg_ai_credentials.mjs` (live frequency = economics).

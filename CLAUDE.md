@@ -34,15 +34,20 @@ banner, title diorama, server-predicted drop landings. **Built 2026-08-24/26
   cubby holes (building kind 3, own rng stream, layout undisturbed);
   `waitForDark` is a dialogue effect, the reducer pops agents out at
   nightfall, early exit cancels.
-**Open**: patrol-density verdict — the commissioned n=24 batteries are read
-in `dev-questions.md` (density stays 4; both caveated pre-day-night, so the
-real verdict needs a `pacing 300` re-run on the current build); the AI does
-not yet wait for dark or price night approaches (S07 follow-up); area
-retune batteries deferred behind D42.
+**Built 2026-08-27 (D65)**: era `sm-era-1` (version finally HASHED — never
+was); AI buys credentials from cache and waits for dark (AI-1 — the dead-
+since-D51 8f scorer gate found and fixed); waiting polish (shelter survives
+lockdown, nightfall countdown); BEGIN discoverable (intro + banner hints);
+the cyberpunk splash (SP-1) and district neon/pipes (DC-2), all token-
+driven; the wire's own fog fixed (agent-only events resolved to their firm —
+four event types were mapped, tested and silently dropped). Era-1 batteries
+QUEUED for the batch PC (pacing 300, patrol 3/4 — worker needs ops/ synced
+by hand). **Open**: the battery verdicts; the AI's general night pricing;
+area retune behind D42; avenue density (7B, noted).
 
 ## Read first
 
-1. `specs/00_document_index.md` — document map, rulings D1–D64
+1. `specs/00_document_index.md` — document map, rulings D1–D65
 2. `plan-version1.md` — the operational plan (milestones M0–M7, gates)
 3. `plan-implementation-order.md` — slice-by-slice execution order, per-milestone
    STATUS markers (battery runbook: `ops/BATCH_PC.md`, private ops repo)
@@ -72,6 +77,8 @@ SEED=4711 node debugging/dbg_ai_rejections.mjs 12000  # AI rejected commands (0 
 node debugging/dbg_look.mjs                 # drop in, photograph the live look
 node debugging/dbg_area_look.mjs            # S17: enter a compound, render, exit
 node debugging/dbg_street_life.mjs          # S17: crowd + hover cars, live shot
+node debugging/dbg_district_look.mjs        # DC-2: commercial neon, via zone picker
+node debugging/dbg_ai_credentials.mjs 1000 36000  # AI-1: live purchase census
 node tools/repin_fixture.mjs "<reason>"     # deliberate fixture re-pin
 ```
 

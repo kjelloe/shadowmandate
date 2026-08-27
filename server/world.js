@@ -195,7 +195,11 @@ export class World {
       // nothing on the server subtracted the money, so every purchase and
       // every bail was silently free.
       if ((e.cost | 0) > 0 && e.firmId !== undefined
+        && !this.state.firms[e.firmId]?.isAi
         && ["itemBought", "dialogueChosen", "coverBought", "bailPaid"].includes(e.type)) {
+        // AI purchases are cache-funded inside the engine (AI-1); settling
+        // them here would bill a ledger seat the AI does not own — and if a
+        // human ever held that seat id, THEIR bank.
         this.ledger?.spendBank(this.id, e.firmId, e.cost | 0);
       }
       if (e.type === "firmExtracted") {
@@ -363,8 +367,9 @@ export class World {
   }
 
   broadcast(events) {
+    const ownerOf = (agentId) => this.state.agents[agentId]?.firmId ?? -1;
     for (const [firmId, seat] of this.seats) {
-      const mine = events.filter((e) => relevantTo(e, firmId));
+      const mine = events.filter((e) => relevantTo(e, firmId, ownerOf));
       try {
         seat.send({ type: "view", view: this.viewFor(firmId), events: mine });
       } catch {
@@ -394,12 +399,18 @@ export class World {
 
 // An event reaches a seat only if it concerns them. A rival's burn is their
 // business; your own perimeter alarm is very much yours.
-function relevantTo(event, firmId) {
+export function relevantTo(event, firmId, ownerOf = null) {
   // A rejection belongs to whoever caused it. Without this the player pressed
   // a button, nothing happened, and nothing said why (playtest 1).
   if (event.type === "rejected") return true;
   if (event.firmId !== undefined) return event.firmId === firmId;
   if (event.byFirmId !== undefined) return event.byFirmId === firmId;
+  // An event that names only an AGENT belongs to that agent's firm. Before
+  // this resolver, waitedForDark / assetExtracted / surveillancePass /
+  // areaAlarm carried no firmId and were silently DROPPED — toasts and
+  // journal lines for them were mapped and tested client-side, and never
+  // arrived (the sweep's recurring failure, on the wire this time).
+  if (event.agentId !== undefined && ownerOf) return ownerOf(event.agentId) === firmId;
   // World-scale events everyone may see.
   return ["heatChanged", "dormancyApplied", "pactExpired", "sitesSeeded"].includes(event.type);
 }

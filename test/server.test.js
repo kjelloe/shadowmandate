@@ -465,3 +465,46 @@ test("zone picks predict the REAL landing with the engine's own rule (playtest 1
     assert.equal(predicted.cellY, p.landingY);
   }
 });
+
+// ── Event delivery (the wire's own fog) — found in the 2026-08-27 sweep ────
+
+test("agent-only events reach their OWNER, and only their owner", async () => {
+  const { relevantTo } = await import("../server/world.js");
+  const ownerOf = (id) => (id === 7 ? 2 : -1);
+  // The four types that were mapped, tested client-side, and silently
+  // DROPPED because they carry no firmId: the resolver is what delivers them.
+  for (const type of ["waitedForDark", "assetExtracted", "agentUnseen"]) {
+    assert.equal(relevantTo({ type, agentId: 7 }, 2, ownerOf), true,
+      `${type} must reach the agent's own firm`);
+    assert.equal(relevantTo({ type, agentId: 7 }, 0, ownerOf), false,
+      `${type} must NOT leak to a rival`);
+  }
+  // Without a resolver (defensive default) the old behaviour stands.
+  assert.equal(relevantTo({ type: "waitedForDark", agentId: 7 }, 2), false);
+  // firmId still outranks everything, and world-scale still broadcasts.
+  assert.equal(relevantTo({ type: "areaAlarm", firmId: 1 }, 1, ownerOf), true);
+  assert.equal(relevantTo({ type: "heatChanged" }, 0, ownerOf), true);
+});
+
+test("the ledger settle skips AI purchases — cache money is not seat money", () => {
+  // AI-1 funds AI purchases from the HQ cache inside the engine. The server's
+  // settle loop must NOT also bill the ledger seat for that firm id — if a
+  // human ever held the same seat, it would be THEIR bank being drained.
+  const spent = [];
+  const fakeLedger = { spendBank: (w, f, a) => { spent.push([f, a]); return true; } };
+  const world = new World({
+    id: "settle-test", seed: 4711, size: 64, rules: RULES, ledger: fakeLedger,
+    aiCount: 0, now: () => 1_000_000,
+  });
+  world.state.firms[0].isAi = 1;
+  world.state.firms[1].isAi = 0;
+  const events = [
+    { type: "dialogueChosen", firmId: 0, optionKey: "x", cost: 120 },   // AI: skip
+    { type: "dialogueChosen", firmId: 1, optionKey: "x", cost: 30 },    // human: settle
+  ];
+  world.drain = () => events;
+  world.tick();
+  assert.deepEqual(spent, [[1, 30]],
+    "exactly the human purchase settles; the AI's cache purchase must not touch the ledger");
+  world.stop();
+});
