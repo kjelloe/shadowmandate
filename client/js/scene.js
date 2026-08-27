@@ -26,7 +26,7 @@
 import * as THREE from "three";
 import { buildGround, buildBlocks, buildClutter, buildRoads, setTerrainTokens } from "./terrain3d.js";
 import { buildArea, setAreaTokens } from "./area3d.js";
-import { siteRoles, objectiveCell, buildingRole, siteVisual, burnedGuidance, pinnedCells, hqInBuilding, moveTarget, walkOffset, ARRIVE_CLAMP, areaView, transitLanes, hoverCarsAt } from "./models.js";
+import { siteRoles, objectiveCell, buildingRole, siteVisual, burnedGuidance, coverShops, pinnedCells, hqInBuilding, moveTarget, walkOffset, ARRIVE_CLAMP, areaView, transitLanes, hoverCarsAt } from "./models.js";
 import { buildProcedural, applyTint } from "./asset_factory.js";
 import { resolveVisual, tintFor, detectionMark } from "./asset_resolver.js";
 import { art } from "./assets.js";
@@ -548,7 +548,14 @@ export function createScene(canvas) {
       const role = p.alerted ? "patrolAlert" : "patrol";
       const sp = smoothPos(`patrol:${p.id}`, p.x + 0.5, p.y + 0.5);
       at(takeVisual(role), sp.x, sp.z);
-      at(takeRing(tokens.marks[role], npcRing), sp.x, sp.z, 0.04);
+      // An alerted patrol PULSES and wears a bigger ring (playtest 13, finding
+      // 4: "patrols when spotted should be red-marked in game"). The tint alone
+      // was doing the work, and at 1/8 figure scale a recoloured figure the
+      // size of a thumbnail is not a warning.
+      const ring = p.alerted
+        ? npcRing * 1.55 * (1 + 0.14 * Math.sin(view.tick / 2))
+        : npcRing;
+      at(takeRing(tokens.marks[role], ring), sp.x, sp.z, 0.04);
     }
     // Sensor beams (S16 8c). Drawn low and thin, spanning both endpoints, so
     // the line you must not be standing in is unambiguous.
@@ -623,6 +630,14 @@ export function createScene(canvas) {
     // CURRENT objective below.
     for (const p of pinnedCells(view, pinnedIds)) {
       at(takeRing(tokens.marks.pinned, ringZoom, true), p.cellX + 0.5, p.cellY + 0.5, 0.12);
+    }
+    // Cover shops are STANDING landmarks (playtest 13, finding 1): a slim ring
+    // on every one, all the time, so a player can plan a burn route before
+    // being burned. Slim and steady on purpose — the fat breathing ring below
+    // stays reserved for "that one, now".
+    for (const shop of coverShops(view)) {
+      at(takeRing(tokens.marks.coverShop, ringZoom * 0.8, true),
+        shop.cellX + 0.5, shop.cellY + 0.5, 0.1);
     }
     // Burned (playtest 3): mark the nearest cover shop in the world with a
     // breathing ring in the shop's colour, matching the radar ping.

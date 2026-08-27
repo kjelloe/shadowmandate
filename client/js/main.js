@@ -14,7 +14,7 @@ import {
   payloadForBuilding, overlayRows, disguiseFor, districtChoices, standingRows, missionBanner,
   journalLine, gameClock, evacAvailable, SPOKEN_LINES,
   cuttableJunction, liftableGuard, dropshipFlight, DROPSHIP_MS, MAX_PINS,
-  beginMission, areaView, areaActions,
+  beginMission, areaView, areaActions, captureSituation,
   HEAT_CLASS as HEAT_CLASSES,
 } from "./models.js";
 
@@ -288,6 +288,7 @@ function paint(s, events) {
   renderJunction(view);
   renderLift(view);
   renderStandoff(view);
+  renderCaptured(view);
   renderEvac(view);
   for (const toast of toastsFor(events)) addToast(t(toast.key), toast.alarm);
 }
@@ -703,6 +704,69 @@ function renderBuilding(view) {
       else session.send({ type: 36, agentId: a.id, optionIdx: row.idx });
     });
     li.appendChild(go);
+    list.appendChild(li);
+  }
+}
+
+// PLAYTEST 13 (finding 2). The options are REAL commands that already existed,
+// not new mechanics — the defect was that a captured player had no way to learn
+// any of them. Rebuilt only when the situation changes, for the playtest-5
+// reason: a list rebuilt every tick destroys its own buttons between mousedown
+// and mouseup, and the click never lands.
+let capturedSignature = "";
+function renderCaptured(view) {
+  const panel = $("#captured");
+  const sit = captureSituation(view);
+  if (!sit) { panel.hidden = true; capturedSignature = ""; return; }
+  panel.hidden = false;
+  const signature = `${sit.heldCount}:${sit.bailCost}:${sit.canBail}:${sit.canPullOut}:${sit.evacRunning}`;
+  if (signature === capturedSignature) return;
+  capturedSignature = signature;
+
+  $("#captured-where").textContent = sit.cellX >= 0
+    ? t("captured.where", sit.cellX, sit.cellY)
+    : t("captured.whereUnknown");
+
+  const list = $("#captured-options");
+  list.textContent = "";
+  const option = (labelKey, noteKey, enabled, cost, onGo) => {
+    const li = document.createElement("li");
+    const text = document.createElement("div");
+    const label = document.createElement("div");
+    label.className = "opt-label";
+    label.textContent = t(labelKey);
+    const note = document.createElement("div");
+    note.className = "opt-note";
+    note.textContent = t(noteKey);
+    text.append(label, note);
+    li.appendChild(text);
+    if (cost > 0) {
+      const c = document.createElement("span");
+      c.className = "cost";
+      c.textContent = String(cost);
+      li.appendChild(c);
+    }
+    const go = document.createElement("button");
+    go.textContent = t("common.confirm");
+    go.disabled = !enabled;
+    if (!enabled) li.classList.add("unaffordable");
+    go.addEventListener("click", onGo);
+    li.appendChild(go);
+    list.appendChild(li);
+  };
+
+  const held = (view.agents ?? []).find((a) => a.state === 3);
+  option("captured.bail", "captured.bailNote", sit.canBail, sit.bailCost, () => {
+    if (held) session.send({ type: 33, agentId: held.id, firmId: session.firmId });
+  });
+  // D51: folding with everyone in custody is allowed, and the prisoner becomes
+  // a recovery job on the next drop-in. That IS "bring in another agent" — it
+  // just goes through the debrief, and nothing ever said so.
+  option("captured.pullOut", "captured.pullOutNote",
+    sit.canPullOut, 0, () => session.send({ type: 11, firmId: session.firmId }));
+  if (sit.evacRunning) {
+    const li = document.createElement("li");
+    li.textContent = t("captured.evacRunning");
     list.appendChild(li);
   }
 }

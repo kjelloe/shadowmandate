@@ -225,5 +225,13 @@
   "journal.contractLost": "Contract lost to a rival crew",
   "intro.begin": "Extraction and surveillance happen INSIDE — walk to the contract site and press BEGIN.",
   "banner.goBegin": "Get to the site — BEGIN awaits",
-  "banner.pressBegin": "You are here — press BEGIN"
+  "banner.pressBegin": "You are here — press BEGIN",
+  "captured.title": "OPERATIVE IN CUSTODY",
+  "captured.where": "Held at the Holding Site at {0},{1}. Your Firm has no one in the field.",
+  "captured.whereUnknown": "Held in custody. Your Firm has no one in the field.",
+  "captured.bail": "PAY BAIL",
+  "captured.bailNote": "Bought out of custody and returned to the Field HQ. Paid from the bank.",
+  "captured.pullOut": "PULL OUT",
+  "captured.pullOutNote": "Fold up the HQ and leave them behind. A recovery job will be waiting when you drop in again.",
+  "captured.evacRunning": "Extraction under way."
 }

@@ -155,6 +155,57 @@ export function burnedGuidance(view) {
   return { buildingId: best.id, cellX: best.cellX, cellY: best.cellY, distance: bestD };
 }
 
+// PLAYTEST 13 (finding 2): "Agent captured. When what?" — the honest answer was
+// nothing. The operative vanished into a Holding Site, the HUD kept rendering a
+// world with no one in it, and every option the game actually offers lived
+// somewhere the player had no reason to look. Not one line of this is a new
+// mechanic: bail (CMD_PAY_BAIL) and the D51 fold-with-nobody-left have both
+// existed for months and neither was ever mentioned on screen.
+//
+// `heldOwn` on each holding site is likewise not new — the view has carried
+// "your people are in THAT building" since M4 and no surface read it.
+export function captureSituation(view) {
+  if (!view) return null;
+  const held = (view.agents ?? []).filter((a) => a.state === 3);
+  if (!held.length) return null;
+  // Still have someone on their feet? Then this is a setback, not a crisis —
+  // the overlay is for the moment the sortie has stopped, and stealing the
+  // screen from a player who is still playing would be its own defect.
+  const active = (view.agents ?? []).some((a) => a.state === 1);
+  if (active) return null;
+  const site = (view.holdingSites ?? []).find((h) => (h.heldOwn ?? []).length > 0) ?? null;
+  const cost = view.bailCost | 0;
+  return {
+    heldCount: held.length,
+    cellX: site?.cellX ?? -1,
+    cellY: site?.cellY ?? -1,
+    bailCost: cost,
+    // The engine's own affordability rule (combat.js bailQuote): a zero cost is
+    // refused, which is what a broke Firm gets.
+    canBail: cost > 0 && cost <= (view.bank ?? 0),
+    // D51: folding up with everyone in custody is explicitly allowed, and the
+    // prisoner becomes a recovery job waiting on the next drop-in. That is the
+    // "bring in another agent" route — it goes through the debrief.
+    canPullOut: !!view.hq && !view.hq.evacActive,
+    evacRunning: !!view.hq?.evacActive,
+  };
+}
+
+// PLAYTEST 13 (finding 1): "shouldn't re-spray shops be visible on the map as a
+// place of interest all the time?" They should. Until now a cover shop appeared
+// on the radar ONLY while you were burned — which is the one moment you have no
+// time to plan a route to one. A shop is civic infrastructure: everybody knows
+// where it is, the whole building list already crosses the wire unfiltered, and
+// hiding it taught the player nothing except that the radar is unreliable.
+//
+// `burnedGuidance` above stays exactly as it was and keeps its pulse: the
+// standing marks say "these exist", the pulse says "go to THAT one, now".
+export function coverShops(view) {
+  return (view?.buildings ?? [])
+    .filter((b) => buildingRole(b.kind) === "coverShop")
+    .map((b) => ({ id: b.id, cellX: b.cellX, cellY: b.cellY }));
+}
+
 // PLAYTEST 3 (finding 2): pin up to three ACCEPTED contracts so their targets
 // carry an extra ring on the radar and in the world. Resolution goes through
 // objectiveFor, so a pinned ring follows the contract to its return leg

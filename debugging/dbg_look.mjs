@@ -31,9 +31,18 @@ try {
     await sleep(300);
   }
   await sleep(2500);
+  // Freeze before every capture. Since the frame loop moved to rAF (PT13-A) the
+  // diorama redraws as fast as SwiftShader will allow, which starves the
+  // automation thread and times the screenshot out. Freezing holds the last
+  // drawn frame, which is exactly what a photograph wants.
+  await page.evaluate(() => window.__smFreeze?.(true));
+  await sleep(300);
   await page.screenshot({ path: "reports/look_intro.png", timeout: 90000 });   // intro overlay up
+  await page.evaluate(() => window.__smFreeze?.(false));
   await page.evaluate(() => document.getElementById("intro-dismiss")?.click());
   await sleep(6500);                                            // dropship gone, world settled
+  await page.evaluate(() => window.__smFreeze?.(true));
+  await sleep(300);
   await page.screenshot({ path: "reports/look_world.png", timeout: 90000 });
   await browser.close();
   console.log("shots -> reports/look_intro.png, reports/look_world.png");

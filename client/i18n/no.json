@@ -225,5 +225,13 @@
   "journal.contractLost": "Kontrakten tapt til en rival",
   "intro.begin": "Uthenting og overvåking skjer INNENDØRS — gå til kontraktstedet og trykk START.",
   "banner.goBegin": "Kom deg til stedet — START venter",
-  "banner.pressBegin": "Du er fremme — trykk START"
+  "banner.pressBegin": "Du er fremme — trykk START",
+  "captured.title": "AGENT I VARETEKT",
+  "captured.where": "Holdt på forvaringsstedet ved {0},{1}. Firmaet ditt har ingen i felten.",
+  "captured.whereUnknown": "Holdt i varetekt. Firmaet ditt har ingen i felten.",
+  "captured.bail": "BETAL KAUSJON",
+  "captured.bailNote": "Kjøpt fri og sendt tilbake til feltbasen. Betales fra banken.",
+  "captured.pullOut": "TREKK UT",
+  "captured.pullOutNote": "Pakk sammen basen og forlat dem. En redningsjobb venter neste gang du lander.",
+  "captured.evacRunning": "Uthenting pågår."
 }

@@ -306,6 +306,124 @@ test("the 2.5D camera clamps to the map instead of showing the void", async () =
   assert.deepEqual(tiny, { x: 5, y: 5 }, "a small map should centre");
 });
 
+test("PLAYTEST 13: a captured Firm is told what its options are", async () => {
+  const { captureSituation } = await import("../client/js/models.js");
+  const hq = { cellX: 5, cellY: 5, evacActive: 0, perimeterRadius: 4 };
+  const held = { id: 1, state: 3, firmId: 0, x: 0, y: 0, detection: 0 };
+
+  // Nothing to say while somebody is still on their feet: a captured SECOND
+  // operative is a setback, not a crisis, and stealing the screen from a player
+  // who is still playing would be its own defect.
+  assert.equal(captureSituation({
+    agents: [held, { id: 2, state: 1, firmId: 0, x: 0, y: 0, detection: 0 }],
+    holdingSites: [], hq, bank: 400, bailCost: 60,
+  }), null, "the overlay must not interrupt a player who still has an operative");
+
+  // Everyone in custody: this is the "when what?" moment.
+  const sit = captureSituation({
+    agents: [held],
+    holdingSites: [{ id: 0, cellX: 12, cellY: 9, heldOwn: [1] }],
+    hq, bank: 400, bailCost: 60,
+  });
+  assert.ok(sit, "a Firm with everyone in custody must get the overlay");
+  assert.equal(sit.heldCount, 1);
+  assert.deepEqual([sit.cellX, sit.cellY], [12, 9], "it must say WHERE they are held");
+  assert.equal(sit.bailCost, 60);
+  assert.equal(sit.canBail, true);
+  // D51: folding up with nobody left is explicitly allowed, and it is the route
+  // to a fresh operative. If this ever reads false the player is stuck with no
+  // move at all, which is the state the finding was reported from.
+  assert.equal(sit.canPullOut, true, "D51: folding with nobody left must stay offered");
+
+  // Broke: bail is refused by the engine (bailQuote), so the button must be
+  // dead in the UI rather than a click that comes back rejected.
+  const broke = captureSituation({
+    agents: [held], holdingSites: [{ id: 0, cellX: 12, cellY: 9, heldOwn: [1] }],
+    hq, bank: 0, bailCost: 0,
+  });
+  assert.equal(broke.canBail, false, "bail must not be offered to a Firm that cannot pay");
+  assert.equal(broke.canPullOut, true, "a broke captured Firm must still have a way out");
+});
+
+test("PLAYTEST 13: the quoted bail price is the price actually charged", async () => {
+  // The two-readers rule with money attached. If the overlay computed its own
+  // price the failure is silent and horrible: the button says one number, the
+  // command charges another or refuses, and nothing on screen explains it.
+  const { bailQuote, payBail } = await import("../engine/combat.js");
+  const cfg = { bail: { pctOfBankTier1: 15, pctPerTier: 10 } };
+  const firm = { id: 0, tierUnlocked: 2 };
+  const bank = 400;
+  const quote = bailQuote(firm, cfg, bank);
+  assert.equal(quote.pct, 25, "tier 2 is 15 + 10");
+  assert.equal(quote.cost, 100);
+
+  // The reducer path must arrive at the same number, through the real function.
+  const state = {
+    tick: 0, events: [], holdingSites: [{ id: 0, heldAgentIds: [7] }],
+    agents: [], firms: [firm],
+  };
+  const agent = { id: 7, firmId: 0, state: 3, holdingSiteId: 0, condition: 1, x: 0, y: 0 };
+  const res = payBail(state, firm, agent, cfg, { conditionMax: 100 }, bank,
+    { cellX: 4, cellY: 4 });
+  assert.equal(res.error, undefined, `payBail refused: ${res.error}`);
+  assert.equal(res.cost, quote.cost, "the charged price differs from the quoted price");
+  const paid = state.events.find((e) => e.type === "bailPaid");
+  assert.equal(paid.cost, quote.cost);
+  assert.equal(paid.pct, quote.pct);
+});
+
+test("PLAYTEST 13: re-spray shops are landmarks, not a burned-only emergency ping", async () => {
+  const { coverShops, burnedGuidance } = await import("../client/js/models.js");
+  const view = {
+    agents: [{ id: 1, state: 1, firmId: 0, x: 10 * 256, y: 10 * 256, detection: 0 }],
+    buildings: [
+      { id: 1, kind: 0, cellX: 4, cellY: 4 },     // informant
+      { id: 2, kind: 2, cellX: 12, cellY: 10 },   // cover shop
+      { id: 3, kind: 1, cellX: 6, cellY: 9 },     // market
+      { id: 4, kind: 2, cellX: 30, cellY: 30 },   // a second, far cover shop
+    ],
+  };
+  const shops = coverShops(view);
+  assert.equal(shops.length, 2, "both cover shops should be landmarks");
+  assert.deepEqual(shops.map((s) => s.id).sort(), [2, 4]);
+  // The whole point of the finding: they are on the map while UNSEEN. The old
+  // behaviour showed nothing until you were already burned — the one moment you
+  // have no time left to plan a route to one.
+  assert.equal(burnedGuidance(view), null, "guidance is a burned-only signal by design");
+  assert.ok(shops.length > 0, "landmarks must not depend on detection state");
+
+  // ...and the urgent pulse still resolves to the NEAREST when burned, so the
+  // two signals stay distinct rather than one replacing the other.
+  view.agents[0].detection = 2;
+  assert.equal(burnedGuidance(view).buildingId, 2);
+  assert.equal(coverShops(view).length, 2, "landmarks are unchanged by being burned");
+});
+
+test("PLAYTEST 13: an alerted patrol is louder than a recoloured dot", async () => {
+  // Finding 4 wanted red-marked patrols "for caution". The colour was already
+  // there; what was missing is that a 1.6px dot changing hue is not something a
+  // player notices. Both surfaces must scale the marker, not just tint it — so
+  // the guard reads the SOURCE of both and requires the alerted branch to be a
+  // different size, which is the part a colour-only regression would drop.
+  const src = {
+    minimap: readFileSync(join(JS_DIR, "minimap.js"), "utf8"),
+    scene: readFileSync(join(JS_DIR, "scene.js"), "utf8"),
+  };
+  for (const [name, text] of Object.entries(src)) {
+    // Strip comments first — this guard has been fooled by prose twice before
+    // (the dependency guard matched a phrase in a comment, the CSS guard matched
+    // the rule written inside the comment explaining the bug).
+    const code = text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+    const idx = code.indexOf("patrolAlert");
+    assert.ok(idx >= 0, `${name} does not mark alerted patrols at all`);
+    // A pulse: the alerted branch must consult the tick. A steady marker is
+    // legitimate design elsewhere, but here it was the reported defect.
+    const region = code.slice(Math.max(0, idx - 400), idx + 400);
+    assert.ok(/tick/.test(region),
+      `${name}: the alerted-patrol marker does not pulse — it is a static recolour`);
+  }
+});
+
 test("PLAYTEST 13: the camera rotates in quarter turns, all of them two-facade", async () => {
   const { azimuthFor, BASE_AZIMUTH } = await import("../client/js/scene.js");
   const quarter = Math.PI / 2;

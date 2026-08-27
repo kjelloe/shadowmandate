@@ -12,6 +12,7 @@ import { generateCity, findDropZones, autoSelectDropZone } from "../engine/cityg
 import { buildView } from "../engine/view.js";
 import { hashState } from "../engine/snapshot.js";
 import { hqLandingFor } from "../engine/hq.js";
+import { bailQuote } from "../engine/combat.js";
 import { refillPool, rebuildOffers } from "../engine/contracts.js";
 import { spawnAiFirms, stepAiFirms } from "../engine/ai_firms.js";
 import { worldNews } from "../engine/dormancy.js";
@@ -351,6 +352,14 @@ export class World {
     // The bank rides on the view (playtest 5): a player who cannot SEE their
     // money reads every refused purchase as "cannot do any actions".
     if (this.ledger) view.bank = this.ledger.get(this.id, firmId).bank | 0;
+    // What bail would cost, priced HERE for the same reason the bank is: the
+    // formula needs the ledger balance, which the reducer is never allowed to
+    // read. Straight from the engine's own bailQuote, so the capture overlay
+    // quotes exactly what CMD_PAY_BAIL will charge (playtest 13, finding 2).
+    const firm = this.state.firms[firmId];
+    if (firm) {
+      view.bailCost = bailQuote(firm, this.rules.combat, view.bank ?? 0).cost;
+    }
     return view;
   }
 

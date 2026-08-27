@@ -10,7 +10,7 @@
 // candidate changes both at once.
 const CELL = 256;
 
-import { siteRoles, objectiveCell, siteRole, burnedGuidance, pinnedCells } from "./models.js";
+import { siteRoles, objectiveCell, siteRole, burnedGuidance, pinnedCells, coverShops } from "./models.js";
 import { mark, terrain } from "./assets.js";
 import { detectionMark } from "./asset_resolver.js";
 
@@ -68,7 +68,34 @@ export function createMinimap(canvas) {
         ctx.arc(objective.cellX * s, objective.cellY * s, pulse, 0, Math.PI * 2);
         ctx.stroke();
       }
-      for (const p of view.patrols) dot(p.x, p.y, mark(p.alerted ? "patrolAlert" : "patrol"));
+      // Cover shops, ALWAYS (playtest 13, finding 1). Drawn before the movers
+      // so a patrol dot is never hidden under a piece of scenery: the radar's
+      // job is to show what can hurt you first.
+      //
+      // A HOLLOW marker, not a dot. The first cut drew filled dots and they were
+      // indistinguishable from the site tokens already covering the radar —
+      // present, findable only if you knew to look, which is not what "visible
+      // as a place of interest" means. Shape carries the kind; the token carries
+      // the colour, as everywhere else (D46).
+      for (const shop of coverShops(view)) {
+        ctx.strokeStyle = mark("coverShop"); ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.arc(shop.cellX * s, shop.cellY * s, 2.8, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      // Patrols. An ALERTED one is a caution marker, not a dot in a different
+      // colour (playtest 13, finding 4): it is bigger, it pulses, and it wears
+      // a ring. At radar scale a 1.6px dot changing hue is simply not something
+      // a player notices while doing anything else.
+      for (const p of view.patrols) {
+        if (!p.alerted) { dot(p.x, p.y, mark("patrol")); continue; }
+        const pulse = 1 + 0.25 * Math.sin(view.tick / 2);
+        dot(p.x, p.y, mark("patrolAlert"), 2.6 * pulse);
+        ctx.strokeStyle = mark("patrolAlert"); ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(p.x * s, p.y * s, 5.2 * pulse, 0, Math.PI * 2);
+        ctx.stroke();
+      }
       // Cameras on the radar too: knowing WHERE the watched ground is, is half
       // of planning a route around it. Small, because a camera is a fixture
       // rather than a mover — the radar's job is to show what changed.

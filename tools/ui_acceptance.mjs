@@ -310,6 +310,12 @@ async function main() {
     // Deliberately not a frame-rate assertion: this runs on SwiftShader, where
     // the real number is whatever the software rasteriser manages. The claim is
     // only that the two clocks are separate.
+    //
+    // IF THIS FAILS WITH frames ~= ticks, check what else is on the CPU before
+    // concluding the frame loop regressed. Software rendering starved by a
+    // concurrent probe drops to about 4fps, which at TICK_MS=250 looks exactly
+    // like the once-per-snapshot defect. Seen once, during PT13-C; re-running
+    // alone was green. Do not run probes and gates at the same time.
     check("the diorama draws faster than snapshots arrive",
       motion.frames > motion.ticks && motion.ticks > 0, JSON.stringify(motion));
 

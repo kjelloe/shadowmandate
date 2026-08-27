@@ -182,12 +182,23 @@ export function bailCost(firm, cfg) {
   return pct;
 }
 
+// What bail WOULD cost, as one function both readers import (playtest 13,
+// finding 2). The capture overlay has to show a price before the player commits
+// to it, and the reducer has to charge one — a client that recomputes the
+// formula is the "gating rule in two places" defect wearing a price tag, and
+// the failure mode is the ugliest kind: the button says 120, the command comes
+// back `cannot_afford`, and nothing on screen explains why.
+export function bailQuote(firm, cfg, bank) {
+  const pct = bailCost(firm, cfg);
+  const cost = Math.trunc(((bank | 0) * pct) / 100);
+  return { pct, cost, affordable: (bank | 0) > 0 && cost > 0 };
+}
+
 export function payBail(state, firm, agent, combatCfg, agentsCfg, bank, hq) {
   if (agent.state !== AGENT_HELD) return { error: "agent_not_held" };
   if (agent.firmId !== firm.id) return { error: "not_your_agent" };
-  const pct = bailCost(firm, combatCfg);
-  const cost = Math.trunc(((bank | 0) * pct) / 100);
-  if ((bank | 0) <= 0 || cost <= 0) return { error: "cannot_afford" };
+  const { pct, cost, affordable } = bailQuote(firm, combatCfg, bank);
+  if (!affordable) return { error: "cannot_afford" };
 
   const err = releaseAgent(state, agent, agentsCfg,
     hq ? hq.cellX : -1, hq ? hq.cellY : -1);

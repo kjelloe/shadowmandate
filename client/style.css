@@ -159,6 +159,20 @@ button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal)
 #building-options .cost { color: var(--amber); font-size: .82rem; }
 #building-options li.unaffordable { opacity: .45; }
 
+/* The capture overlay (playtest 13, finding 2). Alarm-edged, because this is
+   the one overlay that means the sortie has stopped. */
+#captured { border-color: var(--alarm); }
+#captured h2 { color: var(--alarm); }
+#captured-where { color: var(--dim); margin: .2rem 0 .8rem; }
+#captured-options { list-style: none; margin: 0; padding: 0; }
+#captured-options li { display: flex; justify-content: space-between; gap: .6rem;
+  align-items: center; padding: .55rem 0; border-bottom: 1px solid var(--line); }
+#captured-options .opt-label { letter-spacing: .06em; }
+#captured-options .opt-note { color: var(--dim); font-size: .78rem; margin-top: .15rem; }
+#captured-options .cost { color: var(--amber); font-size: .82rem; }
+#captured-options li.unaffordable { opacity: .45; }
+#captured-options button { min-height: 44px; }
+
 #zone-layout { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap;
   justify-content: center; }
 #zone-map { max-width: min(62vw, 512px); height: auto; border: 1px solid var(--line);
