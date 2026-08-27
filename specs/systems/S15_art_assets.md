@@ -305,3 +305,21 @@ station et al) — the owner ruled anchors first; landmarks are a later slice.
   clamp (14–70 cells across) bounds it.
 - The destination pin (S02): a bobbing token-coloured cone plus ground ring
   over the move order's actual endpoint, depth-free like the other HUD marks.
+
+
+## SP-1 + DC-2 — the cyberpunk grade (2026-08-27, ref debugging/cyperpunk-example.png)
+
+**Splash (SP-1)**: street-level perspective camera over the existing
+choreography; canvas-painted parallax skylines (pixel windows, two
+temperatures); magenta haze gradient + derived-range fog; rim/fill lights;
+edge-mounted flickering neon. All colours in `style_tokens.splash`; the
+colour guard scans attract.js.
+
+**District character round two (DC-2)**: facade NEON as the commercial
+identity lever — per-district palettes and densities in
+`terrain.districtStyles.*.neon` (commercial pink-dominant 0.45, research
+cool cyan 0.2, port/residential sparse warm) — and industrial external PIPE
+runs (`pipes`/`pipeDensity`). Both are decor kinds in terrain3d's existing
+instanced pass, deterministic per seed. Round one's balconies, shopfronts,
+gardens, masts and tanks were already in (playtest 5); this pass closes the
+"more district character" directive with the reference's vocabulary.

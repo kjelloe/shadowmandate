@@ -155,7 +155,9 @@
      "density": 0.1,
      "scale": 2,
      "warmShare": 0.6
-    }
+    },
+    "pipes": "#39414E",
+    "pipeDensity": 0.35
    },
    "residential": {
     "blockLo": "#272430",
@@ -168,7 +170,11 @@
     },
     "shopfront": "#E4A85A",
     "garden": "#33472F",
-    "balcony": "#1A1D22"
+    "balcony": "#1A1D22",
+    "neon": [
+     "#FFB13F"
+    ],
+    "neonDensity": 0.08
    },
    "commercial": {
     "blockLo": "#20242F",
@@ -179,7 +185,13 @@
      "scale": 1,
      "warmShare": 0.72
     },
-    "shopfront": "#C96A8A"
+    "shopfront": "#C96A8A",
+    "neon": [
+     "#FF3FA4",
+     "#3FE8FF",
+     "#FFB13F"
+    ],
+    "neonDensity": 0.45
    },
    "government": {
     "blockLo": "#2A2D33",
@@ -199,7 +211,12 @@
      "density": 0.2,
      "scale": 1,
      "warmShare": 0.3
-    }
+    },
+    "neon": [
+     "#3FE8FF",
+     "#7FE8F0"
+    ],
+    "neonDensity": 0.2
    },
    "port": {
     "blockLo": "#212827",
@@ -209,7 +226,12 @@
      "density": 0.12,
      "scale": 2,
      "warmShare": 0.55
-    }
+    },
+    "neon": [
+     "#FFB13F",
+     "#FF3FA4"
+    ],
+    "neonDensity": 0.15
    }
   },
   "note_roofdecor": "Roof furniture (playtest 5): antenna masts with red beacon tips on the tall towers, water tanks on the mid-rise, slimmer setback tops, gardens on residential flats. Colours here; placement is hashed in the massing.",
@@ -217,7 +239,8 @@
    "mast": "#33383F",
    "beacon": "#C2452F",
    "tank": "#3A4046"
-  }
+  },
+  "note_districtRound2": "DC-2 (2026-08-27, ref cyperpunk-example.png): facade NEON per district - commercial pink-dominant and dense, research cool cyan, port/residential sparse and warm; INDUSTRIAL grows external pipe runs. Densities are look judgements refined against screenshots, like the massing weights."
  },
  "note_scale": "World scale (playtest 7, D60): the engine grid is untouched \u2014 cells are cells \u2014 but FIGURES render at 1/8 of a cell (playtest 12: 1/16 figures were a few pixels \u2014 the ruled ratio is figures 8x taller on screen with roads 4x wider, i.e. figures 2x relative plus a much closer camera; the closest zoom delivers the full 8x). Applied by manifest CLASS at build time in the scene; a per-entry `scale` in the manifest overrides the class (the dropship is a vehicle, not a person). Rings that mark a CELL (HQ, pins, re-spray) stay cell-scale; the ring under a figure follows the figure.",
  "scale": {

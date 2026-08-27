@@ -415,6 +415,25 @@ export function blockMassing(tiles, size, seed, districts = null) {
         if (face && styleCfg?.shopfront && hash2(seed ^ 0x5a0f, x, y) < 0.5) {
           decor.push({ kind: "shopfront", x, y, dirX: face[0], dirZ: face[1], style });
         }
+        // DC-2 (ref cyperpunk-example.png): NEON on the street faces — the
+        // commercial identity lever. The roll picks colour and shape too, so
+        // one hash decides the whole sign and reruns are stable.
+        if (face && styleCfg?.neon && h >= 0.9) {
+          const roll = hash2(seed ^ 0x2e02, x, y);
+          if (roll < (styleCfg.neonDensity ?? 0)) {
+            decor.push({
+              kind: "neon", x, y, dirX: face[0], dirZ: face[1], top: h, style,
+              variant: hash2(seed ^ 0x7e01, x, y),
+            });
+          }
+        }
+        // …and industrial facades grow external PIPE runs, the works worn
+        // on the outside of the building.
+        if (face && styleCfg?.pipes && h >= 0.7
+          && hash2(seed ^ 0x9199, x, y) < (styleCfg.pipeDensity ?? 0)) {
+          decor.push({ kind: "pipes", x, y, dirX: face[0], dirZ: face[1], top: h,
+            style, variant: hash2(seed ^ 0x9139, x, y) });
+        }
       }
       // The vertical accents: towers out of a podium, stacks out of a works.
       if (template === "podium" || template === "industrial") {
@@ -592,6 +611,68 @@ export function buildBlocks(tiles, size, seed, districts = null) {
       }
       slab.instanceMatrix.needsUpdate = true;
       group.add(slab);
+    }
+  }
+  // DC-2: neon signs. Vertical strips and small marquees, emissive-flat and
+  // bucketed by colour like the shopfronts; the variant hash picks colour,
+  // shape and mounting height so the street never repeats a rhythm.
+  const neons = kinds.get("neon") ?? [];
+  if (neons.length) {
+    const byHex = new Map();
+    for (const d of neons) {
+      const palette = DISTRICT_STYLES?.[d.style]?.neon;
+      if (!palette?.length) continue;
+      const hex = palette[Math.trunc(d.variant * 997) % palette.length];
+      if (!byHex.has(hex)) byHex.set(hex, []);
+      byHex.get(hex).push(d);
+    }
+    for (const [hex, list] of byHex) {
+      const mesh = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(1, 1, 1),
+        new THREE.MeshBasicMaterial({ color: new THREE.Color().setRGB(...hexRgb(hex)) }),
+        list.length);
+      for (let i = 0; i < list.length; i++) {
+        const d = list[i];
+        const vertical = d.variant < 0.6;   // the reference skews vertical
+        const len = vertical
+          ? Math.min(d.top * 0.55, 0.45 + d.variant * 0.5)
+          : 0.09;
+        const wide = vertical ? 0.07 : 0.38 + d.variant * 0.2;
+        const mountY = vertical
+          ? Math.min(d.top - len / 2 - 0.06, 0.55 + d.variant * 0.9)
+          : Math.min(d.top - 0.12, 0.5 + d.variant * 1.1);
+        put(mesh, i,
+          d.x + 0.5 + d.dirX * 0.56, mountY, d.y + 0.5 + d.dirZ * 0.56,
+          d.dirX ? 0.045 : wide, len, d.dirZ ? 0.045 : wide);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+      group.add(mesh);
+    }
+  }
+  // DC-2: industrial pipe runs — a vertical line up the facade with a stub
+  // elbow near the top. Utility, not decoration: the works worn outside.
+  const pipes = kinds.get("pipes") ?? [];
+  if (pipes.length) {
+    const hex = DISTRICT_STYLES?.industrial?.pipes;
+    if (hex) {
+      const run = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(1, 1, 1), lambert(hex), pipes.length);
+      const stub = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(1, 1, 1), lambert(hex), pipes.length);
+      for (let i = 0; i < pipes.length; i++) {
+        const d = pipes[i];
+        const off = 0.18 + d.variant * 0.5;   // where along the face it climbs
+        const px = d.x + 0.5 + d.dirX * 0.55 + (d.dirX ? 0 : off - 0.5);
+        const pz = d.y + 0.5 + d.dirZ * 0.55 + (d.dirZ ? 0 : off - 0.5);
+        put(run, i, px, d.top * 0.5, pz, 0.05, d.top * 0.96, 0.05);
+        put(stub, i,
+          px + (d.dirZ ? 0.09 : 0), d.top * (0.62 + d.variant * 0.25),
+          pz + (d.dirX ? 0.09 : 0),
+          d.dirX ? 0.05 : 0.2, 0.05, d.dirZ ? 0.05 : 0.2);
+      }
+      run.instanceMatrix.needsUpdate = true;
+      stub.instanceMatrix.needsUpdate = true;
+      group.add(run, stub);
     }
   }
   const shopfronts = kinds.get("shopfront") ?? [];

@@ -112,3 +112,7 @@ never watchers. Needs its own slice and a Q ruling on density/perf.
   Client-side theatre is ACCEPTABLE here (unlike civilians they never react
   to the sim) — deterministic from seed, drawn by the road layer.
 - Both wait behind the mission-area slices unless the owner reorders.
+- **Avenue density (noted 2026-08-27, owner: "note it for later")**: seed
+  4711 has exactly ONE transit avenue, so its hover-car traffic is a single
+  convoy. Guaranteeing >=1 avenue per axis is a citygen layout change (fixture
+  re-pin, whole-city look change) — deferred until a playtest complains.

@@ -170,6 +170,11 @@ session.onChange((s, events) => {
   window.__smView = s.view;
   window.__smSend = (cmd) => session.send(cmd);
   window.__smTiles = session.tiles ?? null;
+  // Probe seam: freeze the diorama so a SwiftShader screenshot has a quiet
+  // main thread — DC-2's instanced neon pushed live-frame capture over the
+  // timeout even at 640x360. Draw once more after freezing so the LAST frame
+  // is current, then hold it.
+  window.__smFreeze = (on) => { window.__smFrozen = !!on; };
 });
 
 // S05: the dropship sequence, owned by the client and driven by a wall clock.
@@ -199,7 +204,7 @@ function paint(s, events) {
     // tools/ui_acceptance.mjs, where every page interaction was taking seconds
     // under software rendering; it costs real devices battery rather than
     // seconds, which is why it went unnoticed.
-    if (!$("#world").hidden) {
+    if (!$("#world").hidden && !window.__smFrozen) {
       renderer.draw(view, pinned);
       // The dropship rides on top of the drawn frame. A null flight hides it,
       // so an interrupted or finished sequence needs no extra bookkeeping.

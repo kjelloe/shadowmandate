@@ -28,7 +28,7 @@ try {
   await page.evaluate(() => {
     const a = window.__smView.agents[0];
     window.__smSend({ type: 21, agentId: a.id, stance: 2 });
-    window.__smSend({ type: 20, agentId: a.id, cellX: 56, cellY: 50 });
+    window.__smSend({ type: 20, agentId: a.id, cellX: 37, cellY: 30 });
   });
   for (let i = 0; i < 200; i++) {
     await sleep(250);
@@ -38,7 +38,7 @@ try {
         civs: (window.__smView.civilians ?? []).length };
     });
     if (i % 12 === 0) console.log("walk:", JSON.stringify(st));
-    if (Math.abs(st.x - 56) + Math.abs(st.y - 50) <= 4) break;
+    if (Math.abs(st.x - 37) + Math.abs(st.y - 30) <= 4) break;
   }
   for (let i = 0; i < 4; i++) await page.evaluate(() => document.getElementById("zoom-out").click());
   // Wait for a hover car to glide into frame before shooting.
@@ -58,6 +58,8 @@ try {
     await sleep(300);
   }
   await sleep(200);
+  await page.evaluate(() => window.__smFreeze?.(true));   // quiet thread for the shot
+  await sleep(300);
   await page.screenshot({ path: "debugging/street-life-01.png", timeout: 30000, animations: "disabled" });
   await browser.close();
   console.log("shot -> debugging/street-life-01.png");
