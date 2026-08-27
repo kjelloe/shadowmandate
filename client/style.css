@@ -70,6 +70,14 @@ button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal)
 #zoom button { min-width: 44px; min-height: 44px; border-radius: 10px;
   background: rgba(29,32,38,.9); border: 1px solid var(--line);
   color: inherit; font-size: 1.3rem; }
+/* Camera controls (playtest 13): quarter-turn rotation and the recentre that
+   appears once a right-drag has stopped the camera following. Same 44px thumb
+   target as zoom — the mobile gate measures these too. */
+#camera-controls { display: flex; gap: .45rem; }
+#camera-controls button { min-width: 44px; min-height: 44px; border-radius: 10px;
+  background: rgba(29,32,38,.9); border: 1px solid var(--line);
+  color: inherit; font-size: 1.2rem; }
+#recentre { border-color: var(--amber); color: var(--amber); }
 .chips { display: flex; gap: .3rem; pointer-events: auto; }
 .chips button { min-width: 64px; font-size: .78rem; }
 .pill.unseen { color: var(--teal); } .pill.noticed { color: var(--amber); }

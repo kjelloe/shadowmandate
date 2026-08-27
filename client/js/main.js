@@ -175,6 +175,13 @@ session.onChange((s, events) => {
   // timeout even at 640x360. Draw once more after freezing so the LAST frame
   // is current, then hold it.
   window.__smFreeze = (on) => { window.__smFrozen = !!on; };
+  // Camera state for the browser gate: "the view rotated" and "the camera
+  // stopped following" are both invisible in the DOM and unreadable from a
+  // SwiftShader screenshot.
+  window.__smCamera = () => ({
+    quarter: renderer?.quarter() ?? 0,
+    panned: renderer?.isPanned() ?? false,
+  });
 });
 
 // S05: the dropship sequence, owned by the client and driven by a wall clock.
@@ -187,6 +194,44 @@ function startDropship(dir) {
   flightDir = dir;
 }
 
+// THE FRAME LOOP (playtest 13, finding 6: "movement was completely jerky, lag
+// skip"). Drawing used to happen once per SNAPSHOT — ten frames a second, each
+// one a hard jump to the new positions. The simulation is unchanged and still
+// arrives at 10Hz; the diorama now redraws on rAF and eases toward whatever the
+// latest snapshot says, which is the difference between watching a slideshow
+// and watching someone walk.
+let lastView = null;
+let minimapAt = 0;
+function frame() {
+  requestAnimationFrame(frame);
+  // Only draw the diorama when it is on screen. Until 7h it rendered behind the
+  // splash and drop-zone screens, where it is completely invisible — a full 3D
+  // frame for nobody. It costs real devices battery rather than seconds, which
+  // is why it went unnoticed for so long.
+  if (!renderer || !lastView || $("#world").hidden || window.__smFrozen) return;
+  try {
+    // Counted for the browser gate. "The diorama is smooth" is not readable
+    // from the DOM and not readable from a screenshot either; the only honest
+    // signal is that frames outnumber snapshots, and a revert to
+    // snapshot-driven drawing makes the two counts equal.
+    window.__smFrames = (window.__smFrames | 0) + 1;
+    renderer.draw(lastView, pinned);
+    // The dropship rides on top of the drawn frame. A null flight hides it,
+    // so an interrupted or finished sequence needs no extra bookkeeping.
+    const flight = flightStartedAt === null
+      ? null : dropshipFlight(Date.now() - flightStartedAt, flightDir);
+    if (flightStartedAt !== null && !flight) flightStartedAt = null;
+    renderer.drawDropship(flight, lastView.hq ? { x: lastView.hq.cellX, y: lastView.hq.cellY } : null);
+    // The radar has nothing to interpolate — it is a dot map of discrete
+    // positions — so it stays on its own slow clock rather than riding rAF.
+    const now = Date.now();
+    if (now - minimapAt > 66) { minimapAt = now; minimap.draw(lastView, pinned); }
+  } catch (err) {
+    fatal("render", err);
+  }
+}
+requestAnimationFrame(frame);
+
 function paint(s, events) {
   const view = s.view;
   if (!renderer) renderer = createScene($("#view"));
@@ -198,25 +243,10 @@ function paint(s, events) {
       renderer.setTerrain(session.tiles, view.size, view.worldSeed ?? 1, session.districtMap);
       minimap.setTiles(session.tiles, view.size);
     }
-    // Only draw the diorama when it is on screen. Until now it rendered at
-    // 10Hz behind the splash and drop-zone screens, where it is completely
-    // invisible — a full 3D frame, ten times a second, for nobody. Found by
-    // tools/ui_acceptance.mjs, where every page interaction was taking seconds
-    // under software rendering; it costs real devices battery rather than
-    // seconds, which is why it went unnoticed.
-    if (!$("#world").hidden && !window.__smFrozen) {
-      renderer.draw(view, pinned);
-      // The dropship rides on top of the drawn frame. A null flight hides it,
-      // so an interrupted or finished sequence needs no extra bookkeeping.
-      const flight = flightStartedAt === null
-        ? null : dropshipFlight(Date.now() - flightStartedAt, flightDir);
-      if (flightStartedAt !== null && !flight) flightStartedAt = null;
-      renderer.drawDropship(flight, view.hq ? { x: view.hq.cellX, y: view.hq.cellY } : null);
-      minimap.draw(view, pinned);
-    }
   } catch (err) {
     fatal("render", err);
   }
+  lastView = view;
 
   const agent = ownAgent(view);
   if (agent) {
@@ -565,6 +595,11 @@ function renderArea(view) {
   const inside = !!areaView(view);
   if (inside !== wasInsideArea) {
     wasInsideArea = inside;
+    // A pan is an offset from the thing being followed, and crossing the
+    // threshold changes that thing completely — carrying the offset over would
+    // open the compound looking at a wall.
+    renderer?.recentre();
+    $("#recentre").hidden = true;
     const canvas = $("#view");
     canvas.classList.remove("area-fade");
     void canvas.offsetWidth;               // restart the animation
@@ -703,6 +738,10 @@ function addToast(text, alarm) {
 // ── Input: tap to move, double-tap to hurry (S12 touch model) ─────────────
 let lastTap = 0;
 $("#view").addEventListener("pointerdown", (ev) => {
+  // The RIGHT button drags the camera (playtest 13, finding 3) and must never
+  // also be a move order. `pointerdown` fires for every button, so without this
+  // the old handler was already routing right-clicks into the engine.
+  if (ev.button === 2) { startPan(ev); return; }
   const agent = ownAgent(session.view);
   if (!agent || !renderer) return;
   // Two fingers down is the start of a pinch, never a move order.
@@ -738,6 +777,39 @@ $("#view").addEventListener("wheel", (ev) => {
 }, { passive: false });
 $("#zoom-in").addEventListener("click", () => renderer?.zoomBy(1 / 1.25));
 $("#zoom-out").addEventListener("click", () => renderer?.zoomBy(1.25));
+
+// ── Free look: hold the right button and drag (playtest 13, finding 3) ─────
+// The camera stops following the operative while panned, and a recentre button
+// appears the moment it does — a camera that has silently stopped following is
+// indistinguishable from an operative who has stopped moving, which is exactly
+// the class of ambiguity this client has been burned by before.
+let panning = null;
+function startPan(ev) {
+  panning = { x: ev.clientX, y: ev.clientY };
+  // Capture keeps the drag alive when the cursor leaves the canvas, but it
+  // THROWS for a pointer id the element does not own — and a throw here takes
+  // the whole pointerdown handler with it, which would also kill tap-to-move.
+  // The pan works without capture; it just ends at the canvas edge.
+  try { $("#view").setPointerCapture?.(ev.pointerId); } catch { /* not captured */ }
+  ev.preventDefault();
+}
+$("#view").addEventListener("contextmenu", (ev) => ev.preventDefault());
+$("#view").addEventListener("pointermove", (ev) => {
+  if (panning && renderer) {
+    renderer.panByPixels(ev.clientX - panning.x, ev.clientY - panning.y);
+    panning = { x: ev.clientX, y: ev.clientY };
+    $("#recentre").hidden = false;
+  }
+});
+for (const type of ["pointerup", "pointercancel", "pointerleave"]) {
+  $("#view").addEventListener(type, (ev) => { if (ev.button === 2 || panning) panning = null; });
+}
+$("#rot-left").addEventListener("click", () => renderer?.rotateBy(-1));
+$("#rot-right").addEventListener("click", () => renderer?.rotateBy(1));
+$("#recentre").addEventListener("click", () => {
+  renderer?.recentre();
+  $("#recentre").hidden = true;
+});
 
 const pinch = new Map();
 let pinchDist = 0;

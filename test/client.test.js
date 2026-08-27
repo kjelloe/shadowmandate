@@ -306,6 +306,76 @@ test("the 2.5D camera clamps to the map instead of showing the void", async () =
   assert.deepEqual(tiny, { x: 5, y: 5 }, "a small map should centre");
 });
 
+test("PLAYTEST 13: the camera rotates in quarter turns, all of them two-facade", async () => {
+  const { azimuthFor, BASE_AZIMUTH } = await import("../client/js/scene.js");
+  const quarter = Math.PI / 2;
+  assert.equal(azimuthFor(0), BASE_AZIMUTH);
+  for (let q = 0; q < 4; q++) {
+    // Every sanctioned azimuth must land on an ODD multiple of 45 degrees: those
+    // are precisely the views that show two facades. An even multiple would put
+    // the camera square-on to the grid, which reads as a completely different
+    // game, and is the thing "no rotation" was protecting against.
+    const eighths = azimuthFor(q) / (Math.PI / 4);
+    assert.ok(Math.abs(eighths - Math.round(eighths)) < 1e-9, "not an eighth turn");
+    assert.equal(Math.round(eighths) % 2, 1, `quarter ${q} is square-on to the grid`);
+  }
+  // Wrapping in both directions, so a rotate-left from the base does not walk
+  // off into negative azimuths the clamp maths was never checked against.
+  assert.ok(Math.abs(azimuthFor(4) - azimuthFor(0)) < 1e-9, "did not wrap forwards");
+  assert.ok(Math.abs(azimuthFor(-1) - azimuthFor(3)) < 1e-9, "did not wrap backwards");
+  assert.ok(Math.abs(azimuthFor(1) - azimuthFor(0) - quarter) < 1e-9, "a step is not a quarter turn");
+});
+
+test("PLAYTEST 13: a right-drag moves the world WITH the cursor, at every azimuth", async () => {
+  const { panDelta, azimuthFor } = await import("../client/js/scene.js");
+  const pitch = Math.PI / 4, upp = 0.01;
+  for (let q = 0; q < 4; q++) {
+    const az = azimuthFor(q);
+    // Drag right by 100px: the camera target must move so that ground which was
+    // off the LEFT edge comes into view — i.e. the target moves screen-left.
+    // Projecting the target displacement back onto the screen-right axis is the
+    // only check that cannot pass by accident: a sign error, a swapped axis and
+    // a missing pitch term all fail it, and all three of them render plausibly.
+    const right = { x: Math.cos(az), y: -Math.sin(az) };
+    const d = panDelta(100, 0, az, pitch, upp);
+    const alongRight = d.dx * right.x + d.dy * right.y;
+    assert.ok(alongRight < -0.5, `quarter ${q}: drag-right did not move the view left (${alongRight})`);
+    // ...and the same drag must have NO component along the screen-vertical.
+    const down = { x: Math.sin(az), y: Math.cos(az) };
+    const alongDown = d.dx * down.x + d.dy * down.y;
+    assert.ok(Math.abs(alongDown) < 1e-9, `quarter ${q}: a horizontal drag slid the view vertically`);
+
+    // Vertical drag is foreshortened by the pitch: at 45 degrees a pixel of
+    // vertical drag must cover MORE ground than a horizontal one, or the world
+    // lags behind the cursor on the diagonal.
+    const v = panDelta(0, 100, az, pitch, upp);
+    const vAlongDown = v.dx * down.x + v.dy * down.y;
+    assert.ok(Math.abs(vAlongDown) > Math.abs(alongRight) * 1.3,
+      `quarter ${q}: the pitch foreshortening term is missing`);
+  }
+});
+
+test("PLAYTEST 13: smoothing is frame-rate independent and snaps across teleports", async () => {
+  const { slewAlpha, smoothTo } = await import("../client/js/scene.js");
+  // Same wall-clock, different frame rates: one 100ms step and ten 10ms steps
+  // must land in the same place, or the easing speed becomes a property of the
+  // player's monitor. This is the whole reason the alpha is exponential.
+  const tau = 0.07;
+  let slow = smoothTo(0, 10, slewAlpha(0.1, tau), 4);
+  let fast = 0;
+  for (let i = 0; i < 10; i++) fast = smoothTo(fast, 10, slewAlpha(0.01, tau), 4);
+  assert.ok(Math.abs(slow - fast) < 0.01, `frame rate changed the easing (${slow} vs ${fast})`);
+
+  // A first sighting takes the reported position exactly — easing in from zero
+  // would fly every new figure in from the map origin.
+  assert.equal(smoothTo(undefined, 7, 0.5, 4), 7);
+  // A teleport (entering a compound is a 60-cell jump) snaps rather than
+  // sliding the operative across the void.
+  assert.equal(smoothTo(0, 60, 0.5, 4), 60);
+  // ...but an ordinary step eases.
+  assert.ok(smoothTo(0, 1, 0.5, 4) < 1);
+});
+
 test("PLAYTEST 3: nothing may fog the diorama out of existence", async () => {
   // The bug that made the canvas look empty with no error at all: fog.far was
   // 110 while the orthographic camera sits ~114 units from the ground, so every

@@ -2,13 +2,26 @@
 //
 // An orthographic camera at the classic 1993 isometric view (playtest 4): 45-degree
 // azimuth so every building shows two facades and a roof, pitched at 40
-// degrees, close enough to read doorways. STILL no player rotation — a fixed
-// compass keeps a stealth map readable, and a player who can spin the world
-// loses their sense of where the patrol was.
+// degrees, close enough to read doorways.
+//
+// ROTATION IS QUARTER-TURNS ONLY (playtest 13, finding 3). The old rule here was
+// "no player rotation at all", for a real reason — a freely spinnable world
+// destroys your sense of where the patrol was. But a fixed compass also means
+// the two facades pointing away from the camera are permanently unknowable, and
+// a stealth game where you cannot look behind a building is hiding the board
+// from the player. The compromise keeps both: FOUR discrete azimuths, all in
+// the 45-degree family, so every view is the same readable two-facade read and
+// the compass has four memorable states rather than a continuum.
 //
 // The camera CLAMPS to the map. Without that, dropping near a corner leaves
 // half the screen showing nothing — which is exactly what playtest 2 saw and
 // reasonably read as "off centre".
+//
+// MOTION IS SMOOTHED HERE, not in the engine. Snapshots arrive at 10Hz and the
+// engine is cell-granular indoors, so drawing raw positions renders as the
+// "completely jerky, lag skip" playtest 13 saw. Every mover is eased toward its
+// reported position by `smoothTo`, and the frame loop runs on rAF instead of on
+// arrival — the simulation stays exactly as discrete as it was.
 
 import * as THREE from "three";
 import { buildGround, buildBlocks, buildClutter, buildRoads, setTerrainTokens } from "./terrain3d.js";
@@ -68,6 +81,50 @@ export function clampCamera(target, size, halfSpanX, halfSpanY) {
     return Math.min(size - half, Math.max(half, v));
   };
   return { x: clampAxis(target.x, halfSpanX), y: clampAxis(target.y, halfSpanY) };
+}
+
+// The four sanctioned camera azimuths (playtest 13, finding 3). Quarter turns
+// off the base 45 degrees: every one of them shows two facades, so rotating
+// never lands on the flat single-facade view that reads as a different game.
+export const BASE_AZIMUTH = 45 * (Math.PI / 180);
+export function azimuthFor(quarter) {
+  return BASE_AZIMUTH + (((quarter % 4) + 4) % 4) * (Math.PI / 2);
+}
+
+// Screen drag -> ground displacement of the camera TARGET, so the world
+// follows the cursor under a right-drag.
+//
+// DERIVED, NOT GUESSED (the octantToRadians lesson): with the camera behind the
+// target at azimuth `az`, the ground vector pointing screen-right is
+// (cos az, -sin az) and the one pointing screen-DOWN is (sin az, cos az).
+// Vertical screen motion is foreshortened by the pitch, so a pixel of vertical
+// drag covers 1/sin(pitch) as much ground as a horizontal one — without that
+// term the world slides diagonally away from the cursor, which feels broken in
+// a way that is very hard to name while playing.
+export function panDelta(dxPx, dyPx, azimuth, pitch, unitsPerPixel) {
+  const dx = dxPx * unitsPerPixel;
+  const dy = (dyPx * unitsPerPixel) / Math.sin(pitch);
+  const c = Math.cos(azimuth), s = Math.sin(azimuth);
+  // Negated: dragging right must move the world right, i.e. the camera LEFT.
+  return { dx: -(dx * c + dy * s), dy: -(dx * -s + dy * c) };
+}
+
+// Frame-rate independent easing. A fixed per-frame factor was fine while
+// drawing happened only on a 10Hz snapshot; on rAF it would ease six times
+// faster on a 60Hz screen than a 10Hz one, making the smoothing itself a
+// function of the player's monitor.
+export function slewAlpha(dtSeconds, tauSeconds) {
+  if (!(dtSeconds > 0)) return 0;
+  return 1 - Math.exp(-dtSeconds / Math.max(1e-4, tauSeconds));
+}
+
+// Ease a coordinate toward its reported value, but SNAP across large jumps.
+// Entering a compound, exiting one, and a drop-in are all teleports; easing
+// through them would draw the operative sliding across sixty cells of void.
+export function smoothTo(prev, next, alpha, snap) {
+  if (prev === null || prev === undefined) return next;
+  if (Math.abs(next - prev) > snap) return next;
+  return prev + (next - prev) * alpha;
 }
 
 export function createScene(canvas) {
@@ -272,7 +329,7 @@ export function createScene(canvas) {
     // Comes in along the SCREEN horizontal — the ground direction perpendicular
     // to the view azimuth — so the wing reads broadside to a camera that never
     // rotates; the model's nose is +z, hence atan2 of the axis.
-    const ax = Math.cos(AZIMUTH), az = -Math.sin(AZIMUTH);
+    const ax = Math.cos(drawnAzimuth), az = -Math.sin(drawnAzimuth);
     dropship.position.set(
       hqCell.x + 0.5 + ax * flight.offsetCells,
       flight.height,
@@ -316,10 +373,18 @@ export function createScene(canvas) {
   // of roofs, high enough that the streets the player actually taps stay
   // visible between the towers (40 was tried and buried them) — and a
   // 45-degree azimuth so every building shows two faces, the classic genre
-  // read. The azimuth is a constant, not a control: the compass stays fixed
-  // on purpose (see the header note).
+  // read. The azimuth is now a quarter-turn CONTROL (playtest 13); the pitch
+  // stays fixed, because pitch is the thing that makes the city read as a city.
   const PITCH = 45 * (Math.PI / 180);
-  const AZIMUTH = 45 * (Math.PI / 180);
+  let quarter = 0;
+  let azimuth = azimuthFor(quarter);
+  // The slewed azimuth: a quarter turn EASES round rather than cutting, so the
+  // player keeps hold of which way they were looking. Cutting was tried first
+  // and every rotation read as a fresh drop-in somewhere else.
+  let drawnAzimuth = azimuth;
+  // Free look (playtest 13): a right-drag offset from whatever the camera would
+  // otherwise follow. Non-null means the camera has stopped following.
+  let pan = null;
   const HEIGHT = 90;
   // Exported so anything depth-related (fog, near/far) is derived from the
   // real distance instead of a constant somebody guessed.
@@ -329,17 +394,60 @@ export function createScene(canvas) {
     const aspect = (canvas.clientWidth || 1) / (canvas.clientHeight || 1);
     const halfX = zoomCells / 2;
     const halfY = halfX / aspect;
-    const margin = clampMargin(halfX, halfY, PITCH, AZIMUTH);
+    const margin = clampMargin(halfX, halfY, PITCH, drawnAzimuth);
     const c = clampCamera(target, mapSize, margin, margin);
     const back = HEIGHT / Math.tan(PITCH);
-    camera.position.set(c.x + back * Math.sin(AZIMUTH), HEIGHT, c.y + back * Math.cos(AZIMUTH));
+    camera.position.set(c.x + back * Math.sin(drawnAzimuth), HEIGHT, c.y + back * Math.cos(drawnAzimuth));
     camera.lookAt(c.x, 0, c.y);
     return c;
   }
 
+  // ── Smoothing (playtest 13, finding 6: "movement was completely jerky") ────
+  // One eased position per mover, keyed by a stable id. The engine still moves
+  // in whole cells on a 10Hz tick; this is presentation, exactly like the walk
+  // offset and the dropship — nothing here can desync anything.
+  const eased = new Map();
+  let frameAlpha = 1;              // recomputed per frame from real elapsed time
+  const SNAP_CELLS = 4;            // beyond this it is a teleport, not a walk
+  function smoothPos(key, x, z) {
+    const prev = eased.get(key);
+    const next = {
+      x: smoothTo(prev?.x, x, frameAlpha, SNAP_CELLS),
+      z: smoothTo(prev?.z, z, frameAlpha, SNAP_CELLS),
+      seen: true,
+    };
+    eased.set(key, next);
+    return next;
+  }
+  // Movers that vanish (a rival leaving view, a compound emptying) must not
+  // keep stale entries forever, or a returning id resumes from where it was
+  // last drawn — which after a sortie is a different city.
+  function sweepEased() {
+    for (const [k, v] of eased) {
+      if (!v.seen) eased.delete(k); else v.seen = false;
+    }
+  }
+
+  let lastFrameAt = 0;
   function draw(view, pinnedIds = null) {
     if (!view || !resize()) return;
-      for (const m of pool) { m.inUse = false; m.group.visible = false; }
+    // Real elapsed time, so easing is the same speed on a 144Hz laptop and a
+    // 30Hz phone. Clamped: a backgrounded tab returns with a multi-second gap,
+    // and easing "the rest of the way" over one frame is the snap this exists
+    // to avoid.
+    const now = (typeof performance !== "undefined" ? performance.now() : Date.now());
+    const dt = lastFrameAt ? Math.min(0.25, (now - lastFrameAt) / 1000) : 0.1;
+    lastFrameAt = now;
+    frameAlpha = slewAlpha(dt, 0.07);
+    // The quarter turn eases; going the short way round matters, or turning
+    // from the last quarter to the first spins three-quarters backwards.
+    const turn = slewAlpha(dt, 0.12);
+    let delta = azimuth - drawnAzimuth;
+    while (delta > Math.PI) delta -= Math.PI * 2;
+    while (delta < -Math.PI) delta += Math.PI * 2;
+    drawnAzimuth += delta * turn;
+
+    for (const m of pool) { m.inUse = false; m.group.visible = false; }
 
     // Every HUD ring breathes with the zoom (playtest 8): close in they
     // shrink to neat markers, zoomed out they grow so they stay findable.
@@ -359,7 +467,9 @@ export function createScene(canvas) {
     // the same night the street is having.
     if (lightEnds) {
       const target = view.night ? 0 : 1;
-      dayMix += (target - dayMix) * 0.05;
+      // Was a flat 0.05 per snapshot; on rAF that would fade dawn six times
+      // faster. Same ~2s constant, expressed in seconds.
+      dayMix += (target - dayMix) * slewAlpha(dt, 2.0);
       const m = Math.max(0, Math.min(1, dayMix));
       key.color.lerpColors(lightEnds.key[0], lightEnds.key[1], m);
       key.intensity = lightEnds.key[2] + (lightEnds.key[3] - lightEnds.key[2]) * m;
@@ -375,6 +485,7 @@ export function createScene(canvas) {
     const av = areaView(view);
     if (av) {
       drawAreaMode(av, view.tick);
+      sweepEased();
       renderer.render(scene, camera);
       return;
     }
@@ -382,10 +493,15 @@ export function createScene(canvas) {
     if (terrain) terrain.visible = true;
 
     const own = view.agents?.find((a) => a.state === 1) ?? view.agents?.[0];
-    const target = own
+    const follow = own
       ? { x: own.x / CELL, y: own.y / CELL }
       : view.hq ? { x: view.hq.cellX + 0.5, y: view.hq.cellY + 0.5 }
         : { x: view.size / 2, y: view.size / 2 };
+    // Free look: while panned the camera holds the player's chosen ground
+    // instead of the operative. The offset is stored rather than an absolute
+    // position, so the view still travels with the operative — looking two
+    // streets ahead should not become looking at a fixed patch of city.
+    const target = pan ? { x: follow.x + pan.dx, y: follow.y + pan.dy } : follow;
     place(target);
 
     // Procedural visuals stand ON the ground; their own geometry carries the
@@ -429,8 +545,10 @@ export function createScene(canvas) {
       // figure is pixels tall, and a patrol you cannot see is an ambush —
       // the opposition doctrine, applied to the renderer. Same mark colours
       // the radar speaks, so the two surfaces agree.
-      at(takeVisual(p.alerted ? "patrolAlert" : "patrol"), p.x + 0.5, p.y + 0.5);
-      at(takeRing(tokens.marks[p.alerted ? "patrolAlert" : "patrol"], npcRing), p.x + 0.5, p.y + 0.5, 0.04);
+      const role = p.alerted ? "patrolAlert" : "patrol";
+      const sp = smoothPos(`patrol:${p.id}`, p.x + 0.5, p.y + 0.5);
+      at(takeVisual(role), sp.x, sp.z);
+      at(takeRing(tokens.marks[role], npcRing), sp.x, sp.z, 0.04);
     }
     // Sensor beams (S16 8c). Drawn low and thin, spanning both endpoints, so
     // the line you must not be standing in is unambiguous.
@@ -460,13 +578,15 @@ export function createScene(canvas) {
       obj.rotation.y = octantToRadians(c.facing);
     }
     for (const r of view.rivals) {
-      at(takeVisual("rival"), r.x / CELL, r.y / CELL);
-      at(takeRing(tokens.marks.rival, npcRing), r.x / CELL, r.y / CELL, 0.04);
+      const sr = smoothPos(`rival:${r.id}`, r.x / CELL, r.y / CELL);
+      at(takeVisual("rival"), sr.x, sr.z);
+      at(takeRing(tokens.marks.rival, npcRing), sr.x, sr.z, 0.04);
     }
     // S17 ambient life: the crowd. No rings — rings are for things that
     // matter, and a bystander's whole message is that they do not.
     for (const c of view.civilians ?? []) {
-      const fig = at(takeVisual("civilian"), c.x + 0.5, c.y + 0.5);
+      const sc = smoothPos(`civ:${c.id}`, c.x + 0.5, c.y + 0.5);
+      const fig = at(takeVisual("civilian"), sc.x, sc.z);
       if (fig) fig.rotation.y = octantToRadians(c.facing);
     }
     // Hover cars: client-side theatre on the transit lanes, derived from the
@@ -483,18 +603,20 @@ export function createScene(canvas) {
     // null decision means "standing — hold the position you have".
     const laneTarget = walkOffset(view, terrainTiles, mapSize, moveHint);
     if (laneTarget) {
-      lane.x += (laneTarget.dx - lane.x) * 0.08;
-      lane.z += (laneTarget.dz - lane.z) * 0.08;
+      const laneEase = slewAlpha(dt, 1.25);
+      lane.x += (laneTarget.dx - lane.x) * laneEase;
+      lane.z += (laneTarget.dz - lane.z) * laneEase;
     }
     for (const a of view.agents) {
       // The agent's tint is its DETECTION state — gameplay information, so it
       // comes from the resolver rather than being decided here.
       const stateMark = detectionMark(a.detection);
-      at(takeVisual("agent", stateMark), a.x / CELL + lane.x, a.y / CELL + lane.z);
+      const p = smoothPos(`agent:${a.id}`, a.x / CELL + lane.x, a.y / CELL + lane.z);
+      at(takeVisual("agent", stateMark), p.x, p.z);
       // The ring is how you find your own operative in a busy street. It is a
       // HUD affordance rather than a thing in the world, so it is not a
       // manifest visual.
-      at(takeRing(tokens.marks[stateMark], figureRing), a.x / CELL + lane.x, a.y / CELL + lane.z, 0.04);
+      at(takeRing(tokens.marks[stateMark], figureRing), p.x, p.z, 0.04);
     }
     // Pinned contracts (playtest 3): a steady watched-ring at each pinned
     // objective, in the pinned mark — the pulse stays reserved for the
@@ -570,6 +692,7 @@ export function createScene(canvas) {
       beacon.visible = false; halo.visible = false;
     }
 
+    sweepEased();
     renderer.render(scene, camera);
   }
 
@@ -619,7 +742,7 @@ export function createScene(canvas) {
     camera.updateProjectionMatrix();
     const cx = AREA_ORIGIN.x + area.width / 2, cz = AREA_ORIGIN.z + area.height / 2;
     const back = HEIGHT / Math.tan(PITCH);
-    camera.position.set(cx + back * Math.sin(AZIMUTH), HEIGHT, cz + back * Math.cos(AZIMUTH));
+    camera.position.set(cx + back * Math.sin(drawnAzimuth), HEIGHT, cz + back * Math.cos(drawnAzimuth));
     camera.lookAt(cx, 0, cz);
 
     const at = (obj, gx, gy, h = 0) => {
@@ -628,23 +751,28 @@ export function createScene(canvas) {
     };
 
     // Guards: role carries the state (manifest tints), ring matches the radarless
-    // indoor read — same mark vocabulary as street patrols.
+    // indoor read — same mark vocabulary as street patrols. Positions are eased
+    // like everything else: indoors the engine moves in WHOLE cells every few
+    // ticks, which is the harshest stepping anywhere in the game.
     for (const g of area.guards) {
       const role = g.down ? "guardDown" : g.alerted ? "guardAlert" : "guard";
-      const fig = at(takeVisual(role), g.x, g.y);
+      const p = smoothPos(`aguard:${area.id}:${g.id}`, g.x, g.y);
+      const fig = at(takeVisual(role), p.x, p.z);
       // A downed guard lies down — the one pose change that must be legible.
       if (fig) fig.rotation.x = g.down ? -Math.PI / 2 : 0;
-      at(takeRing(tokens.marks[role], s.npcRing), g.x, g.y, 0.04);
+      at(takeRing(tokens.marks[role], s.npcRing), p.x, p.z, 0.04);
     }
     for (const t of area.terminals) at(takeVisual("terminal"), t.x, t.y);
     for (const o of area.occupants ?? []) {
-      const fig = at(takeVisual("rival"), o.x, o.y);
+      const p = smoothPos(`aocc:${area.id}:${o.id}`, o.x, o.y);
+      const fig = at(takeVisual("rival"), p.x, p.z);
       if (fig) fig.rotation.x = o.state === 2 ? -Math.PI / 2 : 0;
-      at(takeRing(tokens.marks.rival, s.npcRing), o.x, o.y, 0.04);
+      at(takeRing(tokens.marks.rival, s.npcRing), p.x, p.z, 0.04);
     }
     const stateMark = detectionMark(self.detection);
-    at(takeVisual("agent", stateMark), self.areaCol, self.areaRow);
-    at(takeRing(tokens.marks[stateMark], s.figureRing), self.areaCol, self.areaRow, 0.04);
+    const sp = smoothPos(`aself:${area.id}`, self.areaCol, self.areaRow);
+    at(takeVisual("agent", stateMark), sp.x, sp.z);
+    at(takeRing(tokens.marks[stateMark], s.figureRing), sp.x, sp.z, 0.04);
 
     // Exit affordance: a steady ring on each entry door, in the landing mark —
     // the "where you leave" colour the player already knows from drop-in.
@@ -706,5 +834,20 @@ export function createScene(canvas) {
     cameraDistance: () => CAMERA_DISTANCE,
     hasTerrain: () => terrain !== null,
     zoomBy(f) { zoomCells = Math.max(1.5, Math.min(70, zoomCells * f)); resize(); },
+    // ── The camera controls (playtest 13, finding 3) ────────────────────────
+    rotateBy(steps) {
+      quarter = (((quarter + steps) % 4) + 4) % 4;
+      azimuth = azimuthFor(quarter);
+    },
+    quarter: () => quarter,
+    // Screen pixels in, ground offset out. The renderer owns the projection, so
+    // it owns the conversion — main.js only forwards the drag.
+    panByPixels(dxPx, dyPx) {
+      const w = canvas.clientWidth || 1;
+      const d = panDelta(dxPx, dyPx, drawnAzimuth, PITCH, zoomCells / w);
+      pan = { dx: (pan?.dx ?? 0) + d.dx, dy: (pan?.dy ?? 0) + d.dy };
+    },
+    recentre() { pan = null; },
+    isPanned: () => pan !== null,
   };
 }

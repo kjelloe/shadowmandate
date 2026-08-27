@@ -294,6 +294,45 @@ async function main() {
       JSON.stringify(banner));
 
     check("client exposes its state for inspection", hasFatal);
+
+    // --- the frame loop (playtest 13, finding 6) ---------------------------
+    // "Movement was completely jerky, lag skip" was the diorama drawing once
+    // per 10Hz snapshot. Frames must now outnumber snapshots — that is the only
+    // machine-checkable statement of "it is not a slideshow", and it goes red
+    // the moment drawing is moved back under onChange.
+    const motion = await page.evaluate(() => new Promise((resolve) => {
+      const t0 = window.__smDebug?.tick ?? 0, f0 = window.__smFrames | 0;
+      setTimeout(() => resolve({
+        ticks: (window.__smDebug?.tick ?? 0) - t0,
+        frames: (window.__smFrames | 0) - f0,
+      }), 1500);
+    }));
+    // Deliberately not a frame-rate assertion: this runs on SwiftShader, where
+    // the real number is whatever the software rasteriser manages. The claim is
+    // only that the two clocks are separate.
+    check("the diorama draws faster than snapshots arrive",
+      motion.frames > motion.ticks && motion.ticks > 0, JSON.stringify(motion));
+
+    // --- camera controls (playtest 13, finding 3) --------------------------
+    const cam = await page.evaluate(() => {
+      const view = document.getElementById("view");
+      const r = view.getBoundingClientRect();
+      const before = window.__smCamera?.();
+      document.getElementById("rot-right").click();
+      const rotated = window.__smCamera?.();
+      // A right-button drag must pan and reveal the recentre control.
+      view.dispatchEvent(new PointerEvent("pointerdown", {
+        button: 2, bubbles: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }));
+      view.dispatchEvent(new PointerEvent("pointermove", {
+        button: 2, bubbles: true, clientX: r.left + r.width / 2 + 80, clientY: r.top + r.height / 2 }));
+      view.dispatchEvent(new PointerEvent("pointerup", { button: 2, bubbles: true }));
+      return { before, rotated, panned: window.__smCamera?.().panned,
+        recentreShown: !document.getElementById("recentre").hidden };
+    });
+    check("the rotate control turns the camera a quarter",
+      cam.rotated?.quarter === (cam.before?.quarter + 1) % 4, JSON.stringify(cam));
+    check("a right-drag pans the camera and offers recentre",
+      cam.panned === true && cam.recentreShown === true, JSON.stringify(cam));
   } catch (e) {
     failures.push(`harness: ${e.message}`);
   } finally {
