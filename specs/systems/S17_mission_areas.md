@@ -116,3 +116,38 @@ never watchers. Needs its own slice and a Q ruling on density/perf.
   4711 has exactly ONE transit avenue, so its hover-car traffic is a single
   convoy. Guaranteeing >=1 avenue per axis is a citygen layout change (fixture
   re-pin, whole-city look change) — deferred until a playtest complains.
+
+## Interior templates and camera (PT13-E, playtest 13 finding 6)
+
+The compound is no longer one floor plan and is no longer framed whole.
+
+- **Four templates**, derived from the site's own type (`areaTemplateFor`), so
+  the inside matches the marker you walked to. `SITE_TYPE_COUNT` has been 6
+  since M1 and the street marker rendered all six faithfully since playtest 5,
+  while the interior of every one was the same walled yard with wings.
+  - `AREA_WAREHOUSE` (cache, warehouse) — racking aisles, foreman's office.
+  - `AREA_OFFICE` (vault, lab) — corridor spine, cellular rooms, short sight
+    lines. Its objective room sits in the SOUTHERN half, which broke the AI's
+    "stage then cross the ring" instinct until `mustCrossRing` was added.
+  - `AREA_INDUSTRIAL` (relay) — open yard around a plant block, tank clusters.
+  - `AREA_TRANSIT` (transit) — parallel loading bays, wide aisles.
+- **`buildAreaGrid` returns the grid AND the objective together**, and takes no
+  default template. Two readers deriving the compound from different templates
+  would have the client drawing an office while the reducer paths through a
+  warehouse — both correct on their own, with the player walking into walls
+  that are not on screen. A forgotten argument throws. `areaGridFor(state, …)`
+  is the one entry point everything in the game uses.
+- **`grid.open`** is a flood fill from the entry strip. Passable and reachable
+  are different claims and only one of them is playable.
+- **Guard waypoints are legalised against the plan** (see the opposition
+  doctrine in CLAUDE.md): passable, reachable, and outside guard sight of the
+  objective. The objective room carries a SECOND door on a side wall.
+- **The camera follows the operative at street `zoomCells`**, not fitted to the
+  compound. The old fit put ~28 cells across a screen the street plays at 3.5,
+  so every figure indoors rendered at an eighth of its street size — which is
+  exactly the "scaled up at least 8 times" the finding asked for.
+  `clampCameraRect` clamps per axis, because a compound is 24x16.
+
+Compound DIMENSIONS are unchanged (24x16, `data/areas.json`): the apparent-size
+complaint was the camera, and changing the tuned size would void the queued
+era-1 battery baselines for no measured reason.

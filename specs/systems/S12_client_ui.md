@@ -287,3 +287,33 @@ rival (red flash) and walks the captive off. Rules it lives under:
   rings slimmed too, keeping their own mark.
 - The attract scene honours `prefers-reduced-motion`: one composed still of
   the city instead of the loop.
+
+## Playtest 13 (PT13-A/C/D/G)
+
+- **The frame loop is rAF**, not the snapshot. Drawing once per 10Hz snapshot
+  is what "completely jerky, lag skip" was. The simulation is unchanged; movers
+  ease toward the latest snapshot via `smoothTo` and SNAP past 4 cells, because
+  entering a compound is a teleport. Every per-frame slew is dt-based
+  (`slewAlpha`) — a fixed factor would make easing speed a property of the
+  player's monitor. `window.__smFrames` lets the browser gate assert that
+  frames outnumber snapshots, which is the only machine-checkable statement of
+  "it is not a slideshow".
+- **Camera controls**: right-drag pans (`panDelta`, with the pitch
+  foreshortening term derived rather than guessed), stored as an OFFSET from
+  the followed target so the view still travels with the operative; a recentre
+  control appears the moment the camera stops following. Rotation is FOUR
+  quarter turns off 45°, eased — a fixed compass makes the two rear facades
+  permanently unknowable, which in a stealth game is hiding the board.
+- **Cover shops are standing landmarks** in both surfaces, not a burned-only
+  ping; the radar draws them HOLLOW so they read as a different kind of place
+  from the site tokens. Alerted patrols pulse and scale rather than only
+  changing hue.
+- **The capture overlay** appears only when NO operative is left on their feet,
+  and offers the options that already existed: PAY BAIL (`CMD_PAY_BAIL`) and
+  the D51 fold-with-nobody-left. The bail price comes from `bailQuote`, shared
+  with the reducer, so the quoted and charged numbers cannot drift.
+- **Typography is two voices**, token-driven (`--type-*` written at boot):
+  a tracked uppercase display face for chrome, and the plain monospace body
+  face for anything a player reads to decide — dialogue, journal, option
+  labels, intro copy. Terminals keep the body face by FUNCTION: their dot
+  leaders are built with `padEnd`, which only aligns in monospace.

@@ -323,3 +323,30 @@ runs (`pipes`/`pipeDensity`). Both are decor kinds in terrain3d's existing
 instanced pass, deterministic per seed. Round one's balconies, shopfronts,
 gardens, masts and tanks were already in (playtest 5); this pass closes the
 "more district character" directive with the reference's vocabulary.
+
+## Playtest 13 (PT13-B/F/G)
+
+- **Figure proportions** are a checked contract now: every manifest visual of
+  class `figure` must stand >= 1.40 model units and be >= 3.0 times as tall as
+  its bounding box is wide, feet on the ground. The pre-playtest-13 figure was
+  1.03 tall and 0.58 wide (ratio 1.78); it is 1.455 / 0.457 (3.18). Measure the
+  WHOLE bounding box — the first draft of that test compared height against the
+  coat width, reported a flattering 2.7, and missed that the splayed arms and
+  hands were the widest part of the figure and the actual problem.
+- **The gallery frames itself** around whatever the manifest holds, and runs at
+  the diorama's real PITCH. It had kept 52° since playtest 4 moved the camera to
+  45° — reviewing art from an angle no player ever sees, which its own comment
+  warns is how art gets approved and then looks wrong in game — and a hardcoded
+  half-width silently cropped the last rows, so roughly half the cast was listed
+  but unviewable.
+- **District character**: smoke plumes ride ON the works stacks (emitted with
+  the stack, never placed independently) and drift off the world tick; parks
+  grow on OPEN and YARD ground in residential districts only. Both were
+  invisible on first write — plumes sized at two screen pixels, lawns laid below
+  a yard tile's own relief. **Size decorative geometry against the CAMERA, and
+  A/B it by recolouring bright magenta**: in its intended colour a buried or
+  microscopic prop renders "wrong but plausibly".
+- **Typography ships as tokens** (`typography.display` / `.body` and the menu
+  palette), applied to CSS custom properties at boot. No webfont: both are
+  stacks of faces already present on the target platforms, so there is no
+  network fetch (the client has no CDN access by design) and nothing to license.

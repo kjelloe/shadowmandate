@@ -4,7 +4,7 @@ Drop-in/drop-out covert-ops game. Sibling of Fireline Command
 (`~/GIT/firepower` — the fork source, never modified from here).
 
 **Status: M0–M6 complete; M7 done as far as it can go solo, and PLAYABLE in a
-browser. `npm test` = 482 green**, plus four browser gates (`smoke`, `ui`,
+browser. `npm test` = 513 green**, plus four browser gates (`smoke`, `ui`,
 `mobile`, `gallery`). Batch lane verified (`ops/BATCH_PC.md`). **Remaining in M7**:
 the VM deploy (7e) and native GPU perf (7f) — both need the owner's hardware.
 **M8 — opposition and site security — 8a–8k done** (alarms, cameras, beams,
@@ -42,8 +42,38 @@ the cyberpunk splash (SP-1) and district neon/pipes (DC-2), all token-
 driven; the wire's own fog fixed (agent-only events resolved to their firm —
 four event types were mapped, tested and silently dropped). Era-1 batteries
 QUEUED for the batch PC (pacing 300, patrol 3/4 — worker needs ops/ synced
-by hand). **Open**: the battery verdicts; the AI's general night pricing;
-area retune behind D42; avenue density (7B, noted).
+by hand).
+**Playtest 13 (2026-08-28), all eight findings built** on `dev_night`, suite
+513 green:
+- **PT13-A** camera: right-drag pan, quarter-turn rotation (four azimuths, all
+  odd multiples of 45° so every view stays two-facade), and the **rAF frame
+  loop** — the "jerky, lag skip" was drawing once per 10Hz snapshot. Every
+  per-frame slew became dt-based (`slewAlpha`); movers ease via `smoothTo` and
+  SNAP past 4 cells so compound entry does not slide across the void.
+- **PT13-B** figures 1.03 → 1.455 tall, ratio 1.78 → 3.18 (the splayed arms, not
+  the coat, were what read as stocky). The gallery had been reviewing art at
+  PITCH 52 since playtest 4 and cropping half the cast; both fixed.
+- **PT13-C/D** cover shops are standing landmarks (hollow rings on the radar,
+  not dots); alerted patrols pulse and scale; a captured Firm with nobody left
+  gets a centre overlay offering PAY BAIL and the D51 fold — both shipped
+  months ago and never mentioned on screen. `bailQuote` gives the quoted and
+  charged price one home.
+- **PT13-E** four interior templates derived from site type (warehouse, office,
+  industrial, transit) + the compound camera follows at street zoom, which IS
+  the ruled 8x (the old fit put 28 cells across a 3.5-cell frame). Three ring
+  defects found by the M5 gate going red: waypoints in walls park guards
+  forever, naive snapping recreated 8a on the objective, and the AI staged for
+  a crossing the office plan does not need.
+- **PT13-F** smoking works stacks and residential parks; both were invisible
+  when first written (2px plumes; lawns buried under the terrain's own relief).
+- **PT13-G** display type for menus, plain monospace ink for dialogue, all
+  token-driven.
+
+**Open**: the era-1 battery verdicts; **Q48** (mid-sortie redrop — or delete the
+dead `redropReputationHit`), **Q49** (patrols see ~3 cells at CALM heat — is the
+early game missing its opposition?), **Q50** (62% of drops land in a district
+the player did not choose — `hqLandingFor` is unbounded); the AI's general night
+pricing; area retune behind D42; avenue density (7B, noted).
 
 ## Read first
 
@@ -79,6 +109,10 @@ node debugging/dbg_area_look.mjs            # S17: enter a compound, render, exi
 node debugging/dbg_street_life.mjs          # S17: crowd + hover cars, live shot
 node debugging/dbg_district_look.mjs        # DC-2: commercial neon, via zone picker
 node debugging/dbg_ai_credentials.mjs 1000 36000  # AI-1: live purchase census
+node debugging/dbg_area_ring.mjs            # S17: guard-ring legality (4 zero columns)
+node debugging/dbg_ai_areas.mjs 4711 8000   # the counts behind the M5 gate's binary
+node debugging/dbg_poi_look.mjs             # playtest 13: shops + patrol markers
+node debugging/dbg_district_look.mjs Industrial 53,39 4   # a named district, aimed
 node tools/repin_fixture.mjs "<reason>"     # deliberate fixture re-pin
 ```
 
@@ -155,7 +189,19 @@ is undeclared. A missed mirror field silently invalidates every future battery.
   detection band too thin to see — invisible to the code, the tests and a green
   suite. **A green suite cannot tell you the game looks wrong.**
 
-## Opposition doctrine (M8/S16 — learned in 8a–8c)
+## Opposition doctrine (M8/S16 — learned in 8a–8c, and again in PT13-E)
+
+- **A patrol route is only legal against a FLOOR PLAN.** The area guard ring is
+  pure geometry; the moment a second interior template existed it put 25% of
+  waypoints inside walls (a guard advances only on arrival, so it parks forever
+  — a wall with eyes) and, once naively snapped, one cell from the objective,
+  which is 8a indoors and makes surveillance impossible everywhere that plan is
+  used. Waypoints are legalised against the plan: passable, REACHABLE (a sealed
+  room parks a guard exactly like a wall does) and outside guard sight of the
+  objective. `debugging/dbg_area_ring.mjs` — four columns, all must read zero.
+- **"Every mechanism must have a usable gap" applies to floor plans.** The room
+  holding the objective had one door, which a single guard seals by standing in
+  it. Two doors, on different bearings, is what took the last red seed green.
 
 - **A security fixture must never cover the objective it guards.** Cameras were
   first mounted on the site cell, where a cone covers at distance 0
@@ -203,6 +249,21 @@ is undeclared. A missed mirror field silently invalidates every future battery.
   alone). That asymmetry is what makes "trip it and hurry" a real choice.
 
 ## Test conventions (earned, not stylistic)
+
+- **Check the exit status before believing a number.** Reverting two of four
+  files to measure a baseline left import errors; every process died, printed
+  nothing, and an `awk` pipeline reported the empty output as "0 completions".
+  A confident, entirely fictional baseline, nearly acted on (PT13-E).
+- **Measure the thing, not a proxy for it.** A silhouette test that compared
+  height against the COAT width reported a flattering 2.7 while the real
+  bounding box gave 1.78 — the splayed arms were the widest part and the whole
+  problem. A door-count test that walked outward from the objective measured
+  door ALIGNMENT and called a two-door room zero-door.
+- **A geometric feature can be invisible and still pass every test.** Smoke
+  plumes at 0.07 cells render, emit, pass their census, and are two pixels on
+  screen; park lawns at a fixed height are buried by a yard tile's own relief.
+  Size against the CAMERA, and A/B by recolouring the thing bright magenta —
+  in its intended colour it fails "wrong but plausibly".
 
 - **`tickCollecting(state, apply, n)`** from `test/helpers.js` whenever you
   assert something happens *sometime during* a run. `state.events` holds only
