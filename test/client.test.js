@@ -402,13 +402,17 @@ test("PLAYTEST 13: a captured Firm is told what its options are", async () => {
   const sit = captureSituation({
     agents: [held],
     holdingSites: [{ id: 0, cellX: 12, cellY: 9, heldOwn: [1] }],
-    hq, bank: 400, bailCost: 60,
+    hq, bank: 400, bailCost: 60, redropCost: 8,
   });
   assert.ok(sit, "a Firm with everyone in custody must get the overlay");
   assert.equal(sit.heldCount, 1);
   assert.deepEqual([sit.cellX, sit.cellY], [12, 9], "it must say WHERE they are held");
   assert.equal(sit.bailCost, 60);
   assert.equal(sit.canBail, true);
+  // Q48: the third option — a replacement operative, paid for in STANDING.
+  // Priced from the view so the overlay quotes what the reducer charges.
+  assert.equal(sit.canRedrop, true, "the redrop must be offered when the HQ still stands");
+  assert.equal(sit.redropCost, 8);
   // D51: folding up with nobody left is explicitly allowed, and it is the route
   // to a fresh operative. If this ever reads false the player is stuck with no
   // move at all, which is the state the finding was reported from.
@@ -418,10 +422,23 @@ test("PLAYTEST 13: a captured Firm is told what its options are", async () => {
   // dead in the UI rather than a click that comes back rejected.
   const broke = captureSituation({
     agents: [held], holdingSites: [{ id: 0, cellX: 12, cellY: 9, heldOwn: [1] }],
-    hq, bank: 0, bailCost: 0,
+    hq, bank: 0, bailCost: 0, redropCost: 8,
   });
   assert.equal(broke.canBail, false, "bail must not be offered to a Firm that cannot pay");
   assert.equal(broke.canPullOut, true, "a broke captured Firm must still have a way out");
+  // A broke Firm can STILL redrop: the price is standing, not money. That is
+  // the whole reason it is a separate option rather than a second bail.
+  assert.equal(broke.canRedrop, true, "a broke Firm must still be able to bring someone in");
+
+  // Mid-evac nothing is offered but the status line — the reducer refuses both,
+  // and offering a button that cannot work is the playtest-5 dead click.
+  const leaving = captureSituation({
+    agents: [held], holdingSites: [{ id: 0, cellX: 12, cellY: 9, heldOwn: [1] }],
+    hq: { ...hq, evacActive: 1 }, bank: 400, bailCost: 60, redropCost: 8,
+  });
+  assert.equal(leaving.canRedrop, false, "a redrop during an evac is refused engine-side");
+  assert.equal(leaving.canPullOut, false, "the fold is already running");
+  assert.equal(leaving.evacRunning, true);
 });
 
 test("PLAYTEST 13: the quoted bail price is the price actually charged", async () => {

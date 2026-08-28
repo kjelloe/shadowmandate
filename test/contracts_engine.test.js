@@ -134,6 +134,7 @@ test("every command in the vocabulary is implemented", () => {
     [CMD.CMD_ACTIVATE_EVAC]: { firmId: 0 },
     [CMD.CMD_CANCEL_EVAC]: { firmId: 0 },
     [CMD.CMD_EXTRACT]: { firmId: 0 },
+    [CMD.CMD_REDROP]: { firmId: 0 },
     [CMD.CMD_MOVE]: { agentId: 0, cellX: 5, cellY: 5 },
     [CMD.CMD_SET_STANCE]: { agentId: 0, stance: 1 },
     [CMD.CMD_ENTER_VEHICLE]: { agentId: 0 },

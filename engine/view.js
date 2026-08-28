@@ -51,6 +51,10 @@ export function buildView(state, firmId, detCfg) {
     // WD-2: how long until dark, engine-computed (season.js is the single
     // home of the cycle maths) — the waiting overlay's countdown reads this.
     ticksUntilNight: ticksUntilNight(state.tick, state.rules?.season?.dayNight),
+    // Q48: what bringing in a replacement costs in standing. From the ruleset,
+    // so the capture overlay quotes the price the reducer will actually charge
+    // rather than restating it — the bailQuote lesson, applied up front.
+    redropCost: state.rules?.combat?.bail?.redropReputationHit ?? 0,
 
     firm: {
       id: firm.id, nameId: firm.nameId, state: firm.state,

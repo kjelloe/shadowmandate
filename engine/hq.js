@@ -197,6 +197,66 @@ export function dropIn(state, firmId, cellX, cellY, cfg, agentsCfg, ledger = nul
   return null;
 }
 
+// Q48 (ruled 2026-08-28): BRING IN ANOTHER AGENT, mid-sortie.
+//
+// The Firm still holds the ground — HQ standing, cache in it — and has nobody
+// left to work with. Until now the only answer was to fold the whole deployment
+// (D51) and redeploy from the splash, which banks the cache but ends the
+// session; the player's own words were "Agent captured. When what?".
+//
+// `bail.redropReputationHit` has sat in data/combat.json since M4 reading to
+// NOTHING — a ruled price for a command that did not exist. This is that
+// command, and the price is what makes it a decision rather than a free undo:
+// folding up BANKS your cache and costs nothing, redropping keeps you in the
+// field with the cache still at risk and costs standing.
+//
+// The prisoner STAYS a prisoner. `offerRecoveries` runs here exactly as it does
+// on a fresh drop, so the replacement operative arrives with a recovery job
+// already on the board — which is the shape the owner asked for.
+export function redropAgent(state, firmId, hqCfg, combatCfg, agentsCfg) {
+  const firm = state.firms[firmId];
+  if (!firm) return "no_such_firm";
+  // Evac is checked BEFORE the deployed state, because starting one flips the
+  // Firm to FIRM_EVACUATING and the generic "not_deployed" would be the reason
+  // reported — accurate, and useless to a player looking at the button. A
+  // refusal the client cannot explain is the dead-click defect in slow motion.
+  const hq = hqOf(state, firmId);
+  if (!hq) return "no_hq";
+  if (hq.evacActive !== EVAC_NONE) return "evac_running";
+  if (firm.state !== FIRM_DEPLOYED) return "not_deployed";
+  // Only when there is genuinely NOBODY. `leadAgent` counts a DOWNED operative,
+  // because a downed one can still be rescued and is not a lost sortie — this
+  // is for custody and absence, not for a bad tick.
+  if (leadAgent(state, firmId)) return "agent_still_active";
+  const slot = state.agents.find((a) => a.state === AGENT_ABSENT);
+  if (!slot) return "no_agent_available";
+
+  const cost = combatCfg?.bail?.redropReputationHit ?? 0;
+  firm.reputation = (firm.reputation - cost) | 0;
+
+  slot.state = AGENT_ACTIVE;
+  slot.firmId = firmId;
+  slot.x = cellToWorld(hq.cellX);
+  slot.y = cellToWorld(hq.cellY);
+  slot.targetX = slot.x;
+  slot.targetY = slot.y;
+  slot.condition = agentsCfg.conditionMax;
+  slot.route = [];
+  slot.routeIdx = 0;
+  // The replacement arrives clean: a fresh face is the whole point, and
+  // inheriting the last operative's heat would make the option worthless.
+  slot.detection = 0;
+  slot.detectTimer = 0;
+  slot.stance = 1;
+
+  offerRecoveries(state, firmId, state.rules?.contracts);
+  state.events.push({
+    type: "agentRedropped", firmId, agentId: slot.id,
+    cellX: hq.cellX, cellY: hq.cellY, reputationCost: cost,
+  });
+  return null;
+}
+
 // D28: activation is ALWAYS allowed, even with a rival inside the perimeter.
 // The hold is the fight.
 export function activateEvac(state, firmId, cfg) {

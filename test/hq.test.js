@@ -12,11 +12,12 @@ import { join } from "node:path";
 import { apply } from "../engine/reducer.js";
 import { hashState } from "../engine/snapshot.js";
 import {
-  CMD_ADVANCE_TICK, CMD_DROP_IN, CMD_ACTIVATE_EVAC, CMD_CANCEL_EVAC, CMD_EXTRACT, CMD_MOVE,
+  CMD_ADVANCE_TICK, CMD_DROP_IN, CMD_REDROP, CMD_ACTIVATE_EVAC, CMD_CANCEL_EVAC, CMD_EXTRACT, CMD_MOVE,
 } from "../engine/commands.js";
-import { AGENT_ACTIVE, AGENT_DOWNED, FIRM_DEPLOYED, FIRM_UNDEPLOYED, FIRM_EVACUATING } from "../engine/state.js";
+import { AGENT_ACTIVE, AGENT_DOWNED, AGENT_HELD, FIRM_DEPLOYED, FIRM_UNDEPLOYED, FIRM_EVACUATING } from "../engine/state.js";
 import { extract, hqOf, destroyHq, EVAC_EMERGENCY } from "../engine/hq.js";
 import { findDropZones } from "../engine/citygen.js";
+import { captureAgent } from "../engine/combat.js";
 import { hqLandingFor } from "../engine/hq.js";
 import { LedgerStore, emptyLedger } from "../server/ledger.js";
 import { makeWorld, placeAgent, quietCell, centralDropZone, cellAwayFrom, tickCollecting, RULES } from "./helpers.js";
@@ -30,6 +31,91 @@ function deployed(seed = 4711) {
   s = apply(s, { type: CMD_DROP_IN, firmId: 0, cellX: z.cellX, cellY: z.cellY });
   return { s, zone: z };
 }
+
+test("Q48: a captured Firm can bring in a replacement, for a reputation price", () => {
+  // "Build the mid-sortie redrop, and give the player the option to do just
+  // that if agent is captured" (owner, 2026-08-28). Until now the only answer
+  // to losing your operative was to fold the whole deployment.
+  //
+  // `bail.redropReputationHit` had sat in data/combat.json since M4 reading to
+  // NOTHING — a ruled price for a command that did not exist. This asserts the
+  // price is actually charged, because a cost nobody pays is the same dead
+  // config wearing a new hat.
+  const { s } = deployed();
+  const firm = s.firms[0];
+  const before = firm.reputation;
+  const lead = s.agents.find((a) => a.firmId === 0 && a.state === AGENT_ACTIVE);
+  assert.ok(lead, "fixture: nobody deployed");
+
+  // While the operative is on their feet there is nothing to replace.
+  let out = apply(s, { type: CMD_REDROP, firmId: 0 });
+  assert.ok(out.events.some((e) => e.type === "rejected" && e.reason === "agent_still_active"),
+    "a redrop must be refused while the Firm still has someone in the field");
+
+  // Take them into custody, the way the world does it. NOTE the agent is
+  // re-fetched from `out`: `apply` deep-copies, so the reference from before the
+  // call points into a state nobody is looking at any more.
+  assert.ok(out.holdingSites[0], "fixture: no holding site");
+  const captive = out.agents[lead.id];
+  captive.state = AGENT_DOWNED;
+  const held = captureAgent(out, captive, -1, RULES.detection, RULES.agents);
+  assert.equal(held, null, `capture failed: ${held}`);
+  assert.equal(captive.state, AGENT_HELD);
+
+  out = apply(out, { type: CMD_REDROP, firmId: 0 });
+  const ev = out.events.find((e) => e.type === "agentRedropped");
+  assert.ok(ev, `redrop was refused: ${JSON.stringify(out.events.filter((e) => e.type === "rejected"))}`);
+
+  // A DIFFERENT operative, active, standing at the HQ, and clean — inheriting
+  // the last one's heat would make the option worthless.
+  const fresh = out.agents[ev.agentId];
+  assert.notEqual(fresh.id, captive.id, "the redrop reused the prisoner");
+  assert.equal(fresh.state, AGENT_ACTIVE);
+  assert.equal(fresh.firmId, 0);
+  assert.equal(fresh.detection, 0, "the replacement arrived already noticed");
+  const hq = out.hqs[0];
+  assert.equal(Math.trunc(fresh.x / 256), hq.cellX, "the replacement did not land at the HQ");
+  assert.equal(Math.trunc(fresh.y / 256), hq.cellY, "the replacement did not land at the HQ");
+
+  // The price is REAL and comes from the ruleset, not from this test.
+  const cost = RULES.combat.bail.redropReputationHit;
+  assert.ok(cost > 0, "the ruleset no longer prices a redrop");
+  assert.equal(out.firms[0].reputation, before - cost, "the reputation cost was not charged");
+
+  // The prisoner stays a prisoner — and becomes a JOB. That is the owner's
+  // "next drop a mission can be recovering captured agent", except it does not
+  // wait for the next drop.
+  assert.equal(out.agents[captive.id].state, AGENT_HELD, "the redrop freed the prisoner");
+  const recovery = out.contractPool.filter((c) => (c.recoverAgentId ?? -1) === captive.id);
+  assert.ok(recovery.length > 0,
+    "no recovery contract was offered for the operative still in custody");
+});
+
+test("Q48: a redrop is refused when the Firm has no ground left to stand on", () => {
+  // The option is "you still hold the field, bring in someone else" — not a
+  // free respawn. Every refusal here is a state where folding up is the honest
+  // answer, and offering a button that cannot work is the playtest-5 dead-click
+  // defect this project has already paid for.
+  const { s } = deployed();
+  const lead = s.agents.find((a) => a.firmId === 0 && a.state === AGENT_ACTIVE);
+  lead.state = AGENT_DOWNED;
+  captureAgent(s, lead, -1, RULES.detection, RULES.agents);
+
+  // Mid-evac: the deployment is already ending.
+  const evacuating = apply(s, { type: CMD_ACTIVATE_EVAC, firmId: 0 });
+  const out = apply(evacuating, { type: CMD_REDROP, firmId: 0 });
+  assert.ok(out.events.some((e) => e.type === "rejected" && e.reason === "evac_running"),
+    "a redrop during an evac must be refused — the sortie is already over");
+
+  // A DOWNED operative is not a lost one: they can still be rescued, so the
+  // Firm is not out of people and the redrop stays shut.
+  const { s: s2 } = deployed();
+  const lead2 = s2.agents.find((a) => a.firmId === 0 && a.state === AGENT_ACTIVE);
+  lead2.state = AGENT_DOWNED;
+  const out2 = apply(s2, { type: CMD_REDROP, firmId: 0 });
+  assert.ok(out2.events.some((e) => e.type === "rejected" && e.reason === "agent_still_active"),
+    "a downed operative is rescuable — a redrop must not write them off");
+});
 
 test("Q50: a drop lands in the district the player CHOSE, or pitches a tent there", () => {
   // The defect: `hqLandingFor` searched every safehouse in the world, so a

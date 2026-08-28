@@ -11,6 +11,10 @@ export const CMD_DROP_IN = 10;
 export const CMD_ACTIVATE_EVAC = 11;
 export const CMD_CANCEL_EVAC = 12;
 export const CMD_EXTRACT = 13;
+// Q48: bring in a replacement operative mid-sortie, for a reputation cost.
+// Sits with the session loop because that is what it is — a second drop into a
+// deployment the Firm never left.
+export const CMD_REDROP = 14;
 
 // Agent control (S02)
 export const CMD_MOVE = 20;
@@ -68,6 +72,7 @@ export function validate(command) {
     case CMD_ACTIVATE_EVAC:
     case CMD_CANCEL_EVAC:
     case CMD_EXTRACT:
+    case CMD_REDROP:
       return INT(command.firmId);
     case CMD_MOVE:
       return INT(command.agentId) && INT(command.cellX) && INT(command.cellY);
@@ -129,6 +134,7 @@ export const COMMAND_NAMES = Object.freeze({
   [CMD_ACTIVATE_EVAC]: "activateEvac",
   [CMD_CANCEL_EVAC]: "cancelEvac",
   [CMD_EXTRACT]: "extract",
+  [CMD_REDROP]: "redrop",
   [CMD_MOVE]: "move",
   [CMD_SET_STANCE]: "setStance",
   [CMD_ENTER_VEHICLE]: "enterVehicle",

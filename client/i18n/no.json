@@ -233,5 +233,7 @@
   "captured.bailNote": "Kjøpt fri og sendt tilbake til feltbasen. Betales fra banken.",
   "captured.pullOut": "TREKK UT",
   "captured.pullOutNote": "Pakk sammen basen og forlat dem. En redningsjobb venter neste gang du lander.",
-  "captured.evacRunning": "Uthenting pågår."
+  "captured.evacRunning": "Uthenting pågår.",
+  "captured.redrop": "SEND INN EN NY",
+  "captured.redropNote": "En ny agent slippes ned til feltbasen, og redningsoppdraget legges på tavlen. Koster {0} anseelse; forrådet blir værende i felten."
 }

@@ -12,7 +12,7 @@
 import {
   validate, COMMAND_NAMES,
   CMD_ADVANCE_TICK, CMD_SET_STANCE, CMD_MOVE, CMD_USE_ITEM,
-  CMD_RESCUE, CMD_CAPTURE, CMD_DROP_IN, CMD_ACTIVATE_EVAC, CMD_CANCEL_EVAC,
+  CMD_RESCUE, CMD_CAPTURE, CMD_DROP_IN, CMD_REDROP, CMD_ACTIVATE_EVAC, CMD_CANCEL_EVAC,
   CMD_EXTRACT, CMD_ACCEPT_CONTRACT, CMD_ABANDON_CONTRACT, CMD_SITE_ACTION,
   CMD_CUT_JUNCTION, CMD_LIFT_CREDENTIAL,
   CMD_ENTER_BUILDING, CMD_EXIT_BUILDING, CMD_BUY_ITEM, CMD_STANDOFF_CHOICE,
@@ -26,7 +26,7 @@ import {
 } from "./agents.js";
 import { stepDetection, stepHeat, agentCell } from "./detection.js";
 import { rescueAgent, captureAgent, useItem, stepArrests, payBail } from "./combat.js";
-import { dropIn, activateEvac, cancelEvac, extract, stepHqs, hqOf } from "./hq.js";
+import { dropIn, activateEvac, cancelEvac, extract, stepHqs, hqOf, redropAgent } from "./hq.js";
 import {
   enterArea, exitArea, orderAreaMove, takedown, hackTerminal, stepAreas,
 } from "./areas.js";
@@ -247,6 +247,16 @@ function applyExtract(next, command) {
   if (!next.rules) return reject(next, command, "no_ruleset");
   const result = extract(next, command.firmId, next.rules.hq);
   if (result.error) return reject(next, command, result.error);
+  return next;
+}
+
+// Q48: a second operative into a deployment the Firm never left. The
+// reputation cost lives in the rules, not here — the reducer only routes.
+function applyRedrop(next, command) {
+  if (!next.rules) return reject(next, command, "no_ruleset");
+  const err = redropAgent(next, command.firmId, next.rules.hq,
+    next.rules.combat, next.rules.agents);
+  if (err) return reject(next, command, err);
   return next;
 }
 
@@ -554,6 +564,8 @@ export function apply(state, command) {
       return applyCancelEvac(next, command);
     case CMD_EXTRACT:
       return applyExtract(next, command);
+    case CMD_REDROP:
+      return applyRedrop(next, command);
     case CMD_ACCEPT_CONTRACT:
       return applyAcceptContract(next, command);
     case CMD_ABANDON_CONTRACT:

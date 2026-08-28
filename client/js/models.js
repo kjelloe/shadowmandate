@@ -183,9 +183,14 @@ export function captureSituation(view) {
     // The engine's own affordability rule (combat.js bailQuote): a zero cost is
     // refused, which is what a broke Firm gets.
     canBail: cost > 0 && cost <= (view.bank ?? 0),
+    // Q48: BRING IN ANOTHER AGENT, without leaving the field. Costs standing
+    // and keeps the cache at risk; folding banks the cache and ends the sortie.
+    // That is the whole choice, and it is why both are offered side by side.
+    canRedrop: !!view.hq && !view.hq.evacActive && (view.redropCost | 0) > 0,
+    redropCost: view.redropCost | 0,
     // D51: folding up with everyone in custody is explicitly allowed, and the
-    // prisoner becomes a recovery job waiting on the next drop-in. That is the
-    // "bring in another agent" route — it goes through the debrief.
+    // prisoner becomes a recovery job waiting on the next drop-in — the same
+    // job a redrop puts on the board immediately.
     canPullOut: !!view.hq && !view.hq.evacActive,
     evacRunning: !!view.hq?.evacActive,
   };

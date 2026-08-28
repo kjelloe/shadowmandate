@@ -233,5 +233,7 @@
   "captured.bailNote": "Bought out of custody and returned to the Field HQ. Paid from the bank.",
   "captured.pullOut": "PULL OUT",
   "captured.pullOutNote": "Fold up the HQ and leave them behind. A recovery job will be waiting when you drop in again.",
-  "captured.evacRunning": "Extraction under way."
+  "captured.evacRunning": "Extraction under way.",
+  "captured.redrop": "BRING IN ANOTHER",
+  "captured.redropNote": "A replacement operative drops to your Field HQ and the recovery job goes on the board. Costs {0} standing; your cache stays in the field."
 }

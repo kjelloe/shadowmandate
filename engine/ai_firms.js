@@ -20,7 +20,8 @@ import {
 import { agentCell, districtAt } from "./detection.js";
 import { orderMove } from "./agents.js";
 import { hqOf, dropIn, activateEvac, extract } from "./hq.js";
-import { acceptContract, KIND_NAMES, requiresCredential, objectiveCellOf } from "./contracts.js";
+import { acceptContract, KIND_NAMES, requiresCredential, objectiveCellOf,
+  STAGE_DONE, STAGE_FAILED } from "./contracts.js";
 import { hasCredential, isDisrupted } from "./access.js";
 import { raidBy, RAID_INBOUND } from "./raids.js";
 import { abandonedAgents } from "./hq.js";
@@ -64,6 +65,13 @@ export function aiLawfulView(state, firmId) {
   const board = state.offers.find((o) => o.firmId === firmId);
   const myContracts = agent
     ? state.contractPool.filter((c) => agent.contractIds.includes(c.id)) : [];
+  // A Firm's OWN accepted contracts, independent of whether it currently has
+  // anyone to work them. `myContracts` hangs off the agent, so a Firm whose
+  // operative is in custody could not see its own job list at all — and Q48's
+  // redrop decision is exactly "is there unfinished work worth staying for".
+  // Reading the pool directly from the decision function would have been
+  // unlawful knowledge; this is the lawful accessor saying the same thing.
+  const myAccepted = state.contractPool.filter((c) => c.acceptedBy === firmId);
   const offered = board
     ? board.contractIds.map((id) => state.contractPool.find((c) => c.id === id)).filter(Boolean)
     : [];
@@ -79,7 +87,7 @@ export function aiLawfulView(state, firmId) {
       }
     }
   }
-  return { firm, hq, agent, offered, myContracts, visibleRivalHqs };
+  return { firm, hq, agent, offered, myContracts, myAccepted, visibleRivalHqs };
 }
 
 // S16 8f follow-up (2026-08-27, owner-ruled): the cheapest PURCHASABLE
@@ -267,6 +275,37 @@ export function aiDecide(state, firmId, rules) {
     // the next drop-in offers the recovery contract that gets them back.
     if (abandonedAgents(state, firmId).length > 0 && view.hq) {
       if (view.hq.evacActive === 0) {
+        // Q48: THE AI GETS THE REDROP TOO. "No AI-only mechanics — if the AI can
+        // do it, a player can, and vice versa" cuts both ways, and a player-only
+        // option would quietly make every AI Firm fold where a human would
+        // fight on. It is also the measurement problem: these runs are how D11
+        // and D19 get verdicted, so an AI that cannot take an action the player
+        // takes constantly is reporting on a different game.
+        //
+        // The decision is the same one a player faces, and the incentive runs
+        // the opposite way to the obvious guess: folding EXTRACTS, which BANKS
+        // the cache — so a fat cache is a reason to go home, not to stay. You
+        // redrop to keep EARNING, which means the question is whether there is
+        // unfinished work worth finishing.
+        //
+        // The first version gated on `reputation - cost >= floor` and was
+        // completely unreachable: AI Firms start at reputation 0 and only earn
+        // it by extracting cleanly, so nothing could ever pay 8 up front. Zero
+        // redrops across four seeds and 18 captures — the dead-8f-gate shape
+        // exactly, caught by counting the event instead of trusting the branch.
+        const cost = rules.combat?.bail?.redropReputationHit ?? 0;
+        const unfinished = view.myAccepted.filter(
+          (c) => c.stage !== STAGE_DONE && c.stage !== STAGE_FAILED).length;
+        // Reputation is SPENT, not required: it already goes negative elsewhere
+        // (a lost HQ is -6). A Firm deep in the red stops buying its way back.
+        // The floor is a ruleset integer — the first cut divided by riskWeight
+        // and tripped the no-floats guard, which is right: this file is engine
+        // code and integer maths is the doctrine, not a preference.
+        const debtFloor = rules.ai_firms?.redropDebtFloor ?? 0;
+        if (cost > 0 && unfinished > 0 && (firm.reputation | 0) - cost >= debtFloor) {
+          debug("redrop_agent_lost");
+          return { command: { type: 14, firmId }, telemetry };     // CMD_REDROP
+        }
         debug("folding_agent_lost");
         return { command: { type: 11, firmId }, telemetry };      // ACTIVATE_EVAC
       }

@@ -734,7 +734,7 @@ function renderCaptured(view) {
   const sit = captureSituation(view);
   if (!sit) { panel.hidden = true; capturedSignature = ""; return; }
   panel.hidden = false;
-  const signature = `${sit.heldCount}:${sit.bailCost}:${sit.canBail}:${sit.canPullOut}:${sit.evacRunning}`;
+  const signature = `${sit.heldCount}:${sit.bailCost}:${sit.canBail}:${sit.canRedrop}:${sit.redropCost}:${sit.canPullOut}:${sit.evacRunning}`;
   if (signature === capturedSignature) return;
   capturedSignature = signature;
 
@@ -744,7 +744,11 @@ function renderCaptured(view) {
 
   const list = $("#captured-options");
   list.textContent = "";
-  const option = (labelKey, noteKey, enabled, cost, onGo) => {
+  // `noteArgs` because not every price is money: the redrop is paid in
+  // standing, which must NOT render in the cost chip — that chip is coloured
+  // against the bank, and a reputation number sitting in it reads as currency
+  // the player could check their balance for.
+  const option = (labelKey, noteKey, enabled, cost, onGo, noteArgs = []) => {
     const li = document.createElement("li");
     const text = document.createElement("div");
     const label = document.createElement("div");
@@ -752,7 +756,7 @@ function renderCaptured(view) {
     label.textContent = t(labelKey);
     const note = document.createElement("div");
     note.className = "opt-note";
-    note.textContent = t(noteKey);
+    note.textContent = t(noteKey, ...noteArgs);
     text.append(label, note);
     li.appendChild(text);
     if (cost > 0) {
@@ -774,6 +778,11 @@ function renderCaptured(view) {
   option("captured.bail", "captured.bailNote", sit.canBail, sit.bailCost, () => {
     if (held) session.send({ type: 33, agentId: held.id, firmId: session.firmId });
   });
+  // Q48: bring in a replacement without leaving the field. Listed second
+  // because it is the middle option — bail gets THIS operative back, the redrop
+  // gets you a different one, pulling out gets you neither and banks the cache.
+  option("captured.redrop", "captured.redropNote", sit.canRedrop, 0,
+    () => session.send({ type: 14, firmId: session.firmId }), [sit.redropCost]);
   // D51: folding with everyone in custody is allowed, and the prisoner becomes
   // a recovery job on the next drop-in. That IS "bring in another agent" — it
   // just goes through the debrief, and nothing ever said so.
