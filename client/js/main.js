@@ -13,6 +13,7 @@ import {
   objectiveBearing, evacDisplay, toastsFor, debriefRows, reputationBar,
   payloadForBuilding, overlayRows, disguiseFor, districtChoices, standingRows, missionBanner,
   journalLine, gameClock, evacAvailable, SPOKEN_LINES,
+  CITY_TABS, firmPanel, sortiePanel, cityPanel, firmsPanel, firmName,
   cuttableJunction, liftableGuard, dropshipFlight, DROPSHIP_MS, MAX_PINS,
   beginMission, areaView, areaActions, captureSituation,
   HEAT_CLASS as HEAT_CLASSES,
@@ -293,7 +294,8 @@ function paint(s, events) {
   renderStances();
   renderBoard(view);
   renderBanner(view, events);
-  renderJournal();
+  renderCityInfo();
+  noteFirmsSeen(view);
   // EVAC is offered only where the reducer would accept it (playtest 12).
   $("#evac-btn").hidden = !evacAvailable(view);
   renderActive(view);
@@ -381,24 +383,113 @@ function renderBanner(view, events) {
 
 // ── The journal overlay (playtest 12) ──────────────────────────────────────
 const journal = [];
-let journalRendered = -1;
-function renderJournal() {
-  const panel = $("#journal");
-  if (panel.hidden || journalRendered === journal.length) return;
-  journalRendered = journal.length;
-  const list = $("#journal-list");
-  list.textContent = "";
-  for (const entry of [...journal].reverse()) {
-    const li = document.createElement("li");
-    const when = document.createElement("span");
-    when.className = "when";
-    when.textContent = gameClock(entry.tick).label;
-    const what = document.createElement("span");
-    what.textContent = t(entry.key, ...(entry.args ?? []).map((a) =>
-      typeof a === "string" && a.includes(".") ? t(a) : a));
-    li.append(when, what);
-    list.appendChild(li);
+// ── City Info (owner-ruled 2026-08-28) ────────────────────────────────────
+// Four reference panels plus the journal, behind one button. Re-rendered only
+// when its content changes — the playtest-5 rule: a list rebuilt every tick
+// destroys its own buttons between mousedown and mouseup, and these tabs ARE
+// buttons.
+let cityTab = "firm";
+let citySignature = "";
+
+// Rival Firms this session has actually laid eyes on. Accumulated from the
+// VIEW, not from journal text: "have I seen this Firm" is a fact about what was
+// on screen, and deriving it from formatted log lines would be guesswork about
+// which events happen to carry a firmId.
+const notedFirms = new Set();
+function noteFirmsSeen(view) {
+  for (const r of view?.rivals ?? []) if (r.firmId >= 0) notedFirms.add(r.firmId);
+  for (const h of view?.rivalHqs ?? []) if (h.firmId >= 0) notedFirms.add(h.firmId);
+  if (view?.standoff && view.standoff.rivalFirmId >= 0) notedFirms.add(view.standoff.rivalFirmId);
+}
+
+function cityRow(labelKey, value) {
+  const li = document.createElement("li");
+  const k = document.createElement("span");
+  k.textContent = t(labelKey);
+  const v = document.createElement("span");
+  v.className = "val";
+  // A row value may be an i18n KEY (status words) or a plain number/string.
+  // Interpolated catalogue entries used as labels are how the season splash
+  // once rendered "DAY OF ....... 0 / 28", so the check is explicit.
+  v.textContent = typeof value === "string" && value.includes(".") ? t(value) : String(value);
+  li.append(k, v);
+  return li;
+}
+
+function renderCityInfo() {
+  const panel = $("#cityinfo");
+  if (panel.hidden) return;
+  const view = session.view ?? null;
+  const rows = {
+    firm: () => firmPanel(view, session.briefing),
+    sortie: () => sortiePanel(view, journal),
+    city: () => cityPanel(view, session.briefing),
+  };
+  const signature = `${cityTab}:${journal.length}:${view?.tick ?? -1}:${(view?.firms ?? []).length}`;
+  if (signature === citySignature) return;
+  citySignature = signature;
+
+  const tabs = $("#city-tabs");
+  if (tabs.children.length !== CITY_TABS.length) {
+    tabs.textContent = "";
+    for (const name of CITY_TABS) {
+      const b = document.createElement("button");
+      b.textContent = t(`city.tab.${name}`);
+      b.addEventListener("click", () => { cityTab = name; citySignature = ""; renderCityInfo(); });
+      tabs.appendChild(b);
+    }
   }
+  [...tabs.children].forEach((b, i) =>
+    b.setAttribute("aria-pressed", String(CITY_TABS[i] === cityTab)));
+
+  const body = $("#city-body");
+  body.textContent = "";
+  const list = document.createElement("ul");
+  list.className = "city-rows";
+
+  if (rows[cityTab]) {
+    for (const [labelKey, value] of rows[cityTab]()) list.appendChild(cityRow(labelKey, value));
+  } else if (cityTab === "firms") {
+    const firms = firmsPanel(view, notedFirms);
+    if (!firms.length) {
+      list.appendChild(cityRow("city.firms.none", ""));
+    } else {
+      for (const f of firms) {
+        const li = document.createElement("li");
+        const left = document.createElement("div");
+        const name = document.createElement("div");
+        name.className = "firm-name";
+        name.textContent = firmName(session.content, f.nameId);
+        const meta = document.createElement("div");
+        meta.className = "opt-note";
+        // EARNED OR BOUGHT ONLY: an unknown HQ says so, and says where to buy
+        // it. A blank would read as "this Firm has no base".
+        meta.textContent = [
+          t("city.firms.tier", f.tier),
+          f.hqKnown ? t("city.firms.hqAt", f.cellX, f.cellY) : t("city.firms.hqUnknown"),
+          t(f.met ? "city.firms.met" : "city.firms.unmet"),
+        ].join(" · ");
+        left.append(name, meta);
+        li.appendChild(left);
+        list.appendChild(li);
+      }
+    }
+  } else {
+    // The journal, folded in as a tab (its own button is gone).
+    if (!journal.length) list.appendChild(cityRow("city.log.empty", ""));
+    for (const entry of [...journal].reverse()) {
+      const li = document.createElement("li");
+      const when = document.createElement("span");
+      when.className = "when";
+      when.textContent = gameClock(entry.tick).label;
+      const what = document.createElement("span");
+      what.textContent = t(entry.key, ...(entry.args ?? []).map((a) =>
+        typeof a === "string" && a.includes(".") ? t(a) : a));
+      li.append(when, what);
+      list.appendChild(li);
+    }
+  }
+  body.appendChild(list);
 }
 
 function renderBoard(view) {
@@ -1064,12 +1155,16 @@ $("#hack-btn").addEventListener("click", () => {
   const a = ownAgent(session.view);
   if (a) session.send({ type: 48, agentId: a.id });
 });
-$("#journal-btn").addEventListener("click", () => {
-  const panel = $("#journal");
+const toggleCity = () => {
+  const panel = $("#cityinfo");
   panel.hidden = !panel.hidden;
-  journalRendered = -1;
-  renderJournal();
-});
+  citySignature = "";          // force a rebuild on open
+  renderCityInfo();
+};
+$("#city-btn").addEventListener("click", toggleCity);
+// Reachable from the SPLASH too (owner-ruled): reading the city and your own
+// standing matters most BEFORE committing to a drop.
+$("#splash-city").addEventListener("click", toggleCity);
 $("#intro-dismiss").addEventListener("click", () => {
   $("#intro").hidden = true;
   localStorage.setItem("sm_intro_seen", "1");

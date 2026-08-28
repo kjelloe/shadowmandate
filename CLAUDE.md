@@ -4,7 +4,7 @@ Drop-in/drop-out covert-ops game. Sibling of Fireline Command
 (`~/GIT/firepower` — the fork source, never modified from here).
 
 **Status: M0–M6 complete; M7 done as far as it can go solo, and PLAYABLE in a
-browser. `npm test` = 513 green**, plus four browser gates (`smoke`, `ui`,
+browser. `npm test` = 518 green**, plus four browser gates (`smoke`, `ui`,
 `mobile`, `gallery`). Batch lane verified (`ops/BATCH_PC.md`). **Remaining in M7**:
 the VM deploy (7e) and native GPU perf (7f) — both need the owner's hardware.
 **M8 — opposition and site security — 8a–8k done** (alarms, cameras, beams,
@@ -69,11 +69,28 @@ by hand).
 - **PT13-G** display type for menus, plain monospace ink for dialogue, all
   token-driven.
 
-**Open**: the era-1 battery verdicts; **Q48** (mid-sortie redrop — or delete the
-dead `redropReputationHit`), **Q49** (patrols see ~3 cells at CALM heat — is the
-early game missing its opposition?), **Q50** (62% of drops land in a district
-the player did not choose — `hqLandingFor` is unbounded); the AI's general night
-pricing; area retune behind D42; avenue density (7B, noted).
+**Ruled and built 2026-08-28 (era `sm-era-2`)**:
+- **Q50** — safehouses 1 → **8 per district** and `hqLandingFor` confined to the
+  requested district. 62% of drops used to land in a district the player did not
+  choose; it is 0% now, exact rather than statistical (no radius got below ~4%).
+  At the old density, 51% of drops with four rivals deployed got no building at
+  all. **Worldgen change: era bumped, fixtures re-pinned, era-1 baselines void —
+  at zero cost, because those batteries had not run.**
+- **Q48** — the **mid-sortie redrop** (`CMD_REDROP`), so
+  `bail.redropReputationHit` finally reads to something. Folding EXTRACTS and
+  banks the cache; redropping keeps you earning with the cache at risk and costs
+  standing. The AI got it in the same slice.
+- **Q49** — owner is playtesting; nothing changed.
+- **CI-1 City Info** — five tabs (firm / sortie / city / firms / log) on the
+  splash and in the field. Rival intel is **earned or bought only** and the
+  human/AI split is **never disclosed** (not sent at all). No new hashed state:
+  the persistent half is `knownRivalHqs`, the session half derives from the
+  journal.
+
+**Open**: the **era-2** battery verdicts (queue unchanged, still needs the batch
+PC and a hand-synced `ops/`); **Q51** (what else belongs in City Info — a LEGEND
+tab is the cheapest win, and whether BOARD should fold in); the AI's general
+night pricing; area retune behind D42; avenue density (7B, noted).
 
 ## Read first
 
@@ -112,6 +129,7 @@ node debugging/dbg_ai_credentials.mjs 1000 36000  # AI-1: live purchase census
 node debugging/dbg_area_ring.mjs            # S17: guard-ring legality (4 zero columns)
 node debugging/dbg_ai_areas.mjs 4711 8000   # the counts behind the M5 gate's binary
 node debugging/dbg_poi_look.mjs             # playtest 13: shops + patrol markers
+node debugging/dbg_cityinfo.mjs             # CI-1: every City Info tab, splash + field
 node debugging/dbg_district_look.mjs Industrial 53,39 4   # a named district, aimed
 node tools/repin_fixture.mjs "<reason>"     # deliberate fixture re-pin
 ```

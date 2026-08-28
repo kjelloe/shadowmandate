@@ -69,7 +69,7 @@ button:disabled { color: var(--type-menu-dim); text-shadow: none; }
 /* THE READABLE HALF. Anything the player reads for meaning keeps the body face,
    normal case, no tracking, no glow, plain ink — this is the half of finding 8
    that is easy to lose while making the other half look good. */
-#building-greet, #building-options span, #journal-list li span:not(.when),
+#building-greet, #building-options span, .city-rows li span:not(.when):not(.val),
 #captured-options .opt-note, #zone-districts .meta, #recovery,
 .toast, #intro-card p, #evac-note, #evac-eta, #standoff-who {
   font-family: var(--type-body);
@@ -193,10 +193,23 @@ button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal)
   background: #4A1410; color: #FFD9D2; border-bottom: 2px solid var(--burn);
   font-size: .8rem; padding: .5rem .8rem; white-space: pre-wrap; }
 
-#journal-list { list-style: none; margin: 0; padding: 0; font-size: .82rem; }
-#journal-list li { display: flex; gap: .8rem; padding: .35rem 0;
+/* City Info (owner-ruled 2026-08-28). One row shape for every tab: a label on
+   the left, a value on the right, and the journal reusing the same list with a
+   timestamp in the label slot. */
+#city-tabs { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .7rem; }
+/* 44px: the mobile gate measures thumb targets, and a tab is a control. */
+#city-tabs button { min-height: 44px; padding: 0 .7rem; font-size: .76rem; }
+#city-tabs button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal);
+  color: #10131A; }
+#city-body { max-height: 46vh; overflow-y: auto; }
+#city-note { color: var(--dim); font-size: .74rem; margin: .7rem 0 0; }
+.city-rows .val { color: var(--type-menu-ink); }
+.city-rows .firm-name { letter-spacing: .06em; }
+.city-rows { list-style: none; margin: 0; padding: 0; font-size: .82rem; }
+.city-rows li { display: flex; gap: .8rem; padding: .35rem 0;
+  justify-content: space-between; align-items: baseline;
   border-bottom: 1px solid var(--line); }
-#journal-list .when { color: var(--dim); white-space: nowrap; }
+.city-rows .when { color: var(--dim); white-space: nowrap; }
 #active-list { list-style: none; margin: 0 0 .8rem; padding: 0; }
 #active-list li { display: flex; justify-content: space-between; gap: .6rem;
   padding: .4rem 0; border-bottom: 1px solid var(--line); color: var(--teal); }

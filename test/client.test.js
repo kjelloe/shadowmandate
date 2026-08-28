@@ -385,6 +385,74 @@ test("PLAYTEST 13: the compound camera clamps per-axis, not against one size", a
   assert.deepEqual(clampCamera({ x: 6, y: 9 }, 64, 17, 11), { x: 17, y: 11 });
 });
 
+test("CITY INFO: the panels agree with each other and gate rival intel", async () => {
+  const { firmPanel, sortiePanel, cityPanel, firmsPanel, CITY_TABS, firmName } =
+    await import("../client/js/models.js");
+  assert.ok(CITY_TABS.length >= 4, "the panel lost its tabs");
+
+  const view = {
+    tick: 120, bank: 340, night: 0,
+    hq: { cellX: 5, cellY: 5, cacheResources: 90, evacActive: 0 },
+    districts: [{ id: 0 }, { id: 1 }, { id: 2 }],
+    board: { contracts: [{ id: 1 }, { id: 2 }] },
+    firms: [
+      { id: 2, nameId: 3, tier: 4, hqKnown: 1, hqCellX: 11, hqCellY: 13 },
+      { id: 5, nameId: 7, tier: 2, hqKnown: 0, hqCellX: -1, hqCellY: -1 },
+    ],
+  };
+  // A STALE briefing: sent once at welcome and never updated. This is the real
+  // shape of the bug the panel exposed — the CITY tab reported "Firms deployed
+  // 0" while the FIRMS tab beside it listed two. `??` does not fall through on
+  // 0, which is precisely the value that was wrong.
+  const briefing = { worldId: "sample", activeFirms: 0, contracts: 80,
+    standing: { season: 1, day: 0, days: 28, endless: false },
+    ledger: { bank: 340, reputation: 12, recognition: 3, tierUnlocked: 2 } };
+
+  const cityRows = Object.fromEntries(cityPanel(view, briefing));
+  assert.equal(cityRows["city.city.firms"], 3,
+    "the CITY tab must count the live roster plus you, not a frozen briefing");
+  assert.equal(cityRows["city.city.day"], "1 / 28",
+    "the day must read 1-based, agreeing with the game clock");
+
+  // FIRM reads the ledger, which is what survives a sortie.
+  const firmRows = Object.fromEntries(firmPanel(view, briefing));
+  assert.equal(firmRows["city.firm.reputation"], 12);
+  assert.equal(firmRows["city.firm.cache"], 90, "the at-risk cache must be visible beside the bank");
+
+  // SORTIE counts THIS session from the journal — no engine counters needed.
+  const journal = [
+    { key: "journal.accepted" }, { key: "journal.accepted" },
+    { key: "journal.completed" }, { key: "journal.burned" },
+  ];
+  const sortie = Object.fromEntries(sortiePanel(view, journal));
+  assert.equal(sortie["city.sortie.taken"], 2);
+  assert.equal(sortie["city.sortie.completed"], 1);
+  assert.equal(sortie["city.sortie.burns"], 1);
+  assert.equal(sortie["city.sortie.status"], "city.sortie.inField");
+  // Undeployed reports as such rather than as a sortie with zeroes.
+  assert.equal(Object.fromEntries(sortiePanel({ tick: 0 }, []))["city.sortie.status"],
+    "city.sortie.undeployed");
+
+  // FIRMS: earned or bought only. A known HQ carries its cell; an unknown one
+  // must NOT invent one, and must not silently render as 0,0.
+  const firms = firmsPanel(view, new Set([2]));
+  assert.equal(firms.length, 2);
+  const known = firms.find((f) => f.id === 2), unknown = firms.find((f) => f.id === 5);
+  assert.equal(known.hqKnown, true);
+  assert.deepEqual([known.cellX, known.cellY], [11, 13]);
+  assert.equal(known.met, true, "a Firm seen this session should read as encountered");
+  assert.equal(unknown.hqKnown, false);
+  assert.equal(unknown.cellX, -1, "an unknown HQ must not render as a real cell");
+  assert.equal(unknown.met, false);
+
+  // Names come from the shipped roster, and an unknown id degrades to something
+  // true rather than to a blank row that reads as a rendering fault.
+  const content = { firms: { firms: [{ id: 3, name: "The Directorate" }] } };
+  assert.equal(firmName(content, 3), "The Directorate");
+  assert.ok(firmName(content, 99).includes("99"));
+  assert.ok(firmName(null, 1).length > 0, "a missing roster must not blank the row");
+});
+
 test("PLAYTEST 13: a captured Firm is told what its options are", async () => {
   const { captureSituation } = await import("../client/js/models.js");
   const hq = { cellX: 5, cellY: 5, evacActive: 0, perimeterRadius: 4 };

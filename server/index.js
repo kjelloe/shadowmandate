@@ -158,7 +158,11 @@ wss.on("connection", (socket) => {
           districtMap: world.clientDistricts(),
           // Dialogue and shop content, plus the disguise portraits. Static
           // content, so it ships once with the welcome rather than per tick.
-          content: { payloads: rules.payloads, disguises: rules.disguises },
+          // City Info: the curated Firm names. The ROSTER is lawful under the
+          // 2026-08-28 ruling (a Firm operating in a city is not a secret);
+          // everything locating or specific stays gated in the view.
+          content: { payloads: rules.payloads, disguises: rules.disguises,
+            firms: rules.firms },
           ruleset: rules.version,
         });
         return;

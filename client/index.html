@@ -13,6 +13,7 @@
     <h1 id="wordmark" data-i18n="splash.title"></h1>
     <pre id="splash-terminal"></pre>
     <button id="drop-in" class="primary"></button>
+    <button id="splash-city" data-i18n="city.title"></button>
     <p id="recovery" hidden></p>
   </section>
 
@@ -60,7 +61,7 @@
         <div id="cache" class="pill"></div>
         <div id="objective" class="pill" hidden></div>
         <button id="board-btn" class="primary" data-i18n="board.title"></button>
-        <button id="journal-btn" data-i18n="journal.title"></button>
+        <button id="city-btn" data-i18n="city.title"></button>
         <button id="enter-btn" data-i18n="building.enter" hidden></button>
       <button id="cut-btn" data-i18n="junction.cut" hidden></button>
       <button id="lift-btn" data-i18n="access.lift" hidden></button>
@@ -123,17 +124,25 @@
       <ul id="captured-options"></ul>
     </div>
 
-    <div id="journal" class="overlay" hidden>
-      <h2 data-i18n="journal.title"></h2>
-      <ul id="journal-list"></ul>
-      <button class="close" aria-label="close">&#10005;</button>
-    </div>
     <div id="evac" class="overlay" hidden>
       <h2 data-i18n="evac.beaconActive"></h2>
       <p id="evac-eta"></p>
       <p id="evac-note" data-i18n="evac.hold"></p>
     </div>
   </section>
+  <!-- City Info (owner-ruled 2026-08-28): tabbed reference on the world, your
+       Firm, this sortie and the competition. It lives at APP level, not inside
+       #world, because it is reachable from the splash too — reading the city
+       before committing to a drop is when this data matters most. The journal
+       is a tab here now; the BOARD keeps its own button, being used mid-mission
+       where a second click costs real time. -->
+  <div id="cityinfo" class="overlay" hidden>
+    <h2 data-i18n="city.title"></h2>
+    <div id="city-tabs" role="tablist"></div>
+    <div id="city-body"></div>
+    <p id="city-note" class="note" data-i18n="city.note.session"></p>
+    <button class="close" aria-label="close">&#10005;</button>
+  </div>
 </div>
 <script type="importmap">
 { "imports": { "three": "/vendor/three/build/three.module.js" } }

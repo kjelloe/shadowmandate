@@ -95,6 +95,52 @@ test("a view carries no field that would leak the world", () => {
   assert.ok(!serialised.includes('"rng"'), "PRNG state reached the wire");
 });
 
+test("City Info: the Firm roster is lawful, and locations stay EARNED", () => {
+  // Owner-ruled 2026-08-28: "earned or bought only". A Firm operating in a city
+  // is not a secret — the informant has always SOLD rival HQ locations, so
+  // "somebody is here" was never the fogged part. What must stay fogged is
+  // everything D18 fogs, plus any HQ this Firm has neither seen nor bought.
+  //
+  // Asserted at the VIEW, not in the client, because the client cannot un-leak
+  // a field it was given.
+  const { world } = hostedWorld();
+  const st = world.state;
+  // Deploy a rival somewhere this Firm cannot possibly see.
+  const rival = st.firms.find((f) => f.id !== 0);
+  rival.state = 1;
+  rival.nameId = 3;
+  rival.tierUnlocked = 4;
+  st.hqs.push({ id: st.hqs.length, firmId: rival.id, buildingId: -1,
+    cellX: st.size - 2, cellY: st.size - 2, condition: 100, cacheResources: 999,
+    evacActive: 0, evacTicks: 0, evacPaused: 0, alarmTicks: 0 });
+
+  const view = world.viewFor(0);
+  const row = (view.firms ?? []).find((f) => f.id === rival.id);
+  assert.ok(row, "a deployed rival is missing from the roster — the panel would be empty");
+  assert.equal(row.nameId, 3, "the roster lost the Firm's identity");
+  assert.equal(row.tier, 4, "tier is public standing and should be reported");
+
+  // UNSEEN AND UNBOUGHT: the location must not be in the payload at all.
+  assert.equal(row.hqKnown, 0, "an unseen rival HQ was reported as known");
+  assert.equal(row.hqCellX, -1, "an unseen rival HQ leaked its position");
+  assert.equal(row.hqCellY, -1, "an unseen rival HQ leaked its position");
+
+  // BOUGHT: the informant's product must actually reveal it, or the thing the
+  // player pays for does nothing (this project's signature failure).
+  st.firms[0].knownRivalHqs.push(st.hqs[st.hqs.length - 1].id);
+  const bought = world.viewFor(0).firms.find((f) => f.id === rival.id);
+  assert.equal(bought.hqKnown, 1, "bought intel did not reveal the rival HQ");
+  assert.equal(bought.hqCellX, st.size - 2);
+
+  // NEVER the cache, and never whether they are AI — the owner ruled the
+  // human/AI distinction is not disclosed, so it must not be sent at all.
+  const serialised = JSON.stringify(view.firms);
+  assert.ok(!serialised.includes("isAi"), "the roster disclosed which Firms are AI");
+  assert.ok(!serialised.includes("999"), "the roster leaked a rival's cache");
+  // ...and never this Firm itself, which would render as a rival of yourself.
+  assert.ok(!view.firms.some((f) => f.id === 0), "the roster listed the viewer");
+});
+
 test("D18: a Firm sees its own five offers and nothing of the pool", () => {
   const { world } = hostedWorld();
   const view = world.viewFor(0);

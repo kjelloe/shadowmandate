@@ -56,6 +56,35 @@ export function buildView(state, firmId, detCfg) {
     // rather than restating it — the bailQuote lesson, applied up front.
     redropCost: state.rules?.combat?.bail?.redropReputationHit ?? 0,
 
+    // ── City Info (owner-ruled 2026-08-28): who else is in this city ────────
+    // EARNED OR BOUGHT ONLY. The roster is lawful — a Firm operating in a city
+    // is not a secret, and the informant already sells rival HQ locations, so
+    // "somebody is here" was never the hidden part. What stays fogged is
+    // everything D18 fogs: what they are WORKING on, what they are carrying,
+    // and where they are unless you have seen or bought it.
+    //
+    // Deliberately NOT reported: `isAi`. The owner ruled it never disclosed —
+    // in a drop-in/drop-out world the tension is that any rival might be a
+    // person, and a tag turns that into a lookup. It is not sent at all rather
+    // than sent-and-ignored, because a client cannot leak a field it never got.
+    firms: state.firms
+      .filter((f) => f.state !== 0 && f.id !== firmId)
+      .map((f) => {
+        const theirHq = state.hqs.find((h) => h.firmId === f.id) ?? null;
+        const hqKnown = !!theirHq
+          && (visible(theirHq.cellX, theirHq.cellY) || (firm.knownRivalHqs ?? []).includes(theirHq.id));
+        return {
+          id: f.id,
+          nameId: f.nameId,
+          // Tier is public standing — it is what the board gates on and what
+          // seasonStanding already reports in aggregate on the splash.
+          tier: f.tierUnlocked | 0,
+          hqKnown: hqKnown ? 1 : 0,
+          hqCellX: hqKnown ? theirHq.cellX : -1,
+          hqCellY: hqKnown ? theirHq.cellY : -1,
+        };
+      }),
+
     firm: {
       id: firm.id, nameId: firm.nameId, state: firm.state,
       reputation: firm.reputation, recognition: firm.recognition,

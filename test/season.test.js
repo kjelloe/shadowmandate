@@ -198,10 +198,15 @@ test("the briefing carries the standing — it is read BEFORE dropping in", () =
 });
 
 test("the splash discloses season, day and tier range", () => {
+  // The day DISPLAYS 1-based (2026-08-28). `seasonDay` is 0-based because the
+  // rotation maths wants it that way, and every surface printing it raw said
+  // "Day 0" on the first day — while `gameClock` right beside it said "D1".
+  // City Info put the two on the same screen and made the disagreement
+  // impossible to keep ignoring. `displayDay` is the single home.
   const rows = standingRows({ season: 2, day: 24, days: 28, endless: false, tierLow: 1, tierHigh: 4 });
   const keys = rows.map(([k]) => k);
   assert.deepEqual(keys, ["splash.season", "splash.day", "splash.rivalTiers"]);
-  assert.equal(rows[1][1], "24 / 28");
+  assert.equal(rows[1][1], "25 / 28", "the day must read 1-based to a player");
   assert.equal(rows[2][1], "1–4");
 });
 
@@ -222,7 +227,7 @@ test("an endless world uses the endless value, never a deadline", () => {
   const day = rows.find(([k]) => k === "splash.day");
   assert.ok(day, "an endless world stopped reporting its age");
   assert.equal(day[1], "splash.dayEndless", "the endless world did not use the endless wording");
-  assert.equal(day[2], 90, "the endless day row lost the day number it interpolates");
+  assert.equal(day[2], 91, "the endless day row lost the day number it interpolates");
   // "90 / 0" would advertise a season end that does not exist.
   assert.ok(!String(day[1]).includes("/"), "an endless world advertised a deadline");
 });
@@ -256,9 +261,11 @@ test("the disclosure RENDERS as readable text, in both catalogs", () => {
       assert.ok(!/:\s*$/.test(line), `${loc}: "${line}" rendered an empty value`);
       assert.ok(!/\{\d+\}/.test(line), `${loc}: "${line}" left an untouched placeholder`);
     }
-    assert.ok(fixed.some((l) => l.includes("24") && l.includes("28")),
+    // 25, not 24: the day displays 1-based (see displayDay). The season LENGTH
+    // is not a day number and stays as configured.
+    assert.ok(fixed.some((l) => l.includes("25") && l.includes("28")),
       `${loc}: the day row lost its numbers`);
-    assert.ok(endless.some((l) => l.includes("90")),
+    assert.ok(endless.some((l) => l.includes("91")),
       `${loc}: an endless world stopped reporting its age`);
   }
 });

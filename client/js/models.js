@@ -323,6 +323,14 @@ export function disguiseFor(content, disguiseId) {
   return content?.disguises?.disguises?.find((d) => d.id === (disguiseId | 0)) ?? null;
 }
 
+// A Firm's curated name. Falls back to its id rather than to an empty string: a
+// nameless row in the FIRMS panel reads as a rendering fault, and "FIRM 3" is at
+// least true.
+export function firmName(content, nameId) {
+  const list = content?.firms?.firms ?? [];
+  return list.find((f) => f.id === (nameId | 0))?.name ?? `FIRM ${nameId | 0}`;
+}
+
 // Events worth interrupting the player for. Everything else is noise.
 const TOASTS = {
   perimeterAlarm: { key: "alarm.perimeter", alarm: true },
@@ -436,12 +444,20 @@ export function siteVisual(state, type) {
 // "DAY {0} OF {1}" as the LABEL, so the splash rendered "DAY  OF ..... 0/28"
 // with both slots empty. It was correct data and unreadable text, and no unit
 // test would ever have noticed — only looking at the live screen did.
+// The season day as a PLAYER reads it. `seasonDay` is 0-based because that is
+// what the rotation maths wants, and every surface printing it raw said "Day 0"
+// on the first day — while `gameClock` right beside it said "D1". One helper, so
+// the two clocks in this game cannot disagree about what day it is.
+export function displayDay(day) {
+  return (day | 0) + 1;
+}
+
 export function standingRows(standing) {
   if (!standing) return [];
   const rows = [["splash.season", `${standing.season | 0}`]];
   rows.push(standing.endless
-    ? ["splash.day", "splash.dayEndless", standing.day | 0]
-    : ["splash.day", `${standing.day | 0} / ${standing.days | 0}`]);
+    ? ["splash.day", "splash.dayEndless", displayDay(standing.day)]
+    : ["splash.day", `${displayDay(standing.day)} / ${standing.days | 0}`]);
   // A world with no Firms in it yet has no tier range, and printing "0–0"
   // would read as a claim about the opposition rather than as its absence.
   if ((standing.tierHigh | 0) > 0) {
@@ -863,4 +879,108 @@ export function hoverCarsAt(tick, lanes, count) {
     });
   }
   return out;
+}
+
+// ── City Info (owner-ruled 2026-08-28) ─────────────────────────────────────
+// "Should we have a list of other Firms present in the city? Like a 'City info'
+// button with tabs and panels for different stats on the current game?"
+//
+// Four panels, and the split is about WHO OWNS the number:
+//   FIRM    — what the ledger remembers about you, across sorties.
+//   SORTIE  — what has happened since you dropped in.
+//   CITY    — the world everyone shares.
+//   FIRMS   — who else is here, and only what you have earned or bought.
+//
+// SORTIE IS DERIVED FROM THE JOURNAL, deliberately. The client already keeps a
+// timestamped record of every event worth a line, so counting it needs no new
+// engine counters — and a counter added to hashed state for a stats panel would
+// be four-places work and fixture churn for something nobody simulates against.
+// The cost is honest and worth stating: these numbers are per SESSION, so a
+// reconnect starts them over.
+
+export const CITY_TABS = ["firm", "sortie", "city", "firms", "log"];
+
+// One row is [labelKey, value] or [labelKey, valueKey, ...args] for translated
+// values — the same shape `standingRows` uses, so the renderer stays one loop.
+export function firmPanel(view, briefing) {
+  const l = briefing?.ledger ?? null;
+  return [
+    ["city.firm.bank", view?.bank ?? l?.bank ?? 0],
+    ["city.firm.reputation", l?.reputation ?? 0],
+    ["city.firm.recognition", l?.recognition ?? 0],
+    ["city.firm.tier", l?.tierUnlocked ?? 1],
+    // The cache is the tension arc (D7): earned this deployment, LOST if the HQ
+    // falls. Showing it beside the bank is the whole point of the split.
+    ["city.firm.cache", view?.hq?.cacheResources ?? 0],
+  ];
+}
+
+export function sortiePanel(view, journal) {
+  const j = journal ?? [];
+  const count = (...keys) => j.filter((e) => keys.includes(e.key)).length;
+  const deployed = !!view?.hq;
+  return [
+    ["city.sortie.status", deployed ? "city.sortie.inField" : "city.sortie.undeployed"],
+    ["city.sortie.elapsed", deployed ? gameClock(view.tick).label : "—"],
+    ["city.sortie.taken", count("journal.accepted")],
+    ["city.sortie.completed", count("journal.completed")],
+    ["city.sortie.failed", count("journal.failed", "journal.expired")],
+    ["city.sortie.burns", count("journal.burned")],
+    ["city.sortie.captures", count("journal.captured")],
+  ];
+}
+
+export function cityPanel(view, briefing) {
+  const st = briefing?.standing ?? null;
+  const districts = view?.districts ?? [];
+  return [
+    ["city.city.world", briefing?.worldId ?? "—"],
+    ["city.city.season", st ? `${st.season ?? 1}` : "—"],
+    // Endless seasons report 0 days; saying "day 4 of 0" is the interpolated
+    // -catalog-entry-as-a-label defect the season splash already paid for.
+    ["city.city.day", st
+      ? (st.endless ? `${displayDay(st.day)}` : `${displayDay(st.day)} / ${st.days}`)
+      : "—"],
+    ["city.city.phase", view?.night ? "hud.phase.night" : "hud.phase.day"],
+    ["city.city.districts", districts.length],
+    ["city.city.contracts", briefing?.contracts ?? (view?.board?.contracts ?? []).length],
+    // LIVE first, briefing second. The briefing is sent once at welcome and
+    // never updated, so `activeFirms` was frozen at whatever it was when the
+    // player connected — the CITY tab said "Firms deployed 0" while the FIRMS
+    // tab beside it listed The Directorate. Two tabs of the same panel
+    // contradicting each other is worse than either number alone, and a `??`
+    // does not fall through on 0, which is exactly the value that was wrong.
+    ["city.city.firms", view?.firms
+      ? view.firms.length + 1                     // + this Firm, which is not in the roster
+      : (briefing?.activeFirms ?? 0)],
+  ];
+}
+
+// EARNED OR BOUGHT ONLY. A Firm operating in the city is not a secret — the
+// roster is lawful, and the informant has always sold rival HQ locations, so
+// "somebody is here" was never the fogged part. What stays fogged is what D18
+// fogs: what they are working on. `hqKnown` comes from the engine, which is the
+// only place that can honestly say whether you have seen or bought it.
+//
+// `met` is SESSION knowledge — a rival you have actually laid eyes on or faced
+// in a standoff this deployment. It is NOT persisted, which is a real
+// limitation and stated rather than hidden; bought intel persists because the
+// engine keeps it in `knownRivalHqs`.
+//
+// The caller accumulates the set from what the VIEW showed (see `notedFirms` in
+// main.js) rather than from journal text. Reading it off journal entries was the
+// first cut and it was guesswork about which events happen to carry a rival's
+// firmId — deriving "have I seen this Firm" from a formatted log line is the
+// wrong direction of dependency.
+export function firmsPanel(view, metIds) {
+  const met = metIds ?? new Set();
+  return (view?.firms ?? []).map((f) => ({
+    id: f.id,
+    nameId: f.nameId,
+    tier: f.tier | 0,
+    met: met.has(f.id),
+    hqKnown: !!f.hqKnown,
+    cellX: f.hqCellX ?? -1,
+    cellY: f.hqCellY ?? -1,
+  }));
 }

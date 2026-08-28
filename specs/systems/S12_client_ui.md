@@ -317,3 +317,34 @@ rival (red flash) and walks the captive off. Rules it lives under:
   face for anything a player reads to decide — dialogue, journal, option
   labels, intro copy. Terminals keep the body face by FUNCTION: their dot
   leaders are built with `padEnd`, which only aligns in monospace.
+
+## City Info (CI-1, owner-ruled 2026-08-28)
+
+One panel, five tabs, reachable from the splash and the field.
+
+| Tab | Owns | Source |
+|---|---|---|
+| FIRM | bank, reputation, recognition, tier, cache at risk | ledger + view |
+| SORTIE | status, clock, contracts taken/completed/failed, burns, captures | **the client journal** |
+| CITY | world, season, day, light phase, districts, contracts, Firms deployed | briefing + live view |
+| FIRMS | the rival roster | view, gated |
+| LOG | the journal | client |
+
+**Rulings encoded here:**
+
+- **Rival intel is EARNED OR BOUGHT ONLY.** The roster carries name and tier —
+  a Firm operating in a city is not a secret, and the informant has always sold
+  HQ locations, so "somebody is here" was never the fogged part. A position
+  crosses the wire only when `visible()` or `knownRivalHqs` says so. Gated at
+  the VIEW, because a client cannot un-leak a field it was given.
+- **The human/AI distinction is never disclosed.** `isAi` is not sent at all
+  rather than sent-and-ignored.
+- **No new hashed state.** Sortie figures derive from the journal the client
+  already keeps, so nothing here touches the four places or churns a fixture.
+  The trade is honest and printed on the panel: those figures are per SESSION.
+- **Live numbers beat the briefing.** `briefing` is sent once at welcome and
+  never updated; reading `activeFirms` from it made the CITY tab contradict the
+  FIRMS tab on the same panel. Anything the live view can answer, it answers.
+- **`displayDay` is the single home for "what day is it".** `seasonDay` is
+  0-based for the rotation maths; every player-facing surface adds one, so the
+  season clock and `gameClock` cannot disagree.
