@@ -1,70 +1,71 @@
 {
-  "note": "S01. Ship size 64 (D26); 128 must stay exercised. Counts scale with area. Site floor raised to 16 (M4): 12 sites on a 64-world left phase-1 radii empty.",
-  "sizes": [
-    64,
-    128
-  ],
-  "defaultSize": 64,
-  "districts": {
-    "min": 3,
-    "max": 5
-  },
-  "traits": [
-    "industrial",
-    "residential",
-    "commercial",
-    "government",
-    "research",
-    "port"
-  ],
-  "sites": {
-    "min": 16,
-    "max": 24,
-    "minSpacing": 5
-  },
-  "buildings": {
-    "safeHousesPerDistrict": 1,
-    "marketsPerDistrict": 1,
-    "coverShopsPerDistrict": 1,
-    "cubbiesPerDistrict": 3
-  },
-  "holdingSitePerDistrict": true,
-  "dropZones": {
-    "minPerDistrict": 3,
-    "minClearRadius": 8
-  },
-  "patrols": {
-    "perDistrictBase": 4,
-    "routeLengthMin": 8
-  },
-  "streetSpacing": 8,
-  "alleyChance": 96,
-  "note_cameras": "S16 8b. Only a FRACTION of sites are watched (sitePercent): a city where every contract site has cameras removes the choice of which job to take, and D42 wants opposition to make some contracts harder rather than all of them uniformly harder. A camera stands `standoff` cells OFF its site and looks AWAY from it, watching the approach \u2014 mounted ON the objective cell it covered that cell at distance 0 every tick, so surveillance could never complete and the mechanism was a wall rather than a puzzle. arc + spanMax MUST stay below 4 or the cone can swing back onto the objective; test/cameras.test.js asserts it. Placement draws from the site RNG stream AFTER every other placement, so adding cameras left sites, buildings and patrols byte-identical.",
-  "cameras": {
-    "sitePercent": 20,
-    "perSite": 2,
-    "arc": 1,
-    "spanMin": 0,
-    "spanMax": 2,
-    "rangeMin": 5,
-    "rangeMax": 8,
-    "dwellMin": 40,
-    "dwellMax": 90,
-    "standoff": 3
-  },
-  "note_beams": "S16 8c. A beam is laid ACROSS an approach at `standoff` cells out, never through the site cell \u2014 a beam over the objective would make the work impossible rather than the approach interesting, which is the mistake 8b made with cameras. offMin MUST cover TWO cells of movement (~28 ticks each at baseSpeed 9): crossing a beam means stepping into its cell and out again, so a dark window shorter than that can never be used and the mechanism reads as random rather than as timing. The first values (offMin 25) failed exactly that check. test/sensors.test.js asserts it against agents.baseSpeed, so a movement retune cannot silently make every beam uncrossable.",
-  "beams": {
-    "sitePercent": 12,
-    "standoff": 2,
-    "halfLength": 2,
-    "onMin": 60,
-    "onMax": 110,
-    "offMin": 70,
-    "offMax": 100
-  },
-  "note_junctions": "S16 8d. One box per site that actually HAS fixtures \u2014 derived from what was placed, not rolled independently, so there is never a switch with nothing to switch off. `offset` sets it apart from the site so reaching it is its own small problem.",
-  "junctions": {
-    "offset": 4
-  },
-  "note_secured_share": "MEASURED, not guessed. Camera and beam placement roll INDEPENDENTLY, so their shares compound: 35% + 25% produced 56-80% of sites secured, which is 'most contracts harder' rather than D42's 'some'. At 20% + 12% the combined share is ~30%. test/access.test.js asserts the range across seeds, because this is the number that decides whether opposition is a texture or a wall."
+ "note": "S01. Ship size 64 (D26); 128 must stay exercised. Counts scale with area. Site floor raised to 16 (M4): 12 sites on a 64-world left phase-1 radii empty.",
+ "sizes": [
+  64,
+  128
+ ],
+ "defaultSize": 64,
+ "districts": {
+  "min": 3,
+  "max": 5
+ },
+ "traits": [
+  "industrial",
+  "residential",
+  "commercial",
+  "government",
+  "research",
+  "port"
+ ],
+ "sites": {
+  "min": 16,
+  "max": 24,
+  "minSpacing": 5
+ },
+ "buildings": {
+  "safeHousesPerDistrict": 8,
+  "marketsPerDistrict": 1,
+  "coverShopsPerDistrict": 1,
+  "cubbiesPerDistrict": 3,
+  "note_safehouses": "Q50 (ruled 2026-08-28, owner: 'add more safehouses, so the rule works'). Was 1 - four per CITY - which is why hqLandingFor had to roam: with four rival Firms deployed there was usually no free safehouse left in the district a player picked, so the HQ relocated across the map and 62% of drops started somewhere the player had not chosen. The landing rule is now confined to the requested district and prefers the TENT on certified-clear ground over a door a patrol or camera watches (playtest 5), so density is what keeps the tent rare. Measured over 7 seeds with four rivals already holding safehouses: 1 -> 51% tent, 4 -> 24%, 6 -> 18%, 8 -> 1%, and wrong-district is 0% at every density because the district rule is exact, not statistical. NOTE: this also multiplies informant doors (safehouse = informant), so intel is more CONVENIENT to reach - it is not cheaper, and the pricing is untouched."
+ },
+ "holdingSitePerDistrict": true,
+ "dropZones": {
+  "minPerDistrict": 3,
+  "minClearRadius": 8
+ },
+ "patrols": {
+  "perDistrictBase": 4,
+  "routeLengthMin": 8
+ },
+ "streetSpacing": 8,
+ "alleyChance": 96,
+ "note_cameras": "S16 8b. Only a FRACTION of sites are watched (sitePercent): a city where every contract site has cameras removes the choice of which job to take, and D42 wants opposition to make some contracts harder rather than all of them uniformly harder. A camera stands `standoff` cells OFF its site and looks AWAY from it, watching the approach — mounted ON the objective cell it covered that cell at distance 0 every tick, so surveillance could never complete and the mechanism was a wall rather than a puzzle. arc + spanMax MUST stay below 4 or the cone can swing back onto the objective; test/cameras.test.js asserts it. Placement draws from the site RNG stream AFTER every other placement, so adding cameras left sites, buildings and patrols byte-identical.",
+ "cameras": {
+  "sitePercent": 20,
+  "perSite": 2,
+  "arc": 1,
+  "spanMin": 0,
+  "spanMax": 2,
+  "rangeMin": 5,
+  "rangeMax": 8,
+  "dwellMin": 40,
+  "dwellMax": 90,
+  "standoff": 3
+ },
+ "note_beams": "S16 8c. A beam is laid ACROSS an approach at `standoff` cells out, never through the site cell — a beam over the objective would make the work impossible rather than the approach interesting, which is the mistake 8b made with cameras. offMin MUST cover TWO cells of movement (~28 ticks each at baseSpeed 9): crossing a beam means stepping into its cell and out again, so a dark window shorter than that can never be used and the mechanism reads as random rather than as timing. The first values (offMin 25) failed exactly that check. test/sensors.test.js asserts it against agents.baseSpeed, so a movement retune cannot silently make every beam uncrossable.",
+ "beams": {
+  "sitePercent": 12,
+  "standoff": 2,
+  "halfLength": 2,
+  "onMin": 60,
+  "onMax": 110,
+  "offMin": 70,
+  "offMax": 100
+ },
+ "note_junctions": "S16 8d. One box per site that actually HAS fixtures — derived from what was placed, not rolled independently, so there is never a switch with nothing to switch off. `offset` sets it apart from the site so reaching it is its own small problem.",
+ "junctions": {
+  "offset": 4
+ },
+ "note_secured_share": "MEASURED, not guessed. Camera and beam placement roll INDEPENDENTLY, so their shares compound: 35% + 25% produced 56-80% of sites secured, which is 'most contracts harder' rather than D42's 'some'. At 20% + 12% the combined share is ~30%. test/access.test.js asserts the range across seeds, because this is the number that decides whether opposition is a texture or a wall."
 }

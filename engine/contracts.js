@@ -909,28 +909,39 @@ export function seedSitesNearHq(state, hq, cfg, citygenCfg) {
   if (near.length >= want) return 0;
 
   const { isPassableForSite } = siteHelpers(state);
+  const baseSpacing = citygenCfg?.sites?.minSpacing ?? 5;
   let added = 0;
-  for (let attempt = 0; attempt < 300 && near.length + added < want; attempt++) {
-    const dx = roll(state, -radius, radius);
-    const dy = roll(state, -radius, radius);
-    const x = hq.cellX + dx, y = hq.cellY + dy;
-    if (x < 1 || y < 1 || x >= state.size - 1 || y >= state.size - 1) continue;
-    const fromHq = Math.abs(dx) + Math.abs(dy);
-    if (fromHq > radius || fromHq < minFromHq) continue;
-    if (!isPassableForSite(x, y)) continue;
-    const spacing = citygenCfg?.sites?.minSpacing ?? 5;
-    let clash = false;
-    for (const s of state.sites) {
-      if (Math.abs(s.cellX - x) + Math.abs(s.cellY - y) < spacing) { clash = true; break; }
+  // RELAX THE SPACING RATHER THAN THE COUNT. D35 promises real work inside the
+  // phase-1 radius; it says nothing about how prettily spaced that work is. The
+  // single-pass version silently under-delivered wherever the HQ happened to
+  // land somewhere tight — most candidate cells inside the radius are either
+  // building mass or within `minSpacing` of an existing site — and a ruling
+  // quietly honoured 4 times in 5 is not a ruling. Surfaced when Q50's landing
+  // change moved the HQ and seed 1411 dropped to 2 of 3, but the fragility was
+  // always there and nothing would have reported it.
+  for (const spacing of [baseSpacing, Math.max(2, baseSpacing - 2), 1]) {
+    for (let attempt = 0; attempt < 300 && near.length + added < want; attempt++) {
+      const dx = roll(state, -radius, radius);
+      const dy = roll(state, -radius, radius);
+      const x = hq.cellX + dx, y = hq.cellY + dy;
+      if (x < 1 || y < 1 || x >= state.size - 1 || y >= state.size - 1) continue;
+      const fromHq = Math.abs(dx) + Math.abs(dy);
+      if (fromHq > radius || fromHq < minFromHq) continue;
+      if (!isPassableForSite(x, y)) continue;
+      let clash = false;
+      for (const s of state.sites) {
+        if (Math.abs(s.cellX - x) + Math.abs(s.cellY - y) < spacing) { clash = true; break; }
+      }
+      if (clash) continue;
+      state.sites.push({
+        id: state.sites.length,
+        type: roll(state, 0, 5),
+        districtId: state.districtOwner ? state.districtOwner[y * state.size + x] : 0,
+        cellX: x, cellY: y, status: 0,
+      });
+      added++;
     }
-    if (clash) continue;
-    state.sites.push({
-      id: state.sites.length,
-      type: roll(state, 0, 5),
-      districtId: state.districtOwner ? state.districtOwner[y * state.size + x] : 0,
-      cellX: x, cellY: y, status: 0,
-    });
-    added++;
+    if (near.length + added >= want) break;
   }
   if (added) state.events.push({ type: "sitesSeeded", hqId: hq.id, count: added });
   return added;

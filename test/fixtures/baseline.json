@@ -1,6 +1,6 @@
 {
   "era": "sm-era-0",
-  "reason": "S09/Q45 wait-for-dark: agent gains waitUntilDark (hashed in both twins) and citygen places 3 cubby holes per district on an independent stream — layout and agent bytes both legitimately change; no event drift expected",
+  "reason": "Q50: safehouses 1->8 per district and district-confined HQ landing (worldgen), plus era sm-era-2",
   "seed": 20260804,
   "size": 64,
   "steps": [

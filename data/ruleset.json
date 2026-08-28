@@ -1,21 +1,21 @@
 {
-  "version": "sm-era-1",
-  "note": "Era 1 (2026-08-27, Q47 ruled): the world after day-night, mission areas, civilians and the waiting actions. Every battery baseline measured under sm-era-0 is VOID - the pacing 300 re-run defines this era's baselines (S14 era discipline).",
-  "files": [
-    "terrain.json",
-    "agents.json",
-    "detection.json",
-    "combat.json",
-    "hq.json",
-    "contracts.json",
-    "citygen.json",
-    "ai_firms.json",
-    "standoff.json",
-    "vehicles.json",
-    "firms.json",
-    "season.json",
-    "security.json",
-    "areas.json",
-    "civilians.json"
-  ]
+ "version": "sm-era-2",
+ "note": "Era 2 (2026-08-28, Q50 ruled): safehouses go from 1 to 8 per district and hqLandingFor is confined to the requested district, so a drop lands where the player chose - previously 62% did not. This is a WORLDGEN change (more buildings, different HQ placement, different seeded work), so every baseline measured under sm-era-1 is void. Era-1 batteries were QUEUED but had not run when this landed, so nothing is lost: the queued pacing 300 and patrol 3/4 runs now define era 2. Era 1 was the world after day-night, mission areas, civilians and the waiting actions; era 0 preceded all of it. The version is hashed (D65), so two hosts on different eras cannot agree by accident.",
+ "files": [
+  "terrain.json",
+  "agents.json",
+  "detection.json",
+  "combat.json",
+  "hq.json",
+  "contracts.json",
+  "citygen.json",
+  "ai_firms.json",
+  "standoff.json",
+  "vehicles.json",
+  "firms.json",
+  "season.json",
+  "security.json",
+  "areas.json",
+  "civilians.json"
+ ]
 }

@@ -51,14 +51,29 @@ export function createHq(id, firmId, cellX, cellY, buildingId = -1) {
 // open) only when no safehouse qualifies.
 export function hqLandingFor(state, cellX, cellY, cfg) {
   const claimed = new Set(state.hqs.map((h) => h.buildingId));
-  // Two passes: prefer a door that is ALSO clear of patrols — findDropZones
-  // has always guaranteed that for the request, and the landing must not give
-  // it back. Playtest 5 reproduced the failure: the snap landed an agent on a
-  // door with a patrol at distance 1 and the operative was BURNED during the
-  // drop cinematic, before the player ever had control. If no door is
-  // patrol-clear this moment (patrols move), fall back to the nearest free
-  // door — landing near a patrol beats refusing to land.
-  for (const requirePatrolClear of [true, false]) {
+  // The district of the ground the player actually asked for. -1 (no district
+  // map, or a cell outside every district) disables the constraint rather than
+  // refusing to land — a landing rule must never be able to make a drop
+  // impossible.
+  const districtOf = (x, y) => (state.districtOwner
+    ? (state.districtOwner[y * state.size + x] ?? -1) : -1);
+  const homeDistrict = districtOf(cellX, cellY);
+  // Prefer a door that is ALSO clear of patrols and cameras — findDropZones has
+  // always guaranteed that for the request, and the landing must not give it
+  // back. Playtest 5 reproduced the failure: the snap landed an agent on a door
+  // with a patrol at distance 1 and the operative was BURNED during the drop
+  // cinematic, before the player ever had control.
+  //
+  // THE FALLBACK ORDER CHANGED WITH Q50. It used to be "clear door, else ANY
+  // free door in the world", on the reasoning that landing near a patrol beats
+  // refusing to land. Once the search is confined to one district that reasoning
+  // stops holding, because there is now a third option that is strictly better
+  // than a watched door: the TENT, on the requested cell, which findDropZones
+  // has already certified clear of patrols and cameras. So an unclear door is
+  // the LAST resort, taken only when the requested ground itself is unusable.
+  // Being burned before you have control is the thing playtest 5 ruled out; not
+  // having a roof is merely a worse deployment.
+  for (const requirePatrolClear of [true]) {
     let best = null, bestD = Infinity;
     for (const b of state.buildings) {
       if (b.kind !== BUILDING_SAFEHOUSE || claimed.has(b.id)) continue;
@@ -86,22 +101,33 @@ export function hqLandingFor(state, cellX, cellY, cfg) {
         }
       }
       if (!clear) continue;
+      // SAME DISTRICT, always (Q50, ruled 2026-08-28). This search used to have
+      // no constraint at all, so a district with no free safehouse relocated the
+      // Field HQ to wherever the nearest one happened to be — on seed 4711,
+      // choosing Industrial in the drop picker deployed you 46 cells away in the
+      // RESIDENTIAL district, and 62% of all drops landed somewhere the player
+      // had not chosen. The picker technically showed it (it draws the predicted
+      // landing), but "you picked Industrial and started in Residential" is the
+      // D56 honesty gap the playtest-10 fix closed, reopened from underneath.
+      //
+      // A DISTANCE BOUND WAS THE WRONG TOOL and the measurements said so: no
+      // radius drove the wrong-district rate below about 4%, because a drop near
+      // a border legitimately has a nearer safehouse across the line. Matching
+      // the district makes it exactly zero by construction rather than
+      // statistically — the promise the picker makes is about the district, so
+      // that is the thing to check. The radius survives as a secondary comfort
+      // bound on how far you walk WITHIN your own district.
+      if (homeDistrict >= 0 && districtOf(b.entranceX, b.entranceY) !== homeDistrict) continue;
       const d = Math.abs(b.entranceX - cellX) + Math.abs(b.entranceY - cellY);
-      // BOUNDED (playtest 13). This search had no maximum distance, so a
-      // district with no free safehouse relocated the Field HQ to wherever the
-      // nearest one happened to be — on seed 4711, choosing Industrial in the
-      // drop picker deployed you 46 cells away in the RESIDENTIAL district.
-      // The picker technically showed it (it draws the predicted landing), but
-      // "you picked Industrial and started in Residential" is the D56 honesty
-      // gap the playtest-10 fix was written to close, reopened from underneath.
-      // Past the bound the tent fallback below pitches at the requested cell,
-      // which is what the player actually asked for.
-      if (d > (cfg.landingSearchRadius ?? 14)) continue;
+      if (d > (cfg.landingSearchRadius ?? 9999)) continue;
       // Strict < resolves ties to the lowest building id — deterministic.
       if (d < bestD) { bestD = d; best = b; }
     }
     if (best) return { cellX: best.entranceX, cellY: best.entranceY, buildingId: best.id };
   }
+  // No free safehouse in this district: pitch the tent where the player asked.
+  // That is honest — they chose this ground — and it is why safehouse density
+  // was raised in the same ruling, so the fallback stays uncommon.
   return { cellX, cellY, buildingId: -1 };
 }
 

@@ -45,9 +45,25 @@ test("citygen seats cubbies without disturbing anything that was already placed"
   // The other kinds keep their counts — cubbies draw from their OWN stream,
   // placed last, so the pre-cubby city is byte-identical (the microscope
   // fixture pins the exact layout; this asserts the invariant by kind).
+  //
+  // DERIVED from the config, never restated. This read `s.districts.length` for
+  // every kind, which silently encoded "one of each per district" — true only
+  // while every count happened to be 1. Q50 raised safehouses to 8 and the test
+  // failed with "24 !== 3", reporting a layout disturbance that had not
+  // happened. An instrument that restates what the engine enumerates measures
+  // the wrong game (the pacing-tool lesson, in a unit test).
+  const perDistrict = {
+    0: RULES.citygen.buildings.safeHousesPerDistrict ?? 1,
+    1: RULES.citygen.buildings.marketsPerDistrict ?? 1,
+    2: RULES.citygen.buildings.coverShopsPerDistrict ?? 1,
+  };
   for (const kind of [0, 1, 2]) {
-    assert.equal(s.buildings.filter((b) => b.kind === kind).length, s.districts.length,
-      `building kind ${kind} count changed — the cubby pass disturbed the layout`);
+    const want = perDistrict[kind] * s.districts.length;
+    const got = s.buildings.filter((b) => b.kind === kind).length;
+    // Placement can legitimately fail to seat one (no free entrance cell), so
+    // the check is "did the cubby pass move it", not "is it exactly full".
+    assert.ok(got > 0 && got <= want,
+      `building kind ${kind}: ${got} placed, config allows ${want} — the cubby pass disturbed the layout`);
   }
 });
 

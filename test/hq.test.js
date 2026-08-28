@@ -31,43 +31,71 @@ function deployed(seed = 4711) {
   return { s, zone: z };
 }
 
-test("PLAYTEST 13: the landing search is BOUNDABLE, and honours its bound", () => {
-  // The defect this exists for: `hqLandingFor` searched for the nearest free
-  // safehouse with no maximum distance, so a district without one relocated the
-  // Field HQ clear across the map. Measured over 5 seeds and 184 drops, the
-  // unbounded search lands 62% of drops in a district the player did not
-  // choose, median travel 30 cells on a 64-cell map. Found while repeatedly
-  // failing to photograph the industrial smoke and landing in Residential.
+test("Q50: a drop lands in the district the player CHOSE, or pitches a tent there", () => {
+  // The defect: `hqLandingFor` searched every safehouse in the world, so a
+  // district with no free one relocated the Field HQ clear across the map —
+  // 62% of drops landed in a district the player had not chosen (median travel
+  // 30 cells on a 64-cell map). Found while repeatedly failing to photograph
+  // the industrial smoke and landing in Residential instead.
   //
-  // The shipped radius is deliberately 9999 — the behaviour that has always
-  // shipped — because tightening it trades one defect for another (at 14, 71%
-  // of drops pitch a tent instead of claiming a safehouse, gutting the
-  // playtest-4 HQ-in-a-building ruling). Q50 has the table; the owner rules.
+  // A distance bound was the WRONG TOOL and the measurements said so: no radius
+  // drove the wrong-district rate below ~4%, because a drop near a border
+  // legitimately has a nearer safehouse across the line. Matching the DISTRICT
+  // makes it zero by construction. Ruled 2026-08-28 with the safehouse density
+  // raise that keeps the tent fallback rare.
   //
-  // So this asserts the MECHANISM rather than the policy: a bound, when set,
-  // is obeyed, and past it the tent fallback lands exactly where the player
-  // asked. That is falsifiable today and makes the ruling a one-number edit.
+  // Asserted WITH RIVALS ALREADY DEPLOYED, because that is the state a
+  // late-joining player drops into and the state the old density failed in: at
+  // 1 safehouse per district, 51% of such drops got no building at all.
+  for (const seed of [4711, 1000, 1411]) {
+    const s = makeWorld({ seed });
+    const zones = findDropZones(s, RULES.citygen);
+    assert.ok(zones.length, `seed ${seed}: fixture has no drop zones`);
+    // Four rival HQs holding safehouses.
+    for (const z of zones.filter((_, i) => i % 23 === 0).slice(0, 4)) {
+      const l = hqLandingFor(s, z.cellX, z.cellY, RULES.hq);
+      s.hqs.push({ id: s.hqs.length, firmId: 90 + s.hqs.length, buildingId: l.buildingId,
+        cellX: l.cellX, cellY: l.cellY });
+    }
+    let tents = 0, landings = 0;
+    for (const z of zones.filter((_, i) => i % 5 === 0)) {
+      const l = hqLandingFor(s, z.cellX, z.cellY, RULES.hq);
+      const asked = s.districtOwner[z.cellY * s.size + z.cellX];
+      if (l.buildingId < 0) {
+        tents++;
+        // The tent is honest: it pitches on the ground the player asked for.
+        assert.equal(l.cellX, z.cellX, "the tent moved off the requested cell");
+        assert.equal(l.cellY, z.cellY, "the tent moved off the requested cell");
+        continue;
+      }
+      landings++;
+      const got = s.districtOwner[l.cellY * s.size + l.cellX];
+      assert.equal(got, asked,
+        `seed ${seed}: a drop in district ${asked} landed the HQ in ${got}`);
+    }
+    assert.ok(landings > 0, `seed ${seed}: every drop tented — density is too low`);
+    // The density ruling: tents must be the exception, not the norm. It was 51%.
+    assert.ok(tents / (tents + landings) < 0.2,
+      `seed ${seed}: ${tents}/${tents + landings} drops pitched a tent — safehouses are too sparse`);
+  }
+});
+
+test("Q50: the secondary radius bound still works, so the lever cannot rot", () => {
+  // The district rule does the honesty work, so `landingSearchRadius` ships
+  // permissive. Exercised here at a tight value anyway: config that nothing
+  // reads is the dead-`redropReputationHit` shape, and a lever nobody tests is
+  // a lever nobody can trust when the owner does want it.
   const s = makeWorld({ seed: 4711 });
   const zones = findDropZones(s, RULES.citygen);
-  assert.ok(zones.length, "fixture has no drop zones");
   const tight = { ...RULES.hq, landingSearchRadius: 6 };
-  let bounded = 0, tents = 0;
+  let tents = 0, bounded = 0;
   for (const z of zones.filter((_, i) => i % 11 === 0)) {
     const l = hqLandingFor(s, z.cellX, z.cellY, tight);
     const d = Math.abs(l.cellX - z.cellX) + Math.abs(l.cellY - z.cellY);
-    if (l.buildingId < 0) {
-      tents++;
-      assert.equal(d, 0, "the tent fallback must pitch at the requested cell");
-    } else {
-      bounded++;
-      assert.ok(d <= 6, `landing travelled ${d} cells past a bound of 6`);
-    }
+    if (l.buildingId < 0) { tents++; assert.equal(d, 0); } else { bounded++; assert.ok(d <= 6); }
   }
   assert.ok(tents > 0, "a 6-cell bound should force some tent fallbacks");
-  // ...and the shipped config keeps the search unbounded, so this test cannot
-  // quietly become a policy change nobody ruled on.
-  assert.ok(RULES.hq.landingSearchRadius >= 999,
-    "the landing bound was tightened without a ruling — see Q50");
+  assert.ok(bounded > 0, "a 6-cell bound should still find some doors");
 });
 
 test("drop-in establishes the HQ in the nearest safehouse, and the agent lands with it", () => {
@@ -79,8 +107,13 @@ test("drop-in establishes the HQ in the nearest safehouse, and the agent lands w
   // drop radius and outside every active camera's range (playtest 8) —
   // computed independently here so the engine's hqLandingFor cannot verify
   // itself.
+  // Q50: ...and IN THE REQUESTED DISTRICT. The twin has to carry the district
+  // rule too, or it stops being a check on the engine and becomes a check on
+  // the engine's old behaviour.
+  const asked = s.districtOwner[zone.cellY * s.size + zone.cellX];
   const safehouses = s.buildings.filter((b) => b.kind === 0).filter((b) =>
-    s.patrols.every((p) =>
+    s.districtOwner[b.entranceY * s.size + b.entranceX] === asked
+    && s.patrols.every((p) =>
       Math.abs(p.x - b.entranceX) + Math.abs(p.y - b.entranceY) >= RULES.hq.dropZoneMinClearRadius)
     && (s.cameras ?? []).every((c) => c.disabled
       || Math.max(Math.abs(c.cellX - b.entranceX), Math.abs(c.cellY - b.entranceY)) > (c.range | 0)));
