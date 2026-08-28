@@ -1041,3 +1041,56 @@ test("DC-2: neon and pipes are EMITTED for the districts that own them", async (
   const again = t3.blockMassing(Array.from(city.map.cells), 64, 4711, districts);
   assert.equal(again.decor.filter((d) => d.kind === "neon").length, neon.length);
 });
+
+test("PLAYTEST 13: the works smoke, and residential ground grows parks", async () => {
+  // Finding 7: "industrial area, i.e. piping with smoke coming out; residential
+  // areas should have some parks." Emission, not intent — the same guard DC-2
+  // gets, for the same reason: a decor kind nothing ever pushes is a feature
+  // that silently does nothing.
+  const t3 = await import("../client/js/terrain3d.js");
+  const { generateCity } = await import("../engine/citygen.js");
+  const { RULES } = await import("./helpers.js");
+  const tokens = JSON.parse(readFileSync(
+    join(ROOT, "client/assets/metadata/style_tokens.json"), "utf8"));
+  t3.setTerrainTokens(tokens.terrain);
+
+  let smokeSeen = 0, parkSeen = 0, seedsWithParks = 0;
+  for (const seed of [4711, 1000, 1411]) {
+    const city = generateCity(seed, 64, RULES.citygen);
+    const districts = { owner: Array.from(city.districtOwner),
+      traits: city.districts.map((d) => d.trait) };
+    const cells = Array.from(city.map.cells);
+    const { decor } = t3.blockMassing(cells, 64, seed, districts);
+    const smoke = decor.filter((d) => d.kind === "smoke");
+    smokeSeen += smoke.length;
+    // A plume must sit ON a stack: smoke over open ground is weather, not a
+    // works, and it is emitted with the stack precisely so it cannot drift off.
+    assert.ok(smoke.every((d) => d.style === "industrial"),
+      `seed ${seed}: smoke rose off a non-industrial block`);
+    assert.ok(smoke.every((d) => d.top > 1.5),
+      `seed ${seed}: a plume started below stack height`);
+
+    const parks = t3.parkPlacements(cells, 64, seed, districts);
+    parkSeen += parks.length;
+    if (parks.length) seedsWithParks++;
+    // Parks belong on OPEN and YARD ground in residential districts, and
+    // nowhere else. A tree on a road cell is a prop standing in the playfield.
+    for (const p of parks) {
+      assert.ok(t3.PARK_TILES.includes(cells[p.y * 64 + p.x]),
+        `seed ${seed}: park on tile ${cells[p.y * 64 + p.x]} at ${p.x},${p.y}`);
+      assert.ok(p.trees.length >= 2, `seed ${seed}: a park with ${p.trees.length} tree(s)`);
+      for (const t of p.trees) {
+        assert.ok(Math.abs(t.dx) < 0.5 && Math.abs(t.dz) < 0.5,
+          `seed ${seed}: a tree wandered out of its own cell`);
+      }
+    }
+  }
+  assert.ok(smokeSeen > 0, "no chimney anywhere in three cities is smoking");
+  assert.ok(parkSeen > 0, "no residential ground anywhere grew a park");
+  assert.equal(seedsWithParks, 3, "some cities got no parks at all");
+
+  // No districts, no parks — rather than trees scattered over the whole city
+  // because the district map had not arrived yet.
+  const bare = generateCity(4711, 64, RULES.citygen);
+  assert.deepEqual(t3.parkPlacements(Array.from(bare.map.cells), 64, 4711, null), []);
+});

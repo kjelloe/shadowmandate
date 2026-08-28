@@ -24,7 +24,7 @@
 // arrival — the simulation stays exactly as discrete as it was.
 
 import * as THREE from "three";
-import { buildGround, buildBlocks, buildClutter, buildRoads, setTerrainTokens } from "./terrain3d.js";
+import { buildGround, buildBlocks, buildClutter, buildRoads, buildParks, setTerrainTokens } from "./terrain3d.js";
 import { buildArea, setAreaTokens } from "./area3d.js";
 import { siteRoles, objectiveCell, buildingRole, siteVisual, burnedGuidance, coverShops, pinnedCells, hqInBuilding, moveTarget, walkOffset, ARRIVE_CLAMP, areaView, transitLanes, hoverCarsAt } from "./models.js";
 import { buildProcedural, applyTint } from "./asset_factory.js";
@@ -185,6 +185,10 @@ export function createScene(canvas) {
   let terrainTiles = null;     // kept for the walking-position decision (D61)
   const lane = { x: 0, z: 0 }; // the slewed lateral walk offset (D61)
   let blinkGroups = null;      // faulty street lamps (playtest 5), toggled by tick
+  let smokeGroups = null;      // chimney plumes (playtest 13), drifted by tick
+  const smokeMat = new THREE.Matrix4();
+  const smokePos = new THREE.Vector3(), smokeScl = new THREE.Vector3();
+  const smokeQuat = new THREE.Quaternion();
   let mapSize = 64;
   let terrain = null;
   const markers = new THREE.Group();
@@ -355,7 +359,17 @@ export function createScene(canvas) {
     terrain = new THREE.Group();
     terrain.add(buildGround(tiles, size, seed));
     const blocks = buildBlocks(tiles, size, seed, districts);
-    if (blocks) terrain.add(blocks);
+    if (blocks) {
+      terrain.add(blocks);
+      // Chimney smoke rides on the block group (playtest 13, finding 7); it is
+      // drifted per frame from the world tick, like the faulty street lamps.
+      smokeGroups = blocks.userData?.smoke ?? null;
+    } else smokeGroups = null;
+    // Parks: residential ground cover. Districts are required, so a terrain
+    // built before the district map arrives simply has none rather than
+    // scattering trees across the whole city.
+    const parks = buildParks(tiles, size, seed, districts);
+    if (parks) terrain.add(parks);
     const clutter = buildClutter(tiles, size, seed);
     if (clutter) terrain.add(clutter);
     const roads = buildRoads(tiles, size, seed);
@@ -700,6 +714,27 @@ export function createScene(canvas) {
       const phase = Math.floor(view.tick / 6) % 2 === 0;
       for (const p of blinkGroups.A) p.visible = phase;
       for (const p of blinkGroups.B) p.visible = !phase;
+    }
+
+    // Smoke drift. Each puff rises and leans away on its own phase, so a row of
+    // stacks does not pulse in unison — keyed off the world tick like every
+    // other animated thing here, so two clients watching the same works see the
+    // same weather.
+    if (smokeGroups) {
+      const t = view.tick / 22;
+      for (const d of smokeGroups.drift) {
+        const climb = (t + d.phase) % 1;
+        const lean = 0.15 + climb * 0.7 + d.k * 0.08;
+        const grow = d.r * (1 + climb * 1.3);
+        // Reused temporaries: this runs for every puff on every frame now that
+        // drawing is on rAF, and allocating three objects per puff per frame
+        // would make the GC the most expensive thing in the plume.
+        smokePos.set(d.x + lean * 0.55, d.base + climb * 1.1, d.z + lean * 0.35);
+        smokeScl.set(grow, grow * 0.8, grow);
+        smokeMat.compose(smokePos, smokeQuat, smokeScl);
+        smokeGroups.mesh.setMatrixAt(d.idx, smokeMat);
+      }
+      smokeGroups.mesh.instanceMatrix.needsUpdate = true;
     }
 
     // The objective beacon, pulsing so it reads as live rather than painted on.

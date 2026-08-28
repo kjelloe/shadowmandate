@@ -87,6 +87,16 @@ export function hqLandingFor(state, cellX, cellY, cfg) {
       }
       if (!clear) continue;
       const d = Math.abs(b.entranceX - cellX) + Math.abs(b.entranceY - cellY);
+      // BOUNDED (playtest 13). This search had no maximum distance, so a
+      // district with no free safehouse relocated the Field HQ to wherever the
+      // nearest one happened to be — on seed 4711, choosing Industrial in the
+      // drop picker deployed you 46 cells away in the RESIDENTIAL district.
+      // The picker technically showed it (it draws the predicted landing), but
+      // "you picked Industrial and started in Residential" is the D56 honesty
+      // gap the playtest-10 fix was written to close, reopened from underneath.
+      // Past the bound the tent fallback below pitches at the requested cell,
+      // which is what the player actually asked for.
+      if (d > (cfg.landingSearchRadius ?? 14)) continue;
       // Strict < resolves ties to the lowest building id — deterministic.
       if (d < bestD) { bestD = d; best = b; }
     }

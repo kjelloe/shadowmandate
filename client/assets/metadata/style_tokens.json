@@ -1,5 +1,5 @@
 {
- "note": "Painted Low-Poly Hybrid style tokens (S15). SINGLE SOURCE OF TRUTH for materials, palette and Firm identity \u2014 every procedural model is generated from this file, and the renderer must not carry colours of its own. Forked from the sibling project's pattern (Q41a/D46).",
+ "note": "Painted Low-Poly Hybrid style tokens (S15). SINGLE SOURCE OF TRUTH for materials, palette and Firm identity — every procedural model is generated from this file, and the renderer must not carry colours of its own. Forked from the sibling project's pattern (Q41a/D46).",
  "materials": {
   "paintedMatte": {
    "roughness": 0.85,
@@ -22,7 +22,7 @@
    "metalness": 0.0
   }
  },
- "note_marks": "Carried verbatim from the pre-pipeline MARK table in scene.js so the 7a pipeline changes HOW things are built without changing what anything means. The minimap reads the same values, so the two can never disagree. `objective` (playtest 11) is the MISSION-TARGET ring/beacon colour \u2014 deliberately distinct from siteActive (which tints the site MODEL) so the where-to-go circle never blends with the what-it-is marker.",
+ "note_marks": "Carried verbatim from the pre-pipeline MARK table in scene.js so the 7a pipeline changes HOW things are built without changing what anything means. The minimap reads the same values, so the two can never disagree. `objective` (playtest 11) is the MISSION-TARGET ring/beacon colour — deliberately distinct from siteActive (which tints the site MODEL) so the where-to-go circle never blends with the what-it-is marker.",
  "marks": {
   "site": "#6B6250",
   "siteOffered": "#D9A441",
@@ -58,7 +58,7 @@
   "hoverCar": "#3E6E8E",
   "cubby": "#4E5A50"
  },
- "note_body": "Body colours are the PAINTED part \u2014 the part a tint never touches. Keeping them separate from marks is what lets detection state stay readable: the coat stays the coat while the state band changes colour.",
+ "note_body": "Body colours are the PAINTED part — the part a tint never touches. Keeping them separate from marks is what lets detection state stay readable: the coat stays the coat while the state band changes colour.",
  "body": {
   "coat": "#3C424A",
   "coatDark": "#2C3138",
@@ -72,7 +72,7 @@
   "bars": "#6E747C",
   "plinth": "#2A2E36"
  },
- "note_firms": "S15 palettes. Firm identity is carried by COLOUR AND SYMBOL together \u2014 colour alone fails for a colourblind player, which is the same reason the 7a silhouette pass exists.",
+ "note_firms": "S15 palettes. Firm identity is carried by COLOUR AND SYMBOL together — colour alone fails for a colourblind player, which is the same reason the 7a silhouette pass exists.",
  "firms": [
   {
    "id": 0,
@@ -99,7 +99,7 @@
    "symbol": "dot"
   }
  ],
- "note_terrain": "The TILE look \u2014 the other half of Q41c, retuned 2026-08-18 to the dystopian night reference (playtest 3, finding 3; debugging/dystopia-city-01.png): colder, darker, streets kept a step brighter than the mass so navigation survives the murk, warm sodium reserved for entrances and checkpoints. Values are the authored hex; consumers convert with a plain /255, NOT through THREE.Color \u2014 colour management would sRGB-decode them and darken the ground by a factor of five.",
+ "note_terrain": "The TILE look — the other half of Q41c, retuned 2026-08-18 to the dystopian night reference (playtest 3, finding 3; debugging/dystopia-city-01.png): colder, darker, streets kept a step brighter than the mass so navigation survives the murk, warm sodium reserved for entrances and checkpoints. Values are the authored hex; consumers convert with a plain /255, NOT through THREE.Color — colour management would sRGB-decode them and darken the ground by a factor of five.",
  "terrain": {
   "tiles": {
    "0": "#1E2124",
@@ -114,18 +114,18 @@
    "9": "#2A2724",
    "10": "#152028"
   },
-  "note_block": "Building mass tone ramp. A second seeded hash draw picks a point on it, so tone and height vary independently \u2014 keying both off one value makes every tall block the same shade, which reads as authored rather than grown.",
+  "note_block": "Building mass tone ramp. A second seeded hash draw picks a point on it, so tone and height vary independently — keying both off one value makes every tall block the same shade, which reads as authored rather than grown.",
   "blockLo": "#20242F",
   "blockHi": "#3A424F",
   "unknown": "#222222",
   "backdrop": "#0B0E14",
-  "note_windows": "The lit windows are what make a dark tower read as a TOWER rather than a hole in the render (the reference image is mostly windows). Deterministic per seed; density is the fraction of sockets lit. Warm is interior sodium, cool is screen-glow \u2014 two temperatures is what makes a facade look inhabited rather than printed.",
+  "note_windows": "The lit windows are what make a dark tower read as a TOWER rather than a hole in the render (the reference image is mostly windows). Deterministic per seed; density is the fraction of sockets lit. Warm is interior sodium, cool is screen-glow — two temperatures is what makes a facade look inhabited rather than printed.",
   "windows": {
    "lit": "#E4C87A",
    "cool": "#8FB6C9",
    "density": 0.16
   },
-  "note_road": "The street dressing (playtest 5): streets are 2-lane with centre dashes, transit avenues are 4-lane with a double centre line and lane dashes, and lamp posts stand at the kerb \u2014 some lit (warm sodium or cool halide), some dead, some blinking. All deterministic per seed, all decorative: markings are paint on the ground and lamps sit OFF the cell centres, so nothing covers an agent or implies an obstacle. lampChance is per road cell; litShare/blinkShare partition the lamps (the remainder are dead \u2014 this city does not maintain its streets).",
+  "note_road": "The street dressing (playtest 5): streets are 2-lane with centre dashes, transit avenues are 4-lane with a double centre line and lane dashes, and lamp posts stand at the kerb — some lit (warm sodium or cool halide), some dead, some blinking. All deterministic per seed, all decorative: markings are paint on the ground and lamps sit OFF the cell centres, so nothing covers an agent or implies an obstacle. lampChance is per road cell; litShare/blinkShare partition the lamps (the remainder are dead — this city does not maintain its streets).",
   "road": {
    "marking": "#787E86",
    "sidewalk": "#5A616C",
@@ -137,7 +137,7 @@
    "litShare": 0.6,
    "blinkShare": 0.15
   },
-  "note_clutter": "Street furniture (playtest 3, finding 3 \u2014 the reference city is CLUTTERED at ground level). Purely cosmetic, deterministic per seed, placed only on alleys, yards and rough ground, and kept low and OFF cell centres: the honesty rule means decoration must never cover an agent or read as an obstacle the simulation does not model. density is per eligible cell.",
+  "note_clutter": "Street furniture (playtest 3, finding 3 — the reference city is CLUTTERED at ground level). Purely cosmetic, deterministic per seed, placed only on alleys, yards and rough ground, and kept low and OFF cell centres: the honesty rule means decoration must never cover an agent or read as an obstacle the simulation does not model. density is per eligible cell.",
   "clutter": {
    "crate": "#4A4438",
    "barrel": "#39414D",
@@ -145,7 +145,7 @@
    "tarp": "#4E3A30",
    "density": 0.55
   },
-  "note_districts": "District identity (playtest 5): each engine district trait styles its building mass \u2014 ramp colours, window density/temperature/size, height scale, and which decorations grow on roofs and facades. Industrial is low with big factory glazing and stacks; residential is mid-rise with warm windows, balconies, rooftop gardens and lit ground-floor shopfronts; commercial keeps the highriser canyon; government is austere and dark; research runs cool screen-glow; port is low and utilitarian. windows.scale multiplies the socket size (a factory window is a WALL of glass); warmShare splits sodium interiors from screen glow.",
+  "note_districts": "District identity (playtest 5): each engine district trait styles its building mass — ramp colours, window density/temperature/size, height scale, and which decorations grow on roofs and facades. Industrial is low with big factory glazing and stacks; residential is mid-rise with warm windows, balconies, rooftop gardens and lit ground-floor shopfronts; commercial keeps the highriser canyon; government is austere and dark; research runs cool screen-glow; port is low and utilitarian. windows.scale multiplies the socket size (a factory window is a WALL of glass); warmShare splits sodium interiors from screen glow.",
   "districtStyles": {
    "industrial": {
     "blockLo": "#23261F",
@@ -157,7 +157,9 @@
      "warmShare": 0.6
     },
     "pipes": "#39414E",
-    "pipeDensity": 0.35
+    "pipeDensity": 0.35,
+    "smoke": "#6B6E74",
+    "smokeDensity": 0.7
    },
    "residential": {
     "blockLo": "#272430",
@@ -174,7 +176,15 @@
     "neon": [
      "#FFB13F"
     ],
-    "neonDensity": 0.08
+    "neonDensity": 0.08,
+    "park": {
+     "lawn": "#2A3A26",
+     "path": "#3C3A33",
+     "foliage": "#37542F",
+     "foliageAlt": "#2C4526",
+     "trunk": "#2A2119",
+     "density": 0.5
+    }
    },
    "commercial": {
     "blockLo": "#20242F",
@@ -240,9 +250,10 @@
    "beacon": "#C2452F",
    "tank": "#3A4046"
   },
-  "note_districtRound2": "DC-2 (2026-08-27, ref cyperpunk-example.png): facade NEON per district - commercial pink-dominant and dense, research cool cyan, port/residential sparse and warm; INDUSTRIAL grows external pipe runs. Densities are look judgements refined against screenshots, like the massing weights."
+  "note_districtRound2": "DC-2 (2026-08-27, ref cyperpunk-example.png): facade NEON per district - commercial pink-dominant and dense, research cool cyan, port/residential sparse and warm; INDUSTRIAL grows external pipe runs. Densities are look judgements refined against screenshots, like the massing weights.",
+  "note_park": "District character round three (playtest 13, finding 7): 'industrial area needs piping with smoke coming out, residential areas should have some parks'. Smoke is a drifting plume above the works stacks, keyed off the world tick like the faulty lamps. A park is a lawn patch with trees and a path, grown on OPEN and YARD ground inside residential districts only — the one district whose identity was still carried entirely by window temperature. density is the share of eligible open cells that become parkland."
  },
- "note_scale": "World scale (playtest 7, D60): the engine grid is untouched \u2014 cells are cells \u2014 but FIGURES render at 1/8 of a cell (playtest 12: 1/16 figures were a few pixels \u2014 the ruled ratio is figures 8x taller on screen with roads 4x wider, i.e. figures 2x relative plus a much closer camera; the closest zoom delivers the full 8x). Applied by manifest CLASS at build time in the scene; a per-entry `scale` in the manifest overrides the class (the dropship is a vehicle, not a person). Rings that mark a CELL (HQ, pins, re-spray) stay cell-scale; the ring under a figure follows the figure.",
+ "note_scale": "World scale (playtest 7, D60): the engine grid is untouched — cells are cells — but FIGURES render at 1/8 of a cell (playtest 12: 1/16 figures were a few pixels — the ruled ratio is figures 8x taller on screen with roads 4x wider, i.e. figures 2x relative plus a much closer camera; the closest zoom delivers the full 8x). Applied by manifest CLASS at build time in the scene; a per-entry `scale` in the manifest overrides the class (the dropship is a vehicle, not a person). Rings that mark a CELL (HQ, pins, re-spray) stay cell-scale; the ring under a figure follows the figure.",
  "scale": {
   "figure": 0.125,
   "marker": 0.5,
@@ -259,7 +270,7 @@
   "marker": 100,
   "structure": 220
  },
- "note_light": "Lighting IS art direction, not renderer plumbing. Retuned 2026-08-18 with the dystopian pass (finding 3): the warm evening key became a cold skyglow key \u2014 the city is NIGHT now, and warmth belongs to the windows and doorways, not the sky. Retuned again 2026-08-22 for the 45-degree camera (playtest 4): the camera now looks from the south-east, so the key moved to the CAMERA side \u2014 a key behind the buildings left every visible facade in raw ambient and the whole city read as black \u2014 and the teal bounce swapped to the north-west as a rim. Keeping it in tokens means a look candidate (Q41c) can change the mood without touching scene.js.",
+ "note_light": "Lighting IS art direction, not renderer plumbing. Retuned 2026-08-18 with the dystopian pass (finding 3): the warm evening key became a cold skyglow key — the city is NIGHT now, and warmth belongs to the windows and doorways, not the sky. Retuned again 2026-08-22 for the 45-degree camera (playtest 4): the camera now looks from the south-east, so the key moved to the CAMERA side — a key behind the buildings left every visible facade in raw ambient and the whole city read as black — and the teal bounce swapped to the north-west as a rim. Keeping it in tokens means a look candidate (Q41c) can change the mood without touching scene.js.",
  "lighting": {
   "clear": "#0B0E14",
   "key": {
@@ -286,7 +297,7 @@
    ]
   }
  },
- "note_lightingDay": "D63a. The base `lighting` IS the night look (the dystopia was authored dark); `lightingDay` is the overcast working day the cycle lerps toward \u2014 brighter and a touch warmer, never sunny: the city does not get nice weather. The scene eases between the two off view.night.",
+ "note_lightingDay": "D63a. The base `lighting` IS the night look (the dystopia was authored dark); `lightingDay` is the overcast working day the cycle lerps toward — brighter and a touch warmer, never sunny: the city does not get nice weather. The scene eases between the two off view.night.",
  "lightingDay": {
   "clear": "#1A2027",
   "key": {
@@ -312,7 +323,7 @@
    ]
   }
  },
- "note_portrait": "D47 portrait palette. Lived as a literal PALETTE object inside portraits.js until 2026-08-07 \u2014 the last colours outside this file, and the reason V1 acceptance criterion 14 stayed PARTIAL: a look candidate (Q41c/D48) reached the world but not the faces. Now a look is genuinely one file.",
+ "note_portrait": "D47 portrait palette. Lived as a literal PALETTE object inside portraits.js until 2026-08-07 — the last colours outside this file, and the reason V1 acceptance criterion 14 stayed PARTIAL: a look candidate (Q41c/D48) reached the world but not the faces. Now a look is genuinely one file.",
  "portrait": {
   "backdrop": "#22262B",
   "skin": "#C9A98B",

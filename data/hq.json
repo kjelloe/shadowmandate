@@ -1,19 +1,21 @@
 {
-    "note": "S05. Timers in ticks (10/second). Evac hold is 30s = 300 ticks (design doc). startingBank seeds a NEW identity's ledger bank and is what a season rotation resets the bank to (playtest 5: a fresh player could afford no action at all).",
-    "perimeterRadius": 4,
-    "evacHoldTicks": 300,
-    "emergencyEvacTicks": 100,
-    "emergencyReachTicks": 600,
-    "beaconSignalRadius": 20,
-    "lootTicks": 120,
-    "alarmGraceTicks": 60,
-    "dropZoneMinClearRadius": 8,
-    "cacheStartResources": 0,
-    "reputation": {
-        "cleanExtract": 4,
-        "emergencyEvac": -3,
-        "hqLost": -6
-    },
-    "dropZoneEdgeMargin": 6,
-    "startingBank": 200
+ "note": "S05. Timers in ticks (10/second). Evac hold is 30s = 300 ticks (design doc). startingBank seeds a NEW identity's ledger bank and is what a season rotation resets the bank to (playtest 5: a fresh player could afford no action at all).",
+ "perimeterRadius": 4,
+ "evacHoldTicks": 300,
+ "emergencyEvacTicks": 100,
+ "emergencyReachTicks": 600,
+ "beaconSignalRadius": 20,
+ "lootTicks": 120,
+ "alarmGraceTicks": 60,
+ "dropZoneMinClearRadius": 8,
+ "cacheStartResources": 0,
+ "reputation": {
+  "cleanExtract": 4,
+  "emergencyEvac": -3,
+  "hqLost": -6
+ },
+ "dropZoneEdgeMargin": 6,
+ "startingBank": 200,
+ "landingSearchRadius": 9999,
+ "note_landing": "Playtest 13, Q50: how far hqLandingFor may travel from the requested drop cell to find a free safehouse. DELIBERATELY UNBOUNDED (9999) = the behaviour that has always shipped, held here pending the owner's ruling. Measured across 5 seeds, n=184 drops: unbounded lands 62% of drops in a district the player did not choose (median travel 30 cells on a 64 map, max 76); radius 14 cuts that to 8% but pitches the tent instead of claiming a safehouse 71% of the time, which guts the playtest-4 HQ-in-a-building ruling. There is no radius that gives both - safehouses are too sparse - so the real fix is probably citygen, and that is a balance decision. The lever stays so the ruling is a one-number edit."
 }

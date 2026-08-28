@@ -335,6 +335,22 @@ const streetFace = (tiles, size, x, y) => {
   return null;
 };
 
+// Shared instancing helpers. These lived inside the decor builder until parks
+// (playtest 13, finding 7) needed the same two lines; a second copy is how the
+// tile palette ended up in three places and two colour spaces.
+const lambert = (hex) => new THREE.MeshLambertMaterial({
+  color: new THREE.Color().setRGB(...hexRgb(hex)),
+});
+const _m = new THREE.Matrix4();
+const _pos = new THREE.Vector3(), _scl = new THREE.Vector3();
+const _quat = new THREE.Quaternion();
+function put(mesh, i, px, py, pz, sx = 1, sy = 1, sz = 1) {
+  _quat.identity();
+  _pos.set(px, py, pz); _scl.set(sx, sy, sz);
+  _m.compose(_pos, _quat, _scl);
+  mesh.setMatrixAt(i, _m);
+}
+
 export function blockMassing(tiles, size, seed, districts = null) {
   const regions = blockRegions(tiles, size);
   const instances = [];
@@ -445,9 +461,18 @@ export function blockMassing(tiles, size, seed, districts = null) {
         for (let t = 0; t < Math.min(count, ranked.length); t++) {
           const [x, y] = ranked[t];
           const j = hash2(seed ^ 0x7071, x, y);
+          const stackH = 2.2 + j * 0.8;
           instances.push(template === "podium"
             ? { x, y, w: 0.58, h: Math.min(MASSING_MAX_H, (2.4 + j * 1.6) * Math.max(hScale, 0.75)), tone: clamp01(baseTone - 0.1), style, sub: true }
-            : { x, y, w: 0.16, h: 2.2 + j * 0.8, tone: clamp01(baseTone - 0.15), style, sub: true });
+            : { x, y, w: 0.16, h: stackH, tone: clamp01(baseTone - 0.15), style, sub: true });
+          // "Industrial area, with smoke coming out" (playtest 13, finding 7).
+          // Emitted WITH the stack rather than placed independently, so a plume
+          // can never end up hanging over open ground with nothing under it.
+          if (template === "industrial"
+            && hash2(seed ^ 0x50e7, x, y) < (styleCfg?.smokeDensity ?? 0)) {
+            decor.push({ kind: "smoke", x, y, top: stackH, style,
+              variant: hash2(seed ^ 0x5e11, x, y) });
+          }
         }
       }
     }
@@ -530,15 +555,6 @@ export function buildBlocks(tiles, size, seed, districts = null) {
   }
 
   // ── The decoration meshes (playtest 5) ──
-  const lambert = (hex) => new THREE.MeshLambertMaterial({
-    color: new THREE.Color().setRGB(...hexRgb(hex)),
-  });
-  const put = (mesh, i, px, py, pz, sx = 1, sy = 1, sz = 1) => {
-    quat.identity();
-    pos.set(px, py, pz); scl.set(sx, sy, sz);
-    m.compose(pos, quat, scl);
-    mesh.setMatrixAt(i, m);
-  };
   const kinds = new Map();
   for (const d of decor) {
     if (!kinds.has(d.kind)) kinds.set(d.kind, []);
@@ -675,6 +691,47 @@ export function buildBlocks(tiles, size, seed, districts = null) {
       group.add(run, stub);
     }
   }
+  // SMOKE (playtest 13, finding 7). Four soft puffs climbing off each works
+  // stack, widening and fading as they rise. Handed back through userData so
+  // scene.js can DRIFT them off the world tick — like the faulty street lamps,
+  // the animation keys off the same clock as everything else, and a still
+  // plume would read as a grey lump rather than as a working chimney.
+  const smokes = kinds.get("smoke") ?? [];
+  if (smokes.length) {
+    const hex = DISTRICT_STYLES?.industrial?.smoke;
+    if (hex) {
+      const PUFFS = 4;
+      const mat = new THREE.MeshLambertMaterial({
+        color: new THREE.Color().setRGB(...hexRgb(hex)),
+        transparent: true, opacity: 0.42, depthWrite: false,
+      });
+      const puffs = new THREE.InstancedMesh(
+        new THREE.SphereGeometry(1, 7, 5), mat, smokes.length * PUFFS);
+      const drift = [];
+      for (let i = 0; i < smokes.length; i++) {
+        const d = smokes[i];
+        for (let k = 0; k < PUFFS; k++) {
+          const idx = i * PUFFS + k;
+          // SIZED AGAINST THE CAMERA, not against the stack. The first cut used
+          // radii of 0.07-0.22 cells, which at street-planning zoom is about two
+          // pixels — geometry that exists, renders, passes its emission test and
+          // is completely invisible. A plume has to read as a plume from where
+          // the district is actually looked at.
+          const rise = 0.3 + k * 0.42;
+          const r = 0.2 + k * 0.12;
+          put(puffs, idx, d.x + 0.5, d.top + rise, d.y + 0.5, r, r * 0.8, r);
+          // Every puff remembers its own anchor so the drift can be recomputed
+          // per frame without re-deriving the layout.
+          drift.push({ idx, x: d.x + 0.5, z: d.y + 0.5, base: d.top + rise, r,
+            phase: d.variant * 6.28 + k * 1.1, k });
+        }
+      }
+      puffs.instanceMatrix.needsUpdate = true;
+      group.add(puffs);
+      group.userData.smoke = { mesh: puffs, drift };
+    }
+  }
+
   const shopfronts = kinds.get("shopfront") ?? [];
   if (shopfronts.length) {
     // Bucketed by style so a residential café strip and a commercial neon
@@ -764,6 +821,123 @@ const CLUTTER_GEO = {
   tarp: () => new THREE.BoxGeometry(0.18, 0.045, 0.15),
 };
 const CLUTTER_BASE_H = { crate: 0.1, barrel: 0.095, vent: 0.06, tarp: 0.045 };
+
+// ── Parks (playtest 13, finding 7) ─────────────────────────────────────────
+// "Residential areas should have some parks." Residential was the one district
+// whose identity was carried almost entirely by window temperature — a warm
+// glow and nothing on the ground. A park is the cheapest thing that says
+// somebody LIVES here rather than works here.
+//
+// Grown on OPEN and YARD ground only. Never on roads (they are the playfield),
+// never on building mass, and never on a door cell — a tree in a doorway is
+// exactly the class of prop the clutter clearance rule exists to prevent.
+export const PARK_TILES = [0, 8];      // T_OPEN, T_YARD
+
+export function parkPlacements(tiles, size, seed, districts = null) {
+  if (!districts?.owner || !districts?.traits) return [];
+  const out = [];
+  for (let y = 1; y < size - 1; y++) {
+    for (let x = 1; x < size - 1; x++) {
+      if (styleAt(districts, size, x, y) !== "residential") continue;
+      const t = tiles[y * size + x];
+      if (!PARK_TILES.includes(t)) continue;
+      const cfg = DISTRICT_STYLES?.residential?.park;
+      if (!cfg) continue;
+      if (hash2(seed ^ 0x9a4c, x, y) >= (cfg.density ?? 0)) continue;
+      // Two or three trees per cell, off-centre and never all in a line, plus
+      // a path stripe on about a third of them so a park reads as somewhere
+      // people walk rather than a green square.
+      const trees = [];
+      const n = 2 + (hash2(seed ^ 0x7ee5, x, y) < 0.45 ? 1 : 0);
+      for (let i = 0; i < n; i++) {
+        const hx = hash2(seed ^ (0x1100 + i * 7), x, y);
+        const hz = hash2(seed ^ (0x2200 + i * 13), x, y);
+        trees.push({
+          dx: -0.34 + hx * 0.68, dz: -0.34 + hz * 0.68,
+          s: 0.7 + hash2(seed ^ (0x3300 + i), x, y) * 0.6,
+          alt: hash2(seed ^ (0x4400 + i), x, y) < 0.4,
+        });
+      }
+      out.push({ x, y, trees, path: hash2(seed ^ 0x5c0f, x, y) < 0.34 });
+    }
+  }
+  return out;
+}
+
+export function buildParks(tiles, size, seed, districts = null) {
+  const cfg = DISTRICT_STYLES?.residential?.park;
+  const spots = parkPlacements(tiles, size, seed, districts);
+  if (!cfg || !spots.length) return null;
+  const group = new THREE.Group();
+
+  // Lawn: one merged quad set, laid a hair above the ground so it wins the
+  // depth fight with the tile beneath it without z-fighting.
+  // FOLLOW THE GROUND. A flat quad at a constant height is buried by the
+  // terrain's own relief: a YARD cell sits at 0.05 and the first cut laid the
+  // lawn at 0.012, so every park on a yard was underground and the ones on open
+  // ground showed as thin strips where the noise dipped below the quad. Found
+  // by recolouring the lawn magenta and looking — it renders "wrong but
+  // plausibly" in the intended green.
+  const lawnPos = [];
+  const pathPos = [];
+  const LIFT = 0.012;
+  const groundAt = (x, y) => heightAt(tiles, size, seed, x, y);
+  for (const p of spots) {
+    const x0 = p.x + 0.04, x1 = p.x + 0.96, z0 = p.y + 0.04, z1 = p.y + 0.96;
+    // The cell's four lattice corners, so the lawn sits ON the relief rather
+    // than through it.
+    const h00 = groundAt(p.x, p.y) + LIFT, h01 = groundAt(p.x, p.y + 1) + LIFT;
+    const h11 = groundAt(p.x + 1, p.y + 1) + LIFT, h10 = groundAt(p.x + 1, p.y) + LIFT;
+    lawnPos.push(x0, h00, z0, x0, h01, z1, x1, h11, z1,
+      x0, h00, z0, x1, h11, z1, x1, h10, z0);
+    if (p.path) {
+      const a = p.y + 0.44, b = p.y + 0.56;
+      const hm = (h00 + h01 + h11 + h10) / 4 + 0.008;
+      pathPos.push(x0, hm, a, x0, hm, b, x1, hm, b,
+        x0, hm, a, x1, hm, b, x1, hm, a);
+    }
+    p.groundH = (h00 + h01 + h11 + h10) / 4;
+  }
+  const quads = (positions, hex) => {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    const normals = new Float32Array(positions.length);
+    for (let i = 1; i < normals.length; i += 3) normals[i] = 1;
+    geo.setAttribute("normal", new THREE.BufferAttribute(normals, 3));
+    return new THREE.Mesh(geo, lambert(hex));
+  };
+  group.add(quads(lawnPos, cfg.lawn));
+  if (pathPos.length) group.add(quads(pathPos, cfg.path));
+
+  // Trees: trunk plus a two-tone canopy, instanced per colour so a stand of
+  // them is three draw calls rather than one per tree.
+  const all = spots.flatMap((p) => p.trees.map((t) => ({ ...t, x: p.x, y: p.y, g: p.groundH ?? 0 })));
+  const trunks = new THREE.InstancedMesh(
+    new THREE.CylinderGeometry(0.022, 0.03, 1, 5), lambert(cfg.trunk), all.length);
+  const main = all.filter((t) => !t.alt), alt = all.filter((t) => t.alt);
+  const canopy = (list, hex) => {
+    if (!list.length) return null;
+    const m = new THREE.InstancedMesh(
+      new THREE.ConeGeometry(1, 1, 6), lambert(hex), list.length);
+    for (let i = 0; i < list.length; i++) {
+      const t = list[i];
+      put(m, i, t.x + 0.5 + t.dx, t.g + 0.16 * t.s + 0.11 * t.s,
+        t.y + 0.5 + t.dz, 0.13 * t.s, 0.26 * t.s, 0.13 * t.s);
+    }
+    m.instanceMatrix.needsUpdate = true;
+    return m;
+  };
+  for (let i = 0; i < all.length; i++) {
+    const t = all[i];
+    put(trunks, i, t.x + 0.5 + t.dx, t.g + 0.08 * t.s, t.y + 0.5 + t.dz, 1, 0.16 * t.s, 1);
+  }
+  trunks.instanceMatrix.needsUpdate = true;
+  group.add(trunks);
+  const a = canopy(main, cfg.foliage), b = canopy(alt, cfg.foliageAlt);
+  if (a) group.add(a);
+  if (b) group.add(b);
+  return group;
+}
 
 export function buildClutter(tiles, size, seed) {
   if (!CLUTTER) return null;

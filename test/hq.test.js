@@ -17,6 +17,7 @@ import {
 import { AGENT_ACTIVE, AGENT_DOWNED, FIRM_DEPLOYED, FIRM_UNDEPLOYED, FIRM_EVACUATING } from "../engine/state.js";
 import { extract, hqOf, destroyHq, EVAC_EMERGENCY } from "../engine/hq.js";
 import { findDropZones } from "../engine/citygen.js";
+import { hqLandingFor } from "../engine/hq.js";
 import { LedgerStore, emptyLedger } from "../server/ledger.js";
 import { makeWorld, placeAgent, quietCell, centralDropZone, cellAwayFrom, tickCollecting, RULES } from "./helpers.js";
 import { cellToWorld } from "../shared/fixedmath.js";
@@ -29,6 +30,45 @@ function deployed(seed = 4711) {
   s = apply(s, { type: CMD_DROP_IN, firmId: 0, cellX: z.cellX, cellY: z.cellY });
   return { s, zone: z };
 }
+
+test("PLAYTEST 13: the landing search is BOUNDABLE, and honours its bound", () => {
+  // The defect this exists for: `hqLandingFor` searched for the nearest free
+  // safehouse with no maximum distance, so a district without one relocated the
+  // Field HQ clear across the map. Measured over 5 seeds and 184 drops, the
+  // unbounded search lands 62% of drops in a district the player did not
+  // choose, median travel 30 cells on a 64-cell map. Found while repeatedly
+  // failing to photograph the industrial smoke and landing in Residential.
+  //
+  // The shipped radius is deliberately 9999 — the behaviour that has always
+  // shipped — because tightening it trades one defect for another (at 14, 71%
+  // of drops pitch a tent instead of claiming a safehouse, gutting the
+  // playtest-4 HQ-in-a-building ruling). Q50 has the table; the owner rules.
+  //
+  // So this asserts the MECHANISM rather than the policy: a bound, when set,
+  // is obeyed, and past it the tent fallback lands exactly where the player
+  // asked. That is falsifiable today and makes the ruling a one-number edit.
+  const s = makeWorld({ seed: 4711 });
+  const zones = findDropZones(s, RULES.citygen);
+  assert.ok(zones.length, "fixture has no drop zones");
+  const tight = { ...RULES.hq, landingSearchRadius: 6 };
+  let bounded = 0, tents = 0;
+  for (const z of zones.filter((_, i) => i % 11 === 0)) {
+    const l = hqLandingFor(s, z.cellX, z.cellY, tight);
+    const d = Math.abs(l.cellX - z.cellX) + Math.abs(l.cellY - z.cellY);
+    if (l.buildingId < 0) {
+      tents++;
+      assert.equal(d, 0, "the tent fallback must pitch at the requested cell");
+    } else {
+      bounded++;
+      assert.ok(d <= 6, `landing travelled ${d} cells past a bound of 6`);
+    }
+  }
+  assert.ok(tents > 0, "a 6-cell bound should force some tent fallbacks");
+  // ...and the shipped config keeps the search unbounded, so this test cannot
+  // quietly become a policy change nobody ruled on.
+  assert.ok(RULES.hq.landingSearchRadius >= 999,
+    "the landing bound was tightened without a ruling — see Q50");
+});
 
 test("drop-in establishes the HQ in the nearest safehouse, and the agent lands with it", () => {
   const { s, zone } = deployed();
