@@ -367,5 +367,16 @@
   "neonAmber": "#FFB13F",
   "hazeFog": "#3A1A4E",
   "rim": "#C24BFF"
+ },
+ "note_type": "Typography (playtest 13, finding 8): 'a cyberpunk font and colouring for all menus, whereas dialog text needs to prioritize readability and keep the plain white colour'. TWO stacks, and the split is the whole point. `display` dresses CHROME - titles, buttons, chips, board rows, the splash terminal - where character matters and the text is short and known. `body` carries anything a player READS: what the informant says, journal entries, option labels. Menu colour comes from the same neon the splash uses, so the UI and the city agree; dialogue stays plain ink on purpose, because a glowing serif is a worse informant than a legible one. No webfont ships - these are stacks of faces that already exist on the target platforms, so there is no network fetch and nothing to license.",
+ "typography": {
+  "display": "\"Bahnschrift\", \"DIN Alternate\", \"Oswald\", \"Roboto Condensed\", \"Liberation Sans Narrow\", ui-sans-serif, system-ui, sans-serif",
+  "body": "ui-monospace, \"SF Mono\", Menlo, Consolas, monospace",
+  "displayTracking": "0.16em",
+  "menuInk": "#CFE8FF",
+  "menuGlow": "#3FE8FF",
+  "menuAccent": "#FF3FA4",
+  "menuDim": "#6E7C8C",
+  "dialogInk": "#E8E6E0"
  }
 }

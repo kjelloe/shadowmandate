@@ -222,6 +222,64 @@ test("PLAYTEST 1: [hidden] must beat the .screen display rule", () => {
     "[hidden] must win against .screen");
 });
 
+test("PLAYTEST 13: menus wear the display face, dialogue stays plain and readable", () => {
+  // Finding 8 is TWO requirements and the second is the easy one to lose while
+  // making the first look good: "a cyberpunk font and colouring for all menus,
+  // WHEREAS dialog text needs to prioritize readability and keep the plain white
+  // colour." A pass that styles everything satisfies half the ruling and breaks
+  // the informant.
+  //
+  // Comments stripped first — this guard has been fooled by prose twice in this
+  // project's history (the dependency guard matched a phrase in a comment; the
+  // CSS guard matched the rule written inside the comment explaining the bug).
+  const css = readFileSync(join(ROOT, "client/style.css"), "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "");
+  const tokens = JSON.parse(readFileSync(
+    join(ROOT, "client/assets/metadata/style_tokens.json"), "utf8"));
+
+  // The tokens exist and carry two DIFFERENT stacks. One stack for both would
+  // render as "styled" and deliver nothing.
+  const T = tokens.typography;
+  assert.ok(T, "no typography tokens — the UI face is not art-directed");
+  assert.ok(T.display && T.body, "typography needs both a display and a body stack");
+  assert.notEqual(T.display, T.body, "the two faces are the same stack");
+
+  // The stylesheet reads the tokens rather than restating a face (D46).
+  assert.ok(/font-family:\s*var\(--type-display\)/.test(css),
+    "the display face is not read from a token");
+  assert.ok(/font-family:\s*var\(--type-body\)/.test(css),
+    "the body face is not read from a token");
+
+  // The dialogue block must reset ALL THREE things the menu voice applies —
+  // face, tracking and case. Resetting the font while leaving `text-transform:
+  // uppercase` inherited would shout the informant's lines at the player, which
+  // is exactly the readability the finding asked to protect.
+  const greetRule = css.match(/#building-greet[^{]*\{[^}]*\}/g) ?? [];
+  const dialogueBlock = css.match(/#building-greet[\s\S]{0,400}?\{[^}]*\}/);
+  assert.ok(dialogueBlock, "no rule covers the dialogue text at all");
+  const block = dialogueBlock[0];
+  assert.ok(/font-family:\s*var\(--type-body\)/.test(block),
+    "dialogue does not take the readable face");
+  assert.ok(/letter-spacing:\s*normal/.test(block),
+    "dialogue keeps the menu tracking — readability was the whole point");
+  assert.ok(/text-transform:\s*none/.test(block),
+    "dialogue is still uppercased by the menu rule");
+  assert.ok(greetRule.length, "the greet line has no rule");
+
+  // And nothing may glow the dialogue: a text-shadow on body copy is the
+  // "cyberpunk everything" failure the ruling explicitly carved out.
+  assert.ok(!/#building-options[^{]*\{[^}]*text-shadow/.test(css),
+    "dialogue options are glowing — plain white was the ruling");
+
+  // main.js must actually PUBLISH the tokens as CSS variables. Tokens that
+  // nothing reads are the signature failure here: the stylesheet would silently
+  // fall back to its defaults and look almost right.
+  const src = readFileSync(join(JS_DIR, "main.js"), "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  assert.ok(/setProperty\(\s*`--type-/.test(src),
+    "main.js never writes the typography tokens into CSS variables");
+});
+
 test("PLAYTEST 1: the drop-in button never sends an impossible cell", () => {
   // The first build sent cellX:-1, which the engine always rejects as
   // "unlandable" — so the only button on the splash screen did nothing at all.

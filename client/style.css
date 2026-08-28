@@ -5,9 +5,79 @@
   --line: #2C3038; --slate: #5A6472; --amber: #D9A441; --teal: #3E8E8C;
   --alarm: #B5613C; --burn: #C2452F;
 }
+/* TYPOGRAPHY (playtest 13, finding 8): "a cyberpunk font and colouring for all
+   menus, whereas dialog text needs to prioritize readability and keep the plain
+   white colour."
+
+   Two faces, and the split is load-bearing. `--type-display` dresses CHROME —
+   titles, buttons, chips, board rows, the terminal — where the text is short,
+   known, and character is the point. `--type-body` carries anything a player
+   READS to make a decision: what the informant says, journal lines, option
+   labels. Those stay plain ink, unglowed, because a neon serif is a worse
+   informant than a legible one.
+
+   The values arrive as tokens (main.js writes --type-* at boot), so this file
+   still holds no palette of its own. The fallbacks below are what renders if
+   the token load ever fails — deliberately the OLD look rather than something
+   half-styled, because a stylesheet that fails into gibberish is worse than one
+   that fails into plain. */
+:root {
+  --type-display: ui-sans-serif, system-ui, sans-serif;
+  --type-body: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --type-display-tracking: .12em;
+  --type-menu-ink: #E8E6E0; --type-menu-glow: #3E8E8C;
+  --type-menu-accent: #D9A441; --type-menu-dim: #8A867E;
+  --type-dialog-ink: #E8E6E0;
+}
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; overflow: hidden; }
+  font-family: var(--type-body); overflow: hidden; }
+
+/* The menu voice. Everything that is CHROME wears it.
+
+   NOT the terminals. The splash and debrief readouts build dot leaders with
+   `padEnd(24, ".")`, which is a MONOSPACE construction — the first cut of this
+   pass put them in the display face and every column silently lost its
+   alignment, so the values ended up ragged down the page. A terminal is
+   monospace by function, not by taste; it takes the menu COLOUR instead. */
+button, h1, h2, h3, .pill, .chips button, #mission-kind,
+#zone-hint, #objective-distance, .when {
+  font-family: var(--type-display);
+  letter-spacing: var(--type-display-tracking);
+  text-transform: uppercase;
+}
+#splash-terminal, #debrief-terminal {
+  font-family: var(--type-body);
+  color: var(--type-menu-ink);
+}
+/* TRACKING COSTS WIDTH, and the HUD has none to spare on a phone. At 0.16em
+   every button label grew until the world screen scrolled horizontally at
+   360px — caught by the mobile gate, which measured 407px of HUD in a 360px
+   viewport. The display face stays; the letter-spacing yields, because the
+   ruling was about character and the gate is about reachability. */
+@media (max-width: 480px) {
+  :root { --type-display-tracking: normal; }
+  #hud-right button { font-size: .74rem; letter-spacing: normal; padding: 0 .65rem; }
+}
+button, .pill { color: var(--type-menu-ink); }
+h1, h2, h3 { color: var(--type-menu-ink);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--type-menu-glow) 55%, transparent); }
+button.primary { color: var(--type-menu-ink); border-color: var(--type-menu-glow);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--type-menu-glow) 60%, transparent); }
+button:disabled { color: var(--type-menu-dim); text-shadow: none; }
+
+/* THE READABLE HALF. Anything the player reads for meaning keeps the body face,
+   normal case, no tracking, no glow, plain ink — this is the half of finding 8
+   that is easy to lose while making the other half look good. */
+#building-greet, #building-options span, #journal-list li span:not(.when),
+#captured-options .opt-note, #zone-districts .meta, #recovery,
+.toast, #intro-card p, #evac-note, #evac-eta, #standoff-who {
+  font-family: var(--type-body);
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--type-dialog-ink);
+}
+#building-greet { color: var(--dim); }
 /* MUST come before .screen/.overlay: a class rule with `display` beats the
    user-agent's [hidden] { display: none }, which silently disabled every
    screen transition in the first playtest. */

@@ -2,7 +2,7 @@
 // engine; this file only wires elements to a session (S12).
 
 import { loadLocale, t, applyStatic } from "./i18n.js";
-import { loadArt, terrain, mark } from "./assets.js";
+import { loadArt, terrain, mark, art } from "./assets.js";
 import { drawPortrait, portraitLayers } from "./portraits.js";
 import { createRemoteSession } from "./session.js";
 import { createScene } from "./scene.js";
@@ -51,6 +51,21 @@ await loadLocale();
 // and a scene built without them would fall back to grey and look "fine",
 // which is the kind of silent wrongness this project has paid for before.
 await loadArt();
+// TYPOGRAPHY IS ART DIRECTION (D46), so it arrives as tokens like everything
+// else rather than as literals in the stylesheet. The CSS reads only
+// `var(--type-*)`, which means a look candidate changes the whole UI without
+// touching style.css — and, more importantly, the menus and the city cannot
+// drift into two different palettes the way the tile colours once did.
+try {
+  const { tokens } = art();
+  const T = tokens.typography ?? {};
+  const root = document.documentElement.style;
+  for (const [key, value] of Object.entries(T)) {
+    root.setProperty(`--type-${key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`, value);
+  }
+} catch (err) {
+  fatal("typography", err);
+}
 applyStatic();
 $("#drop-in").textContent = t("splash.dropIn");
 
