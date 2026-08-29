@@ -205,6 +205,13 @@ button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal)
 #city-note { color: var(--dim); font-size: .74rem; margin: .7rem 0 0; }
 .city-rows .val { color: var(--type-menu-ink); }
 .city-rows .firm-name { letter-spacing: .06em; }
+/* The legend swatch is the ONE colour set from data rather than from CSS: it
+   reads the same mark table the renderers do, so it cannot lie about them. */
+.city-rows.legend li > div { display: flex; align-items: center; gap: .6rem; }
+.city-rows .swatch { width: 14px; height: 14px; border-radius: 3px; flex: none;
+  border: 1px solid rgba(0,0,0,.4); }
+#city-pane-legend h3 { margin: .9rem 0 .3rem; }
+#city-pane-legend h3:first-child { margin-top: 0; }
 .city-rows { list-style: none; margin: 0; padding: 0; font-size: .82rem; }
 .city-rows li { display: flex; gap: .8rem; padding: .35rem 0;
   justify-content: space-between; align-items: baseline;

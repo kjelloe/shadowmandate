@@ -22,7 +22,13 @@ const tabs = async (page, where) => {
   for (let i = 0; i < names.length; i++) {
     await page.evaluate((idx) => document.querySelectorAll("#city-tabs button")[idx].click(), i);
     await sleep(250);
-    const rows = await page.$$eval("#city-body li", (ls) => ls.map((l) => l.textContent.trim()));
+    // Count rows in the VISIBLE pane. `#city-body li` picks up the hidden
+    // board and legend panes as well, and filtering on `offsetParent` reported
+    // zero for panes that were rendering perfectly — the instrument was wrong,
+    // not the client. Scope the selector instead of filtering after the fact.
+    const rows = await page.$$eval(
+      "#city-pane-rows:not([hidden]) li, #city-pane-board:not([hidden]) li, #city-pane-legend:not([hidden]) li",
+      (ls) => ls.map((l) => l.textContent.trim()));
     console.log(`  [${where}] ${names[i]}: ${rows.length} rows`);
     for (const r of rows.slice(0, 8)) console.log(`      ${r}`);
   }
@@ -70,6 +76,14 @@ try {
   await page.evaluate(() => window.__smFreeze?.(true));
   await sleep(250);
   await page.screenshot({ path: "debugging/cityinfo-field.png", timeout: 60000 });
+  // The LEGEND on its own: it is the tallest pane and the one whose swatches
+  // must actually carry the mark colours.
+  await page.evaluate(() => {
+    const tabs = [...document.querySelectorAll("#city-tabs button")];
+    (tabs.find((b) => /LEGEND|TEGN/.test(b.textContent)) ?? tabs[tabs.length - 1]).click();
+  });
+  await sleep(400);
+  await page.screenshot({ path: "debugging/cityinfo-legend.png", timeout: 60000 });
   await browser.close();
   console.log("shots -> debugging/cityinfo-splash.png, debugging/cityinfo-field.png");
 } finally { server.kill(); }

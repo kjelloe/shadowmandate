@@ -4,7 +4,7 @@ Drop-in/drop-out covert-ops game. Sibling of Fireline Command
 (`~/GIT/firepower` — the fork source, never modified from here).
 
 **Status: M0–M6 complete; M7 done as far as it can go solo, and PLAYABLE in a
-browser. `npm test` = 518 green**, plus four browser gates (`smoke`, `ui`,
+browser. `npm test` = 519 green**, plus four browser gates (`smoke`, `ui`,
 `mobile`, `gallery`). Batch lane verified (`ops/BATCH_PC.md`). **Remaining in M7**:
 the VM deploy (7e) and native GPU perf (7f) — both need the owner's hardware.
 **M8 — opposition and site security — 8a–8k done** (alarms, cameras, beams,
@@ -81,15 +81,18 @@ by hand).
   banks the cache; redropping keeps you earning with the cache at risk and costs
   standing. The AI got it in the same slice.
 - **Q49** — owner is playtesting; nothing changed.
-- **CI-1 City Info** — five tabs (firm / sortie / city / firms / log) on the
-  splash and in the field. Rival intel is **earned or bought only** and the
-  human/AI split is **never disclosed** (not sent at all). No new hashed state:
-  the persistent half is `knownRivalHqs`, the session half derives from the
-  journal.
+- **CI-1/CI-2 City Info** — seven tabs (board / log / firm / sortie / city /
+  firms / legend) on the splash and in the field, BOARD default. Rival intel is
+  **earned or bought only** and the human/AI split is **never disclosed** (not
+  sent at all). No new hashed state: the persistent half is `knownRivalHqs`, the
+  session half derives from the journal. The **legend is derived from
+  `tokens.marks`** — coverage asserted, exclusions must state a reason, so a new
+  mark cannot go undocumented. Panes are shown/hidden, NEVER rebuilt: the
+  board's buttons are the playtest-5 defect's original victim.
 
 **Open**: the **era-2** battery verdicts (queue unchanged, still needs the batch
-PC and a hand-synced `ops/`); **Q51** (what else belongs in City Info — a LEGEND
-tab is the cheapest win, and whether BOARD should fold in); the AI's general
+PC and a hand-synced `ops/`); **Q51** (what else still belongs in City Info —
+per-district panel, season standing, cross-sortie contract history); the AI's general
 night pricing; area retune behind D42; avenue density (7B, noted).
 
 ## Read first

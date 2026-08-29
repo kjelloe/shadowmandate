@@ -60,8 +60,7 @@
         <div id="bank" class="pill"></div>
         <div id="cache" class="pill"></div>
         <div id="objective" class="pill" hidden></div>
-        <button id="board-btn" class="primary" data-i18n="board.title"></button>
-        <button id="city-btn" data-i18n="city.title"></button>
+        <button id="city-btn" class="primary" data-i18n="city.title"></button>
         <button id="enter-btn" data-i18n="building.enter" hidden></button>
       <button id="cut-btn" data-i18n="junction.cut" hidden></button>
       <button id="lift-btn" data-i18n="access.lift" hidden></button>
@@ -87,14 +86,6 @@
         <p data-i18n="intro.begin"></p>
         <button id="intro-dismiss" class="primary" data-i18n="intro.go"></button>
       </div>
-    </div>
-
-    <div id="board" class="overlay" hidden>
-      <h3 data-i18n="board.active"></h3>
-      <ul id="active-list"></ul>
-      <h2 data-i18n="board.title"></h2>
-      <ul id="board-list"></ul>
-      <button class="close" aria-label="close">&#10005;</button>
     </div>
 
     <div id="standoff" class="overlay" hidden>
@@ -139,7 +130,22 @@
   <div id="cityinfo" class="overlay" hidden>
     <h2 data-i18n="city.title"></h2>
     <div id="city-tabs" role="tablist"></div>
-    <div id="city-body"></div>
+    <div id="city-body">
+      <!-- The board keeps its own elements and its own signature-guarded
+           renderers (renderBoard / renderActive). The panel SHOWS and HIDES
+           this pane; it must never rebuild it, because a list rebuilt under the
+           cursor destroys its own buttons between mousedown and mouseup —
+           the playtest-5 defect that made ACCEPT do nothing for a whole
+           playtest round. -->
+      <div id="city-pane-board" hidden>
+        <h3 data-i18n="board.active"></h3>
+        <ul id="active-list"></ul>
+        <h2 data-i18n="board.title"></h2>
+        <ul id="board-list"></ul>
+      </div>
+      <div id="city-pane-legend" hidden></div>
+      <div id="city-pane-rows"></div>
+    </div>
     <p id="city-note" class="note" data-i18n="city.note.session"></p>
     <button class="close" aria-label="close">&#10005;</button>
   </div>

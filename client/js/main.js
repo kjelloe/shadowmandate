@@ -14,6 +14,7 @@ import {
   payloadForBuilding, overlayRows, disguiseFor, districtChoices, standingRows, missionBanner,
   journalLine, gameClock, evacAvailable, SPOKEN_LINES,
   CITY_TABS, firmPanel, sortiePanel, cityPanel, firmsPanel, firmName,
+  legendRows, LEGEND_STANCES,
   cuttableJunction, liftableGuard, dropshipFlight, DROPSHIP_MS, MAX_PINS,
   beginMission, areaView, areaActions, captureSituation,
   HEAT_CLASS as HEAT_CLASSES,
@@ -167,7 +168,7 @@ session.onChange((s, events) => {
     firmId: session.firmId ?? null,
     agent: ownAgent(s.view) ?? null,
     screen: ["splash", "dropzone", "debrief", "world"].find((id) => !$(`#${id}`).hidden) ?? null,
-    openOverlays: ["board", "standoff", "building", "evac"].filter((id) => !$(`#${id}`).hidden),
+    openOverlays: ["cityinfo", "standoff", "building", "evac"].filter((id) => !$(`#${id}`).hidden),
     boardCount: (s.view.board?.contracts ?? []).length,
     activeCount: (s.view.active ?? []).length,
     lastEvents: (events ?? []).map((e) => e.type),
@@ -388,7 +389,9 @@ const journal = [];
 // when its content changes — the playtest-5 rule: a list rebuilt every tick
 // destroys its own buttons between mousedown and mouseup, and these tabs ARE
 // buttons.
-let cityTab = "firm";
+// BOARD is the default tab: it is the one opened mid-mission, and landing on a
+// stats page when you meant to take a contract is friction in the core loop.
+let cityTab = "board";
 let citySignature = "";
 
 // Rival Firms this session has actually laid eyes on. Accumulated from the
@@ -416,6 +419,56 @@ function cityRow(labelKey, value) {
   return li;
 }
 
+// The legend is static for the whole session — built once, then only shown and
+// hidden like the board pane.
+let legendBuilt = false;
+function buildLegend() {
+  if (legendBuilt) return;
+  legendBuilt = true;
+  const host = $("#city-pane-legend");
+  host.textContent = "";
+  for (const group of legendRows(art().tokens.marks)) {
+    const h = document.createElement("h3");
+    h.textContent = t(group.groupKey);
+    const list = document.createElement("ul");
+    list.className = "city-rows legend";
+    for (const e of group.entries) {
+      const li = document.createElement("li");
+      const left = document.createElement("div");
+      const dot = document.createElement("span");
+      dot.className = "swatch";
+      // The ONE place a colour is set from data rather than CSS: a legend whose
+      // swatches do not come from the same table the renderers read would be a
+      // legend that can lie (D46).
+      dot.style.background = e.colour;
+      const label = document.createElement("span");
+      label.textContent = t(e.labelKey);
+      left.append(dot, label);
+      li.appendChild(left);
+      list.appendChild(li);
+    }
+    host.append(h, list);
+  }
+  const h = document.createElement("h3");
+  h.textContent = t("legend.stances");
+  const list = document.createElement("ul");
+  list.className = "city-rows legend";
+  for (const st of LEGEND_STANCES) {
+    const li = document.createElement("li");
+    const left = document.createElement("div");
+    const name = document.createElement("div");
+    name.className = "firm-name";
+    name.textContent = t(st.key);
+    const note = document.createElement("div");
+    note.className = "opt-note";
+    note.textContent = t(st.noteKey);
+    left.append(name, note);
+    li.appendChild(left);
+    list.appendChild(li);
+  }
+  host.append(h, list);
+}
+
 function renderCityInfo() {
   const panel = $("#cityinfo");
   if (panel.hidden) return;
@@ -425,9 +478,6 @@ function renderCityInfo() {
     sortie: () => sortiePanel(view, journal),
     city: () => cityPanel(view, session.briefing),
   };
-  const signature = `${cityTab}:${journal.length}:${view?.tick ?? -1}:${(view?.firms ?? []).length}`;
-  if (signature === citySignature) return;
-  citySignature = signature;
 
   const tabs = $("#city-tabs");
   if (tabs.children.length !== CITY_TABS.length) {
@@ -442,8 +492,24 @@ function renderCityInfo() {
   [...tabs.children].forEach((b, i) =>
     b.setAttribute("aria-pressed", String(CITY_TABS[i] === cityTab)));
 
-  const body = $("#city-body");
-  body.textContent = "";
+  // PANES ARE SHOWN AND HIDDEN, NOT REBUILT. The board's lists carry live
+  // buttons and in-place progress bars maintained by renderBoard/renderActive
+  // under their own change signatures; regenerating them here every tick would
+  // destroy each button between mousedown and mouseup, which is exactly the
+  // defect that made ACCEPT do nothing for a whole playtest round.
+  const isBoard = cityTab === "board", isLegend = cityTab === "legend";
+  $("#city-pane-board").hidden = !isBoard;
+  $("#city-pane-legend").hidden = !isLegend;
+  const rowsHost = $("#city-pane-rows");
+  rowsHost.hidden = isBoard || isLegend;
+  if (isLegend) buildLegend();
+  if (isBoard || isLegend) return;
+
+  const signature = `${cityTab}:${journal.length}:${view?.tick ?? -1}:${(view?.firms ?? []).length}`;
+  if (signature === citySignature) return;
+  citySignature = signature;
+
+  rowsHost.textContent = "";
   const list = document.createElement("ul");
   list.className = "city-rows";
 
@@ -489,7 +555,7 @@ function renderCityInfo() {
       list.appendChild(li);
     }
   }
-  body.appendChild(list);
+  rowsHost.appendChild(list);
 }
 
 function renderBoard(view) {
@@ -1135,7 +1201,6 @@ $("#enter-btn").addEventListener("click", () => {
   const a = ownAgent(session.view);
   if (a) session.send({ type: 34, agentId: a.id });
 });
-$("#board-btn").addEventListener("click", () => { $("#board").hidden = !$("#board").hidden; });
 $("#evac-btn").addEventListener("click", () => session.send({ type: 11, firmId: session.firmId }));
 // S17: the four indoor commands. BEGIN is the enter command wearing the
 // contract's name; the rest are the compound verbs.

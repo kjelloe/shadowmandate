@@ -220,20 +220,30 @@ async function main() {
       `stance stayed ${stanceBefore}`);
 
     // --- mission board -----------------------------------------------------
-    const boardHit = await hitTest("board-btn");
-    check("board button is clickable", boardHit.ok, boardHit.why);
+    // The board folded into City Info as its DEFAULT tab (owner-ruled
+    // 2026-08-29), so reaching it is one press of CITY INFO rather than of a
+    // board button. The checks below are unchanged in substance: the pane must
+    // open, offer contracts, survive fifteen ticks under the cursor, and accept
+    // one. That third check is the playtest-5 defect, and folding a live button
+    // list into a tabbed panel is exactly the kind of change that could bring
+    // it back — the pane is shown and hidden rather than rebuilt for that
+    // reason, and this is what proves it.
+    const boardHit = await hitTest("city-btn");
+    check("city info button is clickable", boardHit.ok, boardHit.why);
     let boardOpen = false, boardRows = 0;
     try {
-      await evalT(() => document.getElementById("board-btn").click(), undefined, "click #board-btn");
+      await evalT(() => document.getElementById("city-btn").click(), undefined, "click #city-btn");
       await sleep(500);
-      boardOpen = await evalT(() => !document.getElementById("board").hidden, undefined, "read #board hidden");
+      boardOpen = await evalT(() => !document.getElementById("cityinfo").hidden
+        && !document.getElementById("city-pane-board").hidden,
+      undefined, "read the board pane");
       boardRows = await evalT(() => document.querySelectorAll("#board-list button").length,
         undefined, "count board rows");
     } catch (e) {
       failures.push(`board interaction: ${e.message}`);
       console.log(`FAIL board interaction — ${e.message}`);
     }
-    check("board button opens the board", boardOpen);
+    check("city info opens on the board tab", boardOpen);
     check("board offers contracts (D18: five)", boardRows > 0, `${boardRows} rows`);
 
     // THE PLAYTEST-5 REGRESSION. A contract row must survive long enough to be

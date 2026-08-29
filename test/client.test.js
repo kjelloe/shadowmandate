@@ -385,6 +385,59 @@ test("PLAYTEST 13: the compound camera clamps per-axis, not against one size", a
   assert.deepEqual(clampCamera({ x: 6, y: 9 }, 64, 17, 11), { x: 17, y: 11 });
 });
 
+test("LEGEND: every mark is either explained or explicitly excluded", async () => {
+  // A legend is a hand-kept list pretending to be documentation, and this
+  // project has been bitten by exactly that: SPOKEN_LINES fell silently out of
+  // step the first time new content shipped. So COVERAGE is derived — every key
+  // in `tokens.marks` must appear in a legend group or in LEGEND_EXCLUDED with
+  // a stated reason, and a new mark fails this test until somebody decides
+  // which it is.
+  const { LEGEND_GROUPS, LEGEND_EXCLUDED, legendRows, LEGEND_STANCES } =
+    await import("../client/js/models.js");
+  const tokens = JSON.parse(readFileSync(
+    join(ROOT, "client/assets/metadata/style_tokens.json"), "utf8"));
+  const marks = Object.keys(tokens.marks);
+  const listed = new Set(LEGEND_GROUPS.flatMap((g) => g.marks));
+
+  for (const m of marks) {
+    assert.ok(listed.has(m) || m in LEGEND_EXCLUDED,
+      `mark "${m}" is in no legend group and not excluded — a player has no way to learn it`);
+  }
+  // ...and the reverse: a group naming a mark that no longer exists would draw
+  // a blank swatch, which reads as a rendering fault rather than as a stale list.
+  for (const m of listed) {
+    assert.ok(tokens.marks[m], `legend lists "${m}", which is not a mark token`);
+  }
+  for (const m of Object.keys(LEGEND_EXCLUDED)) {
+    assert.ok(tokens.marks[m], `LEGEND_EXCLUDED names "${m}", which is not a mark token`);
+    assert.ok(String(LEGEND_EXCLUDED[m]).length > 8, `exclusion of "${m}" gives no reason`);
+  }
+
+  // Every rendered entry carries a real colour FROM THE TOKENS — a legend with
+  // its own palette could disagree with the renderers it explains (D46).
+  const groups = legendRows(tokens.marks);
+  assert.ok(groups.length >= 4, "the legend collapsed to almost nothing");
+  const entries = groups.flatMap((g) => g.entries);
+  assert.ok(entries.length >= 20, `only ${entries.length} legend entries`);
+  for (const e of entries) {
+    assert.equal(e.colour, tokens.marks[e.mark], `legend swatch for ${e.mark} is not the mark colour`);
+  }
+
+  // And every label the legend asks for must EXIST in both catalogs — the
+  // standing i18n guard covers t("...") calls in source, and these keys are
+  // built at runtime from the token names, so it would never see them.
+  for (const e of entries) {
+    assert.ok(EN[e.labelKey], `en is missing ${e.labelKey}`);
+    assert.ok(NO[e.labelKey], `no is missing ${e.labelKey}`);
+  }
+  for (const g of groups) {
+    assert.ok(EN[g.groupKey] && NO[g.groupKey], `missing group label ${g.groupKey}`);
+  }
+  for (const st of LEGEND_STANCES) {
+    assert.ok(EN[st.noteKey] && NO[st.noteKey], `missing stance note ${st.noteKey}`);
+  }
+});
+
 test("CITY INFO: the panels agree with each other and gate rival intel", async () => {
   const { firmPanel, sortiePanel, cityPanel, firmsPanel, CITY_TABS, firmName } =
     await import("../client/js/models.js");

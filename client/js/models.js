@@ -898,7 +898,9 @@ export function hoverCarsAt(tick, lanes, count) {
 // The cost is honest and worth stating: these numbers are per SESSION, so a
 // reconnect starts them over.
 
-export const CITY_TABS = ["firm", "sortie", "city", "firms", "log"];
+// Ordered by how often a player reaches for them: the board is the mid-mission
+// tab and opens by default; the legend is reference and sits last.
+export const CITY_TABS = ["board", "log", "firm", "sortie", "city", "firms", "legend"];
 
 // One row is [labelKey, value] or [labelKey, valueKey, ...args] for translated
 // values — the same shape `standingRows` uses, so the renderer stays one loop.
@@ -984,3 +986,50 @@ export function firmsPanel(view, metIds) {
     cellY: f.hqCellY ?? -1,
   }));
 }
+
+// ── The LEGEND tab (owner-ruled 2026-08-28) ────────────────────────────────
+// "What does that ring mean" is a question the intro overlay answers ONCE and
+// then never again — it is dismissed forever on first deployment. Playtest 13's
+// finding 4 was partly a legibility complaint, and a legend is the cheapest
+// answer to the whole class.
+//
+// DERIVED FROM THE MARK TOKENS, never a hand-kept list. A second list of marks
+// would fall silently out of step the first time a new one shipped — the exact
+// shape of the SPOKEN_LINES defect (a hand-kept key map quietly falling back on
+// new content). Grouping and ORDER are editorial, so they live here; COVERAGE
+// is asserted against `tokens.marks`, and anything deliberately left out has to
+// say why. A test fails on any mark that is in neither list.
+export const LEGEND_GROUPS = [
+  { key: "legend.group.you", marks: ["agentUnseen", "agentNoticed", "agentBurned", "ownHq", "dropZone"] },
+  { key: "legend.group.threat", marks: ["patrol", "patrolAlert", "camera", "cameraDisabled",
+    "beamLive", "beamDark", "guard", "guardAlert", "guardDown"] },
+  { key: "legend.group.work", marks: ["objective", "siteActive", "siteOffered", "site", "pinned", "terminal"] },
+  { key: "legend.group.places", marks: ["informant", "market", "coverShop", "cubby", "holding",
+    "junction", "junctionCut"] },
+  { key: "legend.group.others", marks: ["rival", "rivalHq", "civilian"] },
+];
+
+// Marks with no place in a legend, and the reason. Being explicit is the point:
+// "not listed" and "forgotten" are indistinguishable without this.
+export const LEGEND_EXCLUDED = {
+  dropZoneAuto: "a highlight on the drop picker, not a world mark",
+  dropship: "the arrival cinematic, never a thing to identify in play",
+  hoverCar: "ambient traffic — decoration that reacts to nothing",
+};
+
+// [{ groupKey, entries: [{ mark, colour, labelKey }] }]
+export function legendRows(marks) {
+  const table = marks ?? {};
+  return LEGEND_GROUPS.map((g) => ({
+    groupKey: g.key,
+    entries: g.marks
+      .filter((m) => table[m])
+      .map((m) => ({ mark: m, colour: table[m], labelKey: `legend.mark.${m}` })),
+  })).filter((g) => g.entries.length);
+}
+
+// The stances, explained rather than merely named — the one piece of the legend
+// that is about a DECISION rather than a colour.
+export const LEGEND_STANCES = STANCES.map((s) => ({
+  key: s.key, noteKey: `legend.stance.${s.key.split(".").pop()}`,
+}));

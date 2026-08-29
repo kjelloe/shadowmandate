@@ -149,7 +149,7 @@ async function main() {
         // Nothing in the HUD may sit off-screen where a thumb cannot reach it.
         const offscreen = await page.evaluate(() => {
           const out = [];
-          for (const el of document.querySelectorAll("#hud-left, #hud-right, #stance, #board-btn, #minimap")) {
+          for (const el of document.querySelectorAll("#hud-left, #hud-right, #stance, #city-btn, #minimap")) {
             if (el.offsetParent === null) continue;
             const r = el.getBoundingClientRect();
             if (r.right > window.innerWidth + 1 || r.bottom > window.innerHeight + 1
@@ -162,12 +162,14 @@ async function main() {
         check("no HUD element sits off-screen", offscreen.length === 0,
           `${offscreen.join(" ")} (viewport ${vp.width}x${vp.height})`);
 
-        // The board is the overlay a player opens most; it must fit and scroll
+        // The board is the pane a player opens most. It folded into City Info
+        // (owner-ruled 2026-08-29) and is its DEFAULT tab, so opening City Info
+        // opens the board. It must still fit and scroll on a phone.
         // internally rather than pushing the page sideways.
-        await page.evaluate(() => document.getElementById("board-btn")?.click());
+        await page.evaluate(() => document.getElementById("city-btn")?.click());
         await sleep(800);
         const board = await page.evaluate(() => {
-          const el = document.getElementById("board");
+          const el = document.getElementById("cityinfo");
           if (el.hidden) return null;
           const r = el.getBoundingClientRect();
           return {

@@ -348,3 +348,22 @@ One panel, five tabs, reachable from the splash and the field.
 - **`displayDay` is the single home for "what day is it".** `seasonDay` is
   0-based for the rotation maths; every player-facing surface adds one, so the
   season clock and `gameClock` cannot disagree.
+
+### CI-2 (2026-08-29): the legend, and the board folded in
+
+Tabs are BOARD · LOG · FIRM · SORTIE · CITY · FIRMS · LEGEND, ordered by how
+often a player reaches for them; BOARD opens by default.
+
+- **Panes are shown and hidden, never rebuilt.** The board's lists carry live
+  buttons and in-place progress bars maintained by `renderBoard`/`renderActive`
+  under their own change signatures. Regenerating them with the panel would
+  destroy each button between mousedown and mouseup — the playtest-5 defect that
+  made ACCEPT do nothing for a whole round. The `ui` gate's "a contract row
+  outlives 15 world ticks" check is what proves the move kept it safe.
+- **The legend is DERIVED from `tokens.marks`.** `LEGEND_GROUPS` carries only
+  grouping and order (editorial); coverage is asserted against the token table,
+  and `LEGEND_EXCLUDED` must give a reason for anything left out. A new mark
+  fails the test until it is placed. Swatches read the same table the renderers
+  read, so the legend cannot disagree with what it explains (D46).
+- Legend entries EXPLAIN rather than name — "Sensor beam, dark. This is the
+  window to cross" is the mechanic in a line.
