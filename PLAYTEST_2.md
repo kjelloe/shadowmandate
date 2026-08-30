@@ -179,10 +179,12 @@ Play normally. Do not hunt for anything. After each debrief record only:
 | 4 | | |
 | 5 | | |
 
-The instruments say tier 3 arrives at 6.0 deploys against a 3–4 target. The
-question is not whether that number is correct — it is whether the wait
-**dragged**. That is the last open acceptance criterion and only you can close
-it.
+The instruments said tier 3 arrives at 6.0 deploys against a 3–4 target.
+**That measurement was wrong** (D71, 2026-08-30): it counted every Firm's
+deployments, not the reaching Firm's, and corrected it reads **3.0 — in band**.
+So the question was never whether the number is correct; it is whether the wait
+**dragged**. That is still the last open acceptance criterion and only you can
+close it.
 
 **Note:**
 

@@ -205,6 +205,37 @@ test("the world-day harness produces the full metric row", async () => {
   assert.ok(row.deployments > 0, "a 2000-tick world-day saw no deployment");
 });
 
+// D71. `deploysToTier3` is graded against D19's PER-FIRM band of 3-4, but it
+// was reading `m.deployments` — every Firm's deployments — at the moment the
+// FIRST Firm reached tier 3. With 3 AI Firms that is roughly a 3x inflation,
+// and it is what every tier-3 verdict this project printed was measured with
+// (5.0 at M8, 6.0 on eras 2 and 3, all graded HIGH against 3-4). Corrected, the
+// same worlds read 3.0 — inside the band. D19 was never failing.
+//
+// Asserts the RELATIONSHIP, because the value is a tuning outcome: one Firm's
+// deployments can never exceed the whole world's.
+test("D71: deploysToTier3 counts ONE Firm's deployments, not the world's", async () => {
+  const { runWorldDay } = await import("../tools/sm_worldday.mjs");
+  let checked = 0;
+  for (const seed of [1411, 4711, 1000]) {
+    const row = runWorldDay(seed, { ticks: 30000 });
+    if (!row.deploysToTier3) continue;          // never reached tier 3 in this run
+    checked++;
+    assert.ok(row.deploysToTier3 <= row.deployments,
+      `seed ${seed}: deploysToTier3=${row.deploysToTier3} exceeds total deployments=${row.deployments}`);
+    // The real teeth: with several Firms deploying, a per-WORLD count is
+    // multiples of a per-FIRM one. A Firm cannot make every deployment in a
+    // world where its rivals also deploy, so equality across seeds is the
+    // signature of the defect rather than of a busy Firm.
+    assert.ok(row.deploysToTier3 < row.deployments,
+      `seed ${seed}: deploysToTier3 equals the world's total deployments `
+      + `(${row.deployments}) — it is counting every Firm again`);
+    assert.ok(row.ticksToTier3 > 0,
+      "ticksToTier3 must be set whenever deploysToTier3 is (D71 measures D19 in time)");
+  }
+  assert.ok(checked > 0, "no seed reached tier 3 — the assertion never ran");
+});
+
 // The scorer is an INSTRUMENT: D11 pacing is verdicted from AI runs, so a
 // scorer blind to time-on-objective produces confident, wrong balance numbers.
 // It was blind — surveillance's three 1200-tick stationary holds priced as

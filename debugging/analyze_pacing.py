@@ -21,6 +21,11 @@ mins = lambda ticks: ticks / 600.0        # 10 ticks/s, 60 s/min
 sortie = [t for t in num("avgSortieTicks") if t > 0]
 deploy = [t for t in num("avgDeployTicks") if t > 0]
 tier3 = [n for n in num("deploysToTier3") if n > 0]
+# D71: D19 re-expressed in TIME. Absent from CSVs written before the column
+# existed, and `num()` already tolerates a missing key by yielding nothing —
+# so an older battery simply does not print this row rather than reporting 0,
+# which would read as "instant" instead of "not measured".
+tier3ticks = [t for t in num("ticksToTier3") if t > 0]
 
 print(f"\nworld-days: {len(data)}")
 print(f"{'':22}{'measured':>16}   {'D11/D19 target':>18}   verdict")
@@ -38,6 +43,21 @@ line("sortie (AI)", mins(med(sortie)), 15, 20, "m")
 # had the next reader judging era-3 against a ruling that no longer holds.
 print(f"{'deployment (AI)':22}{mins(med(deploy)):>13.1f}{'m':>3}   {'(retired)':>7}{'':<10}    band retired by D69")
 line("deploys to tier 3", med(tier3), 3, 4, "")
+# D71: the COUNT is retained but is no longer the criterion — "deployment"
+# changed meaning when drop-in/drop-out made them short and frequent, which is
+# the same assumption D69d retired for D11's deployment band. Time is the unit
+# that survived that change. No band yet: the owner sets it once measured
+# (Q54), and printing a target nobody ruled is how a retired one keeps
+# manufacturing verdicts.
+if tier3ticks:
+    reach = 100.0 * len(tier3ticks) / len(data)
+    print(f"{'time to tier 3 (AI)':22}{mins(med(tier3ticks)):>13.1f}{'m':>3}   "
+          f"{'(no band)':>7}{'':<10}    D19 unit revised by D71; {reach:.0f}% ever reach it")
+    print(f"{'':22}{'':>13}{'':>3}   {'':>7}{'':<10}    "
+          f"human 2-4x: {mins(med(tier3ticks))*2:.0f} - {mins(med(tier3ticks))*4:.0f} min")
+else:
+    print(f"{'time to tier 3 (AI)':22}{'not measured':>16}   "
+          f"{'':>7}{'':<10}    CSV predates the ticksToTier3 column (D71)")
 
 # The AI never deliberates; a human is slower. Show the band that implies.
 print(f"\nwith a 2-4x human deliberation factor:")

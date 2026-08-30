@@ -72,6 +72,11 @@ export const COLUMNS = [
   // D11/D19 pacing columns (slice 6e): ticks per completed contract and the
   // deployment length distribution are what the rulings are actually about.
   "avgSortieTicks", "avgDeployTicks", "deploysToTier3",
+  // D71: D19 re-expressed in TIME. "Deployments to tier 3" counts a unit whose
+  // meaning changed when drop-in/drop-out made deployments short and frequent —
+  // the same assumption D69d retired for D11. The tick was already being
+  // tracked to compute deploysToTier3 and simply never emitted.
+  "ticksToTier3",
 ];
 
 export function runWorldDay(seed, { size = SIZE, ticks = TICKS, mirror = MIRROR,
@@ -95,6 +100,12 @@ export function runWorldDay(seed, { size = SIZE, ticks = TICKS, mirror = MIRROR,
   let sortieTicks = 0, sortieCount = 0;
   let deployTicks = 0, deployCount = 0;
   let tier3At = -1, deploysWhenTier3 = 0;
+  // PER FIRM. `m.deployments` counts every Firm's deployments, so reading it
+  // when the FIRST Firm reaches tier 3 answered "how many deployments happened
+  // in this world" — with 3 AI Firms, roughly 3x the question D19 asks. Every
+  // tier-3 verdict this project has printed (5.0 at M8, 6.0 on eras 2 and 3)
+  // was that inflated number graded against a per-Firm band.
+  const deploysByFirm = new Map();
 
   for (let t = 0; t < ticks; t++) {
     // The AI acts BETWEEN ticks, exactly where a player's client would send
@@ -129,7 +140,10 @@ export function runWorldDay(seed, { size = SIZE, ticks = TICKS, mirror = MIRROR,
           break;
         }
         case "tierUnlocked":
-          if (e.tier >= 3 && tier3At < 0) { tier3At = t; deploysWhenTier3 = m.deployments; }
+          if (e.tier >= 3 && tier3At < 0) {
+            tier3At = t;
+            deploysWhenTier3 = deploysByFirm.get(e.firmId) ?? 0;
+          }
           break;
         case "contractFailed": m.failed++; break;
         case "contractExpired": m.expired++; break;
@@ -140,7 +154,11 @@ export function runWorldDay(seed, { size = SIZE, ticks = TICKS, mirror = MIRROR,
         case "agentRescued": m.rescues++; break;
         case "cacheLooted": m.cacheLost += e.amount | 0; m.raidsSucceeded++; break;
         case "perimeterAlarm": m.raids++; break;
-        case "firmDeployed": m.deployments++; deployedAt.set(e.firmId, t); break;
+        case "firmDeployed":
+          m.deployments++;
+          deploysByFirm.set(e.firmId, (deploysByFirm.get(e.firmId) ?? 0) + 1);
+          deployedAt.set(e.firmId, t);
+          break;
         case "firmExtracted": {
           if (e.emergency) m.emergencyExtracts++;
           else { m.cleanExtracts++; m.banked += e.banked | 0; }
@@ -160,6 +178,10 @@ export function runWorldDay(seed, { size = SIZE, ticks = TICKS, mirror = MIRROR,
   m.avgSortieTicks = sortieCount ? Math.trunc(sortieTicks / sortieCount) : 0;
   m.avgDeployTicks = deployCount ? Math.trunc(deployTicks / deployCount) : 0;
   m.deploysToTier3 = tier3At >= 0 ? deploysWhenTier3 : 0;
+  // 0 means NEVER REACHED, exactly as deploysToTier3 does. The analyser filters
+  // those out rather than averaging them in as zero — doing otherwise is how a
+  // hand-rolled mean once reported 3.93 against the instrument's honest 6.0.
+  m.ticksToTier3 = tier3At >= 0 ? tier3At : 0;
 
   for (const f of s.firms) {
     if (f.state === 0 && f.recognition === 0) continue;

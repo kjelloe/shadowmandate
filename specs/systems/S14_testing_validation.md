@@ -195,8 +195,9 @@ while the number it described had never been calculated.
 **Ask what the harness never does.** `completedThisTier` was discarded on every
 extraction, so real players lost partial tier progress — and **a world-day
 battery is structurally blind to it**, because it runs continuously and never
-extracts. The measured "6.0 deploys to tier 3" is therefore the OPTIMISTIC
-figure. Any continuous-run instrument cannot see a cost paid at a session
+extracts. The tier-3 figure printed at the time was therefore OPTIMISTIC for
+players — and the value itself, 6.0, was separately wrong (D71: it counted every
+Firm's deployments). Any continuous-run instrument cannot see a cost paid at a session
 boundary; enumerate those boundaries before trusting a progression number.
 
 **THE INSTRUMENT'S SHAPE IS PART OF THE INSTRUMENT.** Re-queuing the era-3
@@ -263,3 +264,45 @@ world-day never extracts through a ledger, so no run of it — at any n — coul
 have found the leak or can now confirm the fix. Confirming D69(b) needs a
 ledger-crossing harness, or the analytic argument above. That is a gap in the
 instrument set, not a gap in the data.
+
+## The tier-3 metric counted the wrong thing (2026-08-30, D71)
+
+**The single most consequential instrument defect this project has found**, and
+it was found by accident: adding `ticksToTier3` produced a row that contradicted
+its neighbour. 6.0 deployments at ~10 min each is 60 minutes, but elapsed time
+to tier 3 read **38**. Deployments cannot outlast the wall clock — unless they
+belong to different Firms.
+
+They did. `deploysToTier3` captured `m.deployments` — a counter incremented on
+**every** `firmDeployed` event, for all three AI Firms — at the moment the
+**first** Firm reached tier 3. So it answered "how many deployments happened in
+this world before somebody arrived", while **D19's band of 3–4 is per Firm**.
+Corrected to count only the reaching Firm, the same worlds read **3.0: inside
+the band.**
+
+Every tier-3 verdict this project has printed was that number: 5.0 at M8, 6.5
+and 6.0 on eras 2 and 3, each graded HIGH or FAIL. **D19 was never failing.**
+The "progression is SLOW" reading that ran from Q52 through D69 and D70 was an
+instrument defect, and `unlockCompletions` — the lever repeatedly proposed to
+fix it — never needed touching. It never was touched, through three separate
+opportunities, each time for the incidental reason that something else needed
+measuring first.
+
+**The lessons, in order of how much they would have saved:**
+
+- **A ratio is only meaningful if numerator and denominator have the same
+  scope.** `completed / deployments` is fine — both are world-wide. Comparing a
+  world-wide count against a per-Firm band is a category error that no amount of
+  n fixes, and n=300 made it look authoritative.
+- **Cross-check a new metric against an existing one that must agree with it.**
+  Nothing failed. No test went red, no exit status was non-zero, no probe
+  disagreed with the game. The defect surfaced only because two numbers
+  measuring overlapping things were printed side by side and one was impossible
+  given the other. **Print the redundant number.**
+- **A number that has been wrong for months looks exactly like a number that is
+  right.** This one survived being quoted in a design ruling, two acceptance
+  criteria, a playtest brief and four battery verdicts, because it was plausible
+  and everyone downstream reasoned about *why* it was high rather than *whether*
+  it was true.
+- **Suspicion should scale with how much a number is used, not how new it is.**
+  The most-cited figure in the pacing set was the least examined.

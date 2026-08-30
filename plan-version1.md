@@ -86,10 +86,14 @@ partial in `V1_ACCEPTANCE.md`. **10 pass, 3 partial, 1 fail.***
   40–60 min deployment half was **retired by D69**: the era-2 batteries showed
   more, shorter deployments and the owner ruled that correct for a
   drop-in/drop-out game, the figure having predated the drop-in loop existing.
-  What remains open is the sortie band (era-2: 14.2–28.3 human-adjusted, overlaps
-  15–20) and **tier-3 pace, 6.0 against 3–4**. The tier figure is not yet a
-  verdict: D69(b) found that partial tier progress was being discarded on every
-  extraction, which no world-day battery can see, so 6.0 is the OPTIMISTIC
+  The sortie band is **accepted as measured** (D70b: era-3 gives 13.9–27.8
+  human-adjusted against 15–20; it overlaps rather than sits inside, and that is
+  the ruling). Tier-3 pace was reported as **6.0 against 3–4 and that measurement
+  was WRONG** — `deploysToTier3` counted every Firm's deployments rather than the
+  reaching Firm's, roughly a 3x inflation; corrected it reads **3.0, in band**
+  (D71). A separate point still stands: D69(b) found partial tier progress was
+  discarded on every extraction, which no world-day battery can see, so the
+  pre-fix player experience was worse than any figure printed
   number. **Re-measure on era 3** (`0004-pacing` queued) before touching
   `unlockCompletions` — D69(c).
 - [x] Vendor sells ≥3 meaningful upgrades; bank has a purpose.

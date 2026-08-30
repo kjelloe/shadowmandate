@@ -19,7 +19,7 @@ than what was measured is worth nothing.
 | 8 | Every present player's board shows 5 offers, disjoint (headless multi-seat test) | **PASS** (test written in this slice) |
 | 9 | Returning after a day: changed world, intact ledger, fog reset, persistent building changes | **PASS** |
 | 10a | A sortie fits 15–20 min (D11, battery-verified) | **PASS** (owner-ruled 2026-08-30). Era-3: 13.9–27.8 min human-adjusted — it overlaps rather than sits inside, and the owner accepted that range as correct. The 40–60 min deployment half of the old criterion was **retired by D69** |
-| 10b | Median 3–4 deployments to tier 3 (D19) | **FAIL, and now a trustworthy one — 6.0 on era 3.** This was split out of criterion 10 because it answers to D19, not D11, and one ruling was dragging the other into a permanent PARTIAL. The number is unchanged from era 2, which is the expected result: the world-day harness uses no ledger, and `extractHq` never cleared `completedThisTier`, so the battery was **always** modelling the no-leak world. D69(b) did not move the measurement — it moved REALITY up to meet it. 64% of Firms reach tier 3 (up from 56%). Deciding the gate is now possible on honest data |
+| 10b | Tier 3 is reachable in a sensible time (D19, **unit revised by D71**) | **OPEN — awaiting a band, not a measurement.** The old form ("3–4 deployments") assumed the 40–60 min deployment D69d retired: a deployment now yields 1.19 completions and tier 3 costs 5 by construction, so era-3's 6.0 is arithmetically consistent rather than a failure. `ticksToTier3` was added to measure the new unit; the band is the owner's to set (Q54). 64% of Firms reach tier 3, up from 56% on era 2. `unlockCompletions` deliberately untouched |
 | 11 | Vendor sells ≥3 meaningful upgrades; the bank has a purpose | **PASS** |
 | 12 | Cleared browser + recovery code restores the Firm ledger | **PASS** |
 | 13 | Replays exact; pinned fixture stable; sim gate + battery pass on shipping ruleset | **PASS** |
@@ -194,6 +194,14 @@ off for the AI; the player route is untouched.
 `deploysToTier3` remains out of band at 6.0 against 3–4. It is a progression
 question rather than a survivability one — Q42(b) deliberately left tier supply
 alone pending more play data, and this is the number that will answer it.
+
+> **CORRECTION (2026-08-30, D71): that number was never real.** `deploysToTier3`
+> read every Firm's deployments at the moment the FIRST Firm reached tier 3 —
+> with 3 AI Firms, roughly 3x the per-Firm quantity D19 asks about. Corrected,
+> the same worlds read **3.0, inside the band**. Every tier-3 figure in the
+> transcripts above (5.0, 6.0, 6.5) is that inflated metric and none of them
+> should be read as a verdict. `unlockCompletions` was never the problem, and
+> it was — correctly, if accidentally — never changed.
 
 ### 1 and 14 — closed by slice B (2026-08-07)
 

@@ -4,7 +4,7 @@ Drop-in/drop-out covert-ops game. Sibling of Fireline Command
 (`~/GIT/firepower` — the fork source, never modified from here).
 
 **Status: M0–M6 complete; M7 done as far as it can go solo, and PLAYABLE in a
-browser. `npm test` = 533 green**, plus four browser gates (`smoke`, `ui`,
+browser. `npm test` = 534 green**, plus four browser gates (`smoke`, `ui`,
 `mobile`, `gallery`). Batch lane runs through GIT now (`batch/README.md`).
 **Remaining in M7**:
 the VM deploy (7e) and native GPU perf (7f) — both need the owner's hardware.
@@ -100,9 +100,10 @@ QUEUED for the batch PC (pacing 300, patrol 3/4).
 over-chosen (era 0, no opposition) to **1.03x — dead neutral** — with its reward
 never touched. The opposition did it, exactly as ruled. Also: patrol density 3
 vs 4 is **inside noise at n=300** (the n=24 "3 is gentlest" reading is retired;
-4 stays), progression is SLOW (median 6 deploys to tier 3 vs D11's 3-4, 43%
-never reach it), and **courier read as "dominated" (0.17x) — which was a
-MISDIAGNOSIS**, see D69. Acquisition's tiny share is tier gating working, not a
+4 stays), progression READ as slow (median 6 deploys to tier 3 vs 3-4) — **also
+a misdiagnosis: that metric counted every Firm's deployments, and corrected it
+is 3.0, in band** (D71). And **courier read as "dominated" (0.17x), a
+MISDIAGNOSIS too**, see D69. Acquisition's tiny share is tier gating working, not a
 defect.
 
 **Ruled and built 2026-08-30 (era `sm-era-3`, Q52 → D69)**: **courier 69 → 110**,
@@ -113,8 +114,9 @@ WORK-tick** and courier has none, so it was never priced at all, while
 problem. The 110 is derived from its second leg at D53's own rate. Nothing cut,
 **D42 untouched**. **`completedThisTier` now persists** — partial tier progress
 was discarded on extraction, penalising the core loop, and **no world-day battery
-can see it** because a world-day never extracts, so the measured "6 deploys to
-tier 3" was the optimistic figure. `unlockCompletions` deliberately unchanged
+can see it** because a world-day never extracts, so the pre-fix player figure
+was worse than anything printed. (The printed VALUE, 6 deploys, was separately
+wrong — see D71.) `unlockCompletions` deliberately unchanged
 until a clean era-3 reading. **D11's 40-60 min sortie target retired.**
 
 **The era-3 battery is IN** (`0004-pacing`, n=300, `eraMatch` and `ticks`
@@ -426,7 +428,7 @@ is undeclared. A missed mirror field silently invalidates every future battery.
 - **Ask what the harness never does (D69).** A world-day battery runs
   continuously and never extracts, so it is structurally blind to every cost
   paid at a session boundary — which is why the discarded `completedThisTier`
-  went unseen and "6 deploys to tier 3" was the optimistic figure.
+  went unseen and the printed tier-3 figure was optimistic for players.
 - **Balance attractiveness with OPPOSITION, not price (D42).** Extraction read
   1.43x over-chosen and the instinct was to keep cutting its payout. Wrong
   lever: extraction and acquisition are meant to get harder as a season
