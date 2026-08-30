@@ -47,7 +47,7 @@ export const KINDS = {
   mirror: { env: () => ({ MIRROR: "1" }) },
   firmswap: { env: () => ({ FIRMSWAP: "1" }) },
   size128: { env: () => ({ SIZE: "128" }) },
-  pacing: { env: (t) => ({ TICKS: String(t.ticks ?? 36000) }) },
+  pacing: { env: (t) => ({ TICKS: String(t.ticks ?? 60000) }) },
   patrol: { env: (t) => ({ PATROL_BASE: String(t.base ?? 4), TICKS: String(t.ticks ?? 60000) }) },
 };
 
@@ -102,7 +102,7 @@ function queue(argv) {
     task.count = Number(argv[2] ?? 300);
   } else {
     task.count = Number(argv[1] ?? 100);
-    if (kind === "pacing") task.ticks = Number(argv[2] ?? 36000);
+    if (kind === "pacing") task.ticks = Number(argv[2] ?? 60000);
   }
   // No timestamp: a wall-clock stamp is the one field that would churn the diff
   // on every re-queue while saying nothing the commit does not already say.
@@ -124,7 +124,11 @@ function status() {
       : r.status === "ok"
         ? `${r.rows} rows on ${r.ranOnEra} @ ${r.commit}${r.eraMatch ? "" : "  <-- ERA MISMATCH"}`
         : `${r.error}`;
-    console.log(`  ${state.padEnd(8)} ${t.id.padEnd(18)} ${detail}`);
+    const shape = [t.ticks ? `${t.ticks} ticks` : null, t.base !== undefined ? `base ${t.base}` : null]
+      .filter(Boolean).join(" ");
+    const drift = r && r.status === "ok" && r.ticks && t.ticks && r.ticks !== t.ticks
+      ? `  <-- RAN AT ${r.ticks} TICKS, QUEUED FOR ${t.ticks}` : "";
+    console.log(`  ${state.padEnd(8)} ${t.id.padEnd(18)} n=${t.count ?? "?"} ${shape.padEnd(18)} ${detail}${drift}`);
   }
   const pending = tasks.filter((t) => !responseFor(t.id)).length;
   console.log(`\n${pending} pending, ${tasks.length - pending} answered`);
@@ -148,6 +152,13 @@ function runTask(task, dry) {
     // one is exactly the stale-baseline hazard the era discipline exists for.
     // Flagged, never silently corrected.
     eraMatch: (task.queuedForEra ?? ranOnEra) === ranOnEra,
+    // The era is not the only thing that makes two batteries incomparable.
+    // `queue pacing 300` once defaulted to 36000 ticks while the era-2 pacing
+    // baseline had been run at 60000 — the obvious re-queue command silently
+    // built a DIFFERENT INSTRUMENT, and nothing in the response said so.
+    // Recorded so a mismatch is visible on the board instead of in a verdict.
+    ticks: Number(task.ticks ?? 0) || null,
+    base: task.base ?? null,
   };
   const cores = Math.max(1, cpus().length);
   const shards = Math.min(6, cores);

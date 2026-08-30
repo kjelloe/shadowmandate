@@ -20,6 +20,13 @@ A task with no response is pending. That is the whole protocol.
 
 ```bash
 node tools/batch.mjs queue pacing 300 60000   # n=300, 60k ticks
+node tools/batch.mjs queue pacing 300         # same thing — 60k is the default
+
+# Ticks are part of the INSTRUMENT, not a detail. Two batteries at different
+# run lengths are not comparable, and the board flags a response that ran at a
+# length other than the one it was queued for. Pacing's default was 36000 while
+# the era-2 baseline had been run at 60000, so the obvious re-queue command
+# quietly built a different instrument; it is 60000 on both sides now.
 node tools/batch.mjs queue patrol 3 300       # patrol base 3, n=300
 node tools/batch.mjs status                   # the board
 git add batch/tasks && git commit -m "batch: queue pacing 300" && git push

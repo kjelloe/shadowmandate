@@ -1,0 +1,8 @@
+{
+  "id": "0004-pacing",
+  "kind": "pacing",
+  "queuedForEra": "sm-era-3",
+  "queuedAtCommit": "888425b",
+  "count": 300,
+  "ticks": 60000
+}
