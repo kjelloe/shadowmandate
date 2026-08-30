@@ -90,8 +90,10 @@ partial in `V1_ACCEPTANCE.md`. **10 pass, 3 partial, 1 fail.***
   human-adjusted against 15–20; it overlaps rather than sits inside, and that is
   the ruling). Tier-3 pace was reported as **6.0 against 3–4 and that measurement
   was WRONG** — `deploysToTier3` counted every Firm's deployments rather than the
-  reaching Firm's, roughly a 3x inflation; corrected it reads **3.0, in band**
-  (D71). A separate point still stands: D69(b) found partial tier progress was
+  reaching Firm's, exactly a 3x inflation (D71). Corrected at n=300 it reads
+  **2.0 — BELOW the band, not above it** (D72): progression was never slow.
+  The criterion is now time (47 min AI / 94–188 human, 64% arrive) and its band
+  is unset pending Q54. A separate point still stands: D69(b) found partial tier progress was
   discarded on every extraction, which no world-day battery can see, so the
   pre-fix player experience was worse than any figure printed
   number. **Re-measure on era 3** (`0004-pacing` queued) before touching

@@ -101,8 +101,8 @@ over-chosen (era 0, no opposition) to **1.03x — dead neutral** — with its re
 never touched. The opposition did it, exactly as ruled. Also: patrol density 3
 vs 4 is **inside noise at n=300** (the n=24 "3 is gentlest" reading is retired;
 4 stays), progression READ as slow (median 6 deploys to tier 3 vs 3-4) — **also
-a misdiagnosis: that metric counted every Firm's deployments, and corrected it
-is 3.0, in band** (D71). And **courier read as "dominated" (0.17x), a
+a misdiagnosis: that metric counted every Firm's deployments. Corrected at n=300
+it reads 2.0 — BELOW the band. Progression was never slow** (D71/D72). And **courier read as "dominated" (0.17x), a
 MISDIAGNOSIS too**, see D69. Acquisition's tiny share is tier gating working, not a
 defect.
 
@@ -136,8 +136,22 @@ the **sortie band accepted as measured** (13.9–27.8 vs 15–20, overlaps);
 **acceptance criterion 10 split** into 10a sortie (PASS) / 10b tier pace (FAIL);
 **Q53 deferred** to the opposition retune.
 
-**Open**: `unlockCompletions` — now decidable, and the one live balance
-question; the AI's general night pricing; area retune behind D42; avenue density
+**The corrected tier-3 measurement** (`0005-pacing`, n=300 → **D72**): the
+long-held "6.0 deploys vs 3-4, FAIL" was an instrument defect — `deploysToTier3`
+counted every Firm's deployments against a PER-FIRM band. Corrected: **2.0, LOW
+not HIGH — progression was never slow.** 0004 and 0005 differ in **zero cells
+across 46 shared columns**, and the 6.0/2.0 ratio is exactly 3.0, the AI Firm
+count. Time to tier 3 is **47 min AI / 94-188 human, 64% arriving**. **The same
+scope error appeared twice** — the second time in D71(a)'s own reasoning, which
+compared a world-wide 1.19 completions/deployment against D11's per-FIRM 2-3
+intent; the reaching Firm does **2.5, inside intent**. Rule: in a multi-agent
+battery every quantity is per-world or per-agent, and the two are comparable
+only after an explicit conversion — **state the scope of both sides before
+concluding**.
+
+**Open**: **Q54** — the band for D19's revised (time) unit; with the deployment
+count back in band there may be nothing to answer. `unlockCompletions` stays
+untouched, now because nothing measured says it is wrong; the AI's general night pricing; area retune behind D42; avenue density
 (7B, noted). Q48–Q53 all ruled and closed.
 
 ## Read first

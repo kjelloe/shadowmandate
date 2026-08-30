@@ -181,7 +181,9 @@ Play normally. Do not hunt for anything. After each debrief record only:
 
 The instruments said tier 3 arrives at 6.0 deploys against a 3–4 target.
 **That measurement was wrong** (D71, 2026-08-30): it counted every Firm's
-deployments, not the reaching Firm's, and corrected it reads **3.0 — in band**.
+deployments, not the reaching Firm's. Corrected at n=300 it reads **2.0 —
+below the 3–4 band, not above it** (D72). Tier 3 takes about 47 minutes of AI
+time, 94–188 minutes human-adjusted.
 So the question was never whether the number is correct; it is whether the wait
 **dragged**. That is still the last open acceptance criterion and only you can
 close it.

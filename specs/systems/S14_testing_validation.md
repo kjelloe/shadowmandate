@@ -306,3 +306,38 @@ measuring first.
   it was true.
 - **Suspicion should scale with how much a number is used, not how new it is.**
   The most-cited figure in the pacing set was the least examined.
+
+## The corrected measurement (`0005-pacing`, n=300, era 3) — and the same error twice
+
+**Deployments to tier 3: 2.0, against a band of 3-4. LOW, not HIGH.** The belief
+that progression was slow, held from Q52 through D69 and D70 and written into a
+design ruling, two acceptance criteria and a playtest brief, was backwards.
+
+**The cleanest possible confirmation of the defect.** `0004-pacing` and
+`0005-pacing` ran the same era and the same rules on different commits, and
+differ in **zero cells across 46 shared columns and 300 rows**. The same 193
+Firms reach tier 3 in both. Only the tier-3 column moved: 6.0 -> 2.0, a ratio of
+**exactly 3.0 — the AI Firm count**, which is the defect's signature. It is also
+a free determinism check across two commits, the same gift `0001`/`0003` gave.
+
+**And I committed the identical category error inside the ruling that diagnosed
+it.** D71(a) argued that "a deployment yields 1.19 completions while D11 intended
+2-3", concluding the design was missing its own target. But **1.19 is a
+world-wide average across all Firms and D11's intent is per Firm** — the same
+scope mix that produced the 6.0. The Firm that reaches tier 3 does **2.5
+completions per deployment** (5 completions, by construction, across 2.0
+deployments): **inside D11's intent.** The 1.19 is depressed by deployments that
+complete nothing.
+
+**How to apply — the sharpened rule.** Scope errors are not a bug you fix once.
+Every quantity in a multi-agent battery is per-world or per-agent, and the two
+are only comparable after an explicit conversion. **Label the scope in the name
+or in the column comment**, because `deploysToTier3` and `completionsPerDeploy`
+both read as per-Firm and neither is. When comparing any measured number against
+a design intent, state whose scope each side is in before drawing the conclusion.
+
+**No verdict is drawn from the 2.0.** It is expressed in the unit D71(a) revised
+away from, precisely because "deployment" changed meaning under drop-in/drop-out.
+The criterion is time — **47 min AI, 94-188 min human-adjusted, 64% arriving** —
+and it has no band yet (Q54). `unlockCompletions` stays untouched, now for the
+strongest reason available: nothing measured says it is wrong.
