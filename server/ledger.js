@@ -24,7 +24,30 @@ export function emptyLedger(worldId, firmId, startingBank = 0) {
     heldAgentIds: [],
     lastExtractTick: 0,
     seasonsPlayed: 0,
+    // CI-4 career history (owner-ruled 2026-08-30). `bank` is a BALANCE and
+    // says nothing about what a Firm has earned across its life — a player who
+    // banked 4000 and spent 3900 looks identical to one who never worked.
+    sorties: 0,
+    bankedTotal: 0,
+    completedByKind: [0, 0, 0, 0, 0, 0],
   };
+}
+
+// Fill in fields a record predates. `get()` only substitutes a whole missing
+// RECORD, so an existing ledger from before CI-4 would come back without the
+// career fields and every read site would have to defend itself — which is how
+// `?? 0` spreads until nobody knows which fields are real. Defaulted on read,
+// so no version bump and no rewrite of anybody's file.
+export function normaliseLedger(led, startingBank = 0) {
+  const blank = emptyLedger(led.worldId, led.firmId, startingBank);
+  for (const [k, v] of Object.entries(blank)) {
+    if (led[k] === undefined) led[k] = Array.isArray(v) ? v.slice() : v;
+  }
+  // A kind was added to the contract vocabulary after this record was written.
+  if (led.completedByKind.length < blank.completedByKind.length) {
+    while (led.completedByKind.length < blank.completedByKind.length) led.completedByKind.push(0);
+  }
+  return led;
 }
 
 export class LedgerStore {
@@ -77,8 +100,10 @@ export class LedgerStore {
   key(worldId, firmId) { return `${worldId}:${firmId}`; }
 
   get(worldId, firmId) {
-    return this.data.firms[this.key(worldId, firmId)]
-      ?? emptyLedger(worldId, firmId, this.startingBank);
+    const led = this.data.firms[this.key(worldId, firmId)];
+    return led
+      ? normaliseLedger(led, this.startingBank)
+      : emptyLedger(worldId, firmId, this.startingBank);
   }
 
   // Written only on extraction and bail (S10). The debrief is the engine's
@@ -90,6 +115,15 @@ export class LedgerStore {
     led.recognition = Math.max(led.recognition, debrief.recognition | 0);
     led.tierUnlocked = Math.max(led.tierUnlocked, debrief.tierUnlocked | 0);
     led.contractsCompleted += debrief.contractsCompleted | 0;
+    // CI-4: the career record. `sorties` counts deployments that ENDED here —
+    // an extraction or a fold — which is the only place a sortie is known to be
+    // over. `bankedTotal` is lifetime earned, never spent down.
+    led.sorties = (led.sorties | 0) + 1;
+    led.bankedTotal = (led.bankedTotal | 0) + (debrief.banked | 0);
+    const byKind = debrief.completedByKind ?? [];
+    for (let i = 0; i < led.completedByKind.length; i++) {
+      led.completedByKind[i] += byKind[i] | 0;
+    }
     led.lastExtractTick = tick | 0;
     this.data.firms[this.key(worldId, debrief.firmId)] = led;
     this.save();

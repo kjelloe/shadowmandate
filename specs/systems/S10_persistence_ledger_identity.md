@@ -132,3 +132,20 @@ visit). (Token scope and season-end policy ruled: D32, D33.)
   work), so the floor is safe; every save carries the stamp so spending below
   the floor sticks forever after. Pinned in `test/hq.test.js`, both
   directions: legacy files floor, stamped files never re-floor.
+
+## CI-4 career fields (2026-08-30)
+
+The ledger gains three fields for the City Info HISTORY panel:
+
+| Field | Meaning |
+|---|---|
+| `sorties` | deployments that ENDED — an extraction or a fold. The only place a sortie is known to be over. |
+| `bankedTotal` | lifetime earned, never spent down. `bank` is a BALANCE and says nothing about a career: a Firm that banked 4000 and spent 3900 reads identically to one that never worked. |
+| `completedByKind` | completions per contract type, in the engine's own kind order. Derived from `contractCompleted` events at the server — never from a restated list of kinds, which is how the pacing instruments once dropped 30% of completions into a column that did not exist. |
+
+**`normaliseLedger` fills defaults on READ.** `get()` substitutes a whole missing
+RECORD, not missing FIELDS, so a file written before these existed would return
+`undefined` and every read site would have to defend itself until `?? 0` had
+spread far enough that nobody knew which fields were real. Normalising means no
+version bump and no rewrite of anybody's file, and it extends `completedByKind`
+if a contract kind is ever added.

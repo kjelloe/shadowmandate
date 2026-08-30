@@ -4,7 +4,7 @@ Drop-in/drop-out covert-ops game. Sibling of Fireline Command
 (`~/GIT/firepower` — the fork source, never modified from here).
 
 **Status: M0–M6 complete; M7 done as far as it can go solo, and PLAYABLE in a
-browser. `npm test` = 519 green**, plus four browser gates (`smoke`, `ui`,
+browser. `npm test` = 521 green**, plus four browser gates (`smoke`, `ui`,
 `mobile`, `gallery`). Batch lane verified (`ops/BATCH_PC.md`). **Remaining in M7**:
 the VM deploy (7e) and native GPU perf (7f) — both need the owner's hardware.
 **M8 — opposition and site security — 8a–8k done** (alarms, cameras, beams,
@@ -81,8 +81,13 @@ by hand).
   banks the cache; redropping keeps you earning with the cache at risk and costs
   standing. The AI got it in the same slice.
 - **Q49** — owner is playtesting; nothing changed.
-- **CI-1/CI-2 City Info** — seven tabs (board / log / firm / sortie / city /
-  firms / legend) on the splash and in the field, BOARD default. Rival intel is
+- **CI-1..CI-4 City Info** — eleven tabs (board / log / kit / firm / sortie /
+  history / city / places / districts / firms / legend) on the splash and in the
+  field, BOARD default. **KIT closed a real gap**: `credentialTier` was not in
+  the view at all, so a badge bought from the vendor was invisible while the 8f
+  rule gated extraction and acquisition behind it. HISTORY is the only panel
+  needing persisted state (`sorties`, `bankedTotal`, `completedByKind`,
+  normalised on read so no file migrates). Rank is "yours, not theirs". Rival intel is
   **earned or bought only** and the human/AI split is **never disclosed** (not
   sent at all). No new hashed state: the persistent half is `knownRivalHqs`, the
   session half derives from the journal. The **legend is derived from
@@ -91,9 +96,8 @@ by hand).
   board's buttons are the playtest-5 defect's original victim.
 
 **Open**: the **era-2** battery verdicts (queue unchanged, still needs the batch
-PC and a hand-synced `ops/`); **Q51** (what else still belongs in City Info —
-per-district panel, season standing, cross-sortie contract history); the AI's general
-night pricing; area retune behind D42; avenue density (7B, noted).
+PC and a hand-synced `ops/`); the AI's general night pricing; area retune behind
+D42; avenue density (7B, noted). Q48/Q49/Q50/Q51 are all ruled and closed.
 
 ## Read first
 

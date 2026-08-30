@@ -339,5 +339,12 @@
   "districts.none": "No districts reported.",
   "city.firm.rank": "Standing",
   "city.firm.rankValue": "{0} of {1} Firms deployed",
-  "city.firm.rankNone": "—"
+  "city.firm.rankNone": "—",
+  "city.tab.history": "HISTORY",
+  "history.sorties": "Sorties run",
+  "history.completed": "Contracts completed",
+  "history.banked": "Banked, lifetime",
+  "history.seasons": "Seasons played",
+  "history.recognition": "Recognition",
+  "history.none": "No career yet — extract cleanly to start one."
 }

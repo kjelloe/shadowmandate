@@ -339,5 +339,12 @@
   "districts.none": "Ingen bydeler rapportert.",
   "city.firm.rank": "Plassering",
   "city.firm.rankValue": "{0} av {1} utplasserte firmaer",
-  "city.firm.rankNone": "—"
+  "city.firm.rankNone": "—",
+  "city.tab.history": "HISTORIKK",
+  "history.sorties": "Oppdrag utført",
+  "history.completed": "Kontrakter fullført",
+  "history.banked": "Banket, totalt",
+  "history.seasons": "Sesonger spilt",
+  "history.recognition": "Gjenkjennelse",
+  "history.none": "Ingen karriere ennå — hent ut rent for å starte en."
 }

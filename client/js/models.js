@@ -900,7 +900,7 @@ export function hoverCarsAt(tick, lanes, count) {
 
 // Ordered by how often a player reaches for them: the board is the mid-mission
 // tab and opens by default; the legend is reference and sits last.
-export const CITY_TABS = ["board", "log", "kit", "firm", "sortie", "city", "places", "districts", "firms", "legend"];
+export const CITY_TABS = ["board", "log", "kit", "firm", "sortie", "history", "city", "places", "districts", "firms", "legend"];
 
 // One row is [labelKey, value] or [labelKey, valueKey, ...args] for translated
 // values — the same shape `standingRows` uses, so the renderer stays one loop.
@@ -1129,4 +1129,31 @@ export function districtsPanel(view) {
       holdsYours: holds > 0,
     };
   });
+}
+
+// CAREER HISTORY (CI-4, owner-ruled). The only panel here that needed new
+// PERSISTED state: everything else derives from the view or the session, but
+// "what have I done across sorties" is by definition not answerable from one.
+//
+// `bank` is a BALANCE and says nothing about a career — a Firm that banked 4000
+// and spent 3900 reads identically to one that never worked. `bankedTotal` is
+// lifetime earned and never spends down.
+export function historyPanel(briefing) {
+  const l = briefing?.ledger ?? null;
+  if (!l) return [];
+  const byKind = l.completedByKind ?? [];
+  const rows = [
+    ["history.sorties", l.sorties | 0],
+    ["history.completed", l.contractsCompleted | 0],
+    ["history.banked", l.bankedTotal | 0],
+    ["history.seasons", l.seasonsPlayed | 0],
+    ["history.recognition", l.recognition | 0],
+  ];
+  // Per type, in the engine's own kind order. Zero rows are KEPT: "surveillance
+  // 0" is a fact about how you play, and dropping empty rows would make the
+  // panel silently reshape itself as habits change.
+  CONTRACT_KEYS.forEach((key, kind) => {
+    rows.push([key, byKind[kind] | 0]);
+  });
+  return rows;
 }

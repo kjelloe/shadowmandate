@@ -32,6 +32,57 @@ function deployed(seed = 4711) {
   return { s, zone: z };
 }
 
+test("CI-4: the career ledger accumulates across sorties, and old files survive", async () => {
+  // The only City Info panel that needed new PERSISTED state. `bank` is a
+  // BALANCE: a Firm that banked 4000 and spent 3900 reads identically to one
+  // that never worked, so a career needs its own numbers.
+  const { LedgerStore, emptyLedger, normaliseLedger } = await import("../server/ledger.js");
+  const dir = mkdtempSync(join(tmpdir(), "sm-career-"));
+  const path = join(dir, "ledger.json");
+  try {
+    const store = new LedgerStore(path, { startingBank: 200 });
+    store.applyDebrief("w", {
+      firmId: 0, banked: 300, reputationDelta: 4, recognition: 10, tierUnlocked: 2,
+      contractsCompleted: 3, completedByKind: [1, 0, 2, 0, 0, 0],
+    }, 100);
+    store.applyDebrief("w", {
+      firmId: 0, banked: 150, reputationDelta: 4, recognition: 12, tierUnlocked: 2,
+      contractsCompleted: 1, completedByKind: [0, 1, 0, 0, 0, 0],
+    }, 200);
+    const led = store.get("w", 0);
+    assert.equal(led.sorties, 2, "a sortie that ended was not counted");
+    assert.equal(led.contractsCompleted, 4);
+    assert.equal(led.bankedTotal, 450, "lifetime banked must ACCUMULATE, not track the balance");
+    assert.deepEqual(led.completedByKind.slice(0, 3), [1, 1, 2],
+      "per-type completions did not accumulate in the engine's kind order");
+
+    // Spending moves the balance and must NEVER move the career total — that
+    // is the entire reason bankedTotal exists.
+    store.spendBank("w", 0, 400);
+    assert.equal(store.get("w", 0).bankedTotal, 450, "spending ate the career total");
+    assert.ok(store.get("w", 0).bank < 450);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+
+  // A record written BEFORE these fields existed must not come back undefined —
+  // `get()` only substitutes a whole missing RECORD, so without normalising,
+  // every read site would have to defend itself and `?? 0` would spread until
+  // nobody knew which fields were real.
+  const old = { worldId: "w", firmId: 1, reputation: 5, recognition: 2,
+    tierUnlocked: 2, bank: 90, contractsCompleted: 7, heldAgentIds: [],
+    lastExtractTick: 5, seasonsPlayed: 1 };
+  const fixed = normaliseLedger(old, 200);
+  assert.equal(fixed.sorties, 0);
+  assert.equal(fixed.bankedTotal, 0);
+  assert.deepEqual(fixed.completedByKind, [0, 0, 0, 0, 0, 0]);
+  // ...and nothing that WAS there is disturbed.
+  assert.equal(fixed.bank, 90, "normalising overwrote a real value");
+  assert.equal(fixed.contractsCompleted, 7);
+  // A kind added to the vocabulary after the record was written extends it.
+  const short = normaliseLedger({ ...old, completedByKind: [1, 2] }, 200);
+  assert.equal(short.completedByKind.length, emptyLedger("w", 1, 0).completedByKind.length);
+  assert.deepEqual(short.completedByKind.slice(0, 2), [1, 2], "existing counts were lost");
+});
+
 test("Q48: a captured Firm can bring in a replacement, for a reputation price", () => {
   // "Build the mid-sortie redrop, and give the player the option to do just
   // that if agent is captured" (owner, 2026-08-28). Until now the only answer

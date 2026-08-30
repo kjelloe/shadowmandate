@@ -14,7 +14,7 @@ import {
   payloadForBuilding, overlayRows, disguiseFor, districtChoices, standingRows, missionBanner,
   journalLine, gameClock, evacAvailable, SPOKEN_LINES,
   CITY_TABS, firmPanel, sortiePanel, cityPanel, firmsPanel, firmName,
-  kitPanel, placesPanel, districtsPanel,
+  kitPanel, placesPanel, districtsPanel, historyPanel,
   legendRows, LEGEND_STANCES,
   cuttableJunction, liftableGuard, dropshipFlight, DROPSHIP_MS, MAX_PINS,
   beginMission, areaView, areaActions, captureSituation,
@@ -483,6 +483,7 @@ function renderCityInfo() {
     sortie: () => sortiePanel(view, journal),
     city: () => cityPanel(view, session.briefing),
     kit: () => kitPanel(view, session.content),
+    history: () => historyPanel(session.briefing),
   };
 
   const tabs = $("#city-tabs");
@@ -520,7 +521,11 @@ function renderCityInfo() {
   list.className = "city-rows";
 
   if (rows[cityTab]) {
-    for (const [labelKey, value, ...args] of rows[cityTab]()) {
+    const built = rows[cityTab]();
+    // A career panel with no ledger yet must SAY so rather than render as an
+    // empty box, which reads as a broken tab.
+    if (!built.length) list.appendChild(cityRow(`${cityTab}.none`, ""));
+    for (const [labelKey, value, ...args] of built) {
       list.appendChild(cityRow(labelKey, value, ...args));
     }
   } else if (cityTab === "places") {

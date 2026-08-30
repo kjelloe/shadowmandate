@@ -211,12 +211,24 @@ export class World {
             ? this.rules.hq.reputation.emergencyEvac : this.rules.hq.reputation.cleanExtract,
           tierUnlocked: this.state.firms[e.firmId]?.tierUnlocked | 0,
           contractsCompleted: this.completedFor?.get(e.firmId) ?? 0,
+          // CI-4: the same count, split by contract type, for the career panel.
+          // Derived from the events rather than restated: a tool that
+          // enumerates what the engine also enumerates measures the wrong game,
+          // and the pacing instruments already taught that lesson the hard way.
+          completedByKind: (this.completedKindFor?.get(e.firmId) ?? []).slice(),
         });
         this.completedFor?.set(e.firmId, 0);
+        this.completedKindFor?.delete(e.firmId);
       }
       if (e.type === "contractCompleted") {
         if (!this.completedFor) this.completedFor = new Map();
         this.completedFor.set(e.firmId, (this.completedFor.get(e.firmId) ?? 0) + 1);
+        if (!this.completedKindFor) this.completedKindFor = new Map();
+        const byKind = this.completedKindFor.get(e.firmId) ?? [];
+        const k = e.kind | 0;
+        while (byKind.length <= k) byKind.push(0);
+        byKind[k] += 1;
+        this.completedKindFor.set(e.firmId, byKind);
       }
     }
     const ai = stepAiFirms(this.state, this.rules, apply);
