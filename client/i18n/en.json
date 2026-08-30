@@ -346,5 +346,8 @@
   "history.banked": "Banked, lifetime",
   "history.seasons": "Seasons played",
   "history.recognition": "Recognition",
-  "history.none": "No career yet — extract cleanly to start one."
+  "history.none": "No career yet — extract cleanly to start one.",
+  "journal.redropped": "Replacement operative dropped in ({0} standing)",
+  "journal.credential": "Tier {0} credential acquired",
+  "journal.released": "Operative out of custody"
 }

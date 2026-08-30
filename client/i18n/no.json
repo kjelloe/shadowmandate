@@ -346,5 +346,8 @@
   "history.banked": "Banket, totalt",
   "history.seasons": "Sesonger spilt",
   "history.recognition": "Gjenkjennelse",
-  "history.none": "Ingen karriere ennå — hent ut rent for å starte en."
+  "history.none": "Ingen karriere ennå — hent ut rent for å starte en.",
+  "journal.redropped": "Ny agent sluppet ned ({0} anseelse)",
+  "journal.credential": "Nivå {0}-adgangskort skaffet",
+  "journal.released": "Agent ute av varetekt"
 }

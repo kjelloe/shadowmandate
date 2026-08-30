@@ -22,6 +22,26 @@ the D42/D43 balance verdict, which waits on a `pacing 300` re-run of the
 batteries against THIS build (the n=24 patrol sweeps predate all of the
 above — reading recorded in dev-questions.md).
 
+**STATUS 2026-08-30: suite 521/521, era `sm-era-2`.** Playtest 13's eight
+findings (D66) all landed as slices PT13-A..G: the camera moves (right-drag pan,
+quarter-turn rotation) and DRAWS ON rAF — the reported "jerky, lag skip" was ten
+hard jumps a second, not the engine; figures 41% taller and 79% leaner; cover
+shops became standing landmarks and alerted patrols scale and pulse; a captured
+Firm is finally told its options; mission areas gained four floor plans by site
+type with the camera following at street zoom (the ruled 8x); districts gained
+smoke and parks; and the UI grew two typographic voices.
+
+Then three owner rulings (D67) and the City Info panel (D68, slices CI-1..CI-4).
+**Q50 forced the era bump**: safehouses 1 → 8 per district and the HQ landing
+confined to the chosen district, because 62% of drops used to start somewhere
+the player had not picked. Fixtures re-pinned; era-1 baselines void at zero cost
+because those batteries had not run.
+
+**The pre-M9 remainder is unchanged in shape but now era-2**: the D42/D43 balance
+verdict still waits on a `pacing 300` run against THIS build, and the queue on
+the batch PC (update, pacing 300, patrol 3, patrol 4) is the run that defines
+era 2. Nothing else is blocked on it.
+
 *Written 2026-08-04, for the implementing agent (me). The operational plan is
 `plan-version1.md`; specs are `specs/systems/S01–S15`; this file is HOW the
 milestones execute: slice breakdown, order, dependencies, and the battery/sim

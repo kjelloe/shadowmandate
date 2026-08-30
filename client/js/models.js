@@ -689,6 +689,15 @@ export function journalLine(e) {
     case "cacheLooted": return { key: "journal.cacheLooted", args: [e.amount ?? 0] };
     case "rivalHqRevealed": return { key: "journal.rivalRevealed", args: [] };
     case "bailPaid": return { key: "journal.bailPaid", args: [e.cost ?? 0] };
+    // Q48: a redrop is one of the largest decisions in a sortie — it costs
+    // standing and keeps the cache at risk. A player asking "when did I bring
+    // the second one in, and what did it cost" must find it here.
+    case "agentRedropped": return { key: "journal.redropped", args: [e.reputationCost ?? 0] };
+    // CI-3: the KIT tab shows the credential you hold; the journal should say
+    // when you got it. It has always been a toast, which is gone in four
+    // seconds — the one thing a log is for.
+    case "credentialGained": return { key: "journal.credential", args: [e.tier ?? 0] };
+    case "agentReleased": return { key: "journal.released", args: [] };
     case "coverBought": return { key: "journal.coverBought", args: [e.cost ?? 0] };
     case "itemBought": return { key: "journal.itemBought", args: [e.itemKey ?? "", e.cost ?? 0] };
     // The transcript half: record the RESPONSE line the NPC spoke.

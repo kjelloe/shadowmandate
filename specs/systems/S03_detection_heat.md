@@ -151,3 +151,24 @@ MISSES you at night at the same distance. Still open from the draft: the
 night-aware AI scorer (a battery question — night changes burn probability,
 not any rule the AI must obey; the AI also does not USE the waiting actions
 yet, same follow-up). The S09 waiting actions are BUILT (WD-1).
+
+## Measured, 2026-08-30 (Q49 — owner playtesting)
+
+Trying to photograph an alerted patrol failed four times, which surfaced a
+number worth writing down: **a patrol on a cover tile at CALM heat effectively
+sees about three cells.** `patrolSightRadius` is 6, HURRY adds 1, and
+`coverSightPenalty` subtracts 2 per cover tier. Patrols then only go ALERTED
+when a burn CONVERGES them (`convergePatrols`, called from `burnAgent`) — being
+merely noticed does nothing to them.
+
+That compounds with the standing playtest-9 note that drop zones deliberately
+land ≥8 cells from any patrol: **early sorties can run their whole length
+without the opposition registering at all**. The alerted-patrol marker (D66) is
+built either way; this only decides how often a player sees it.
+
+Not tuned. The owner is playtesting it directly (Q49), and this is exactly the
+D42/D43 shape — a difficulty reading taken by feel against a system whose
+numbers were never swept. If it does get folded into a battery, note that the
+queued runs are **era 2**, not era 1: Q50 changed HQ placement and safehouse
+density, so any comparison of patrol exposure across that boundary is comparing
+two different worlds.

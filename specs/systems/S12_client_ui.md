@@ -367,3 +367,21 @@ often a player reaches for them; BOARD opens by default.
   read, so the legend cannot disagree with what it explains (D46).
 - Legend entries EXPLAIN rather than name — "Sensor beam, dark. This is the
   window to cross" is the mechanic in a line.
+
+### CI-3/CI-4 (2026-08-30): kit, places, districts, history
+
+| Tab | Source | Note |
+|---|---|---|
+| KIT | view (`credentialTier`, agent) | `credentialTier` was **not in the view at all** — a badge bought from the vendor was invisible while 8f gated the work behind it. Items are deliberately absent: the engine has no inventory model (items are used by slot, never owned), and a panel inventing one would describe a game that does not exist |
+| PLACES | view (`buildings`) | Nearest first, **distance only** — a bearing would start doing the radar's job from inside a menu. Newly worth having because Q50 took safehouses from 4 per city to 24 |
+| DISTRICTS | view (`districts`, `board`, `holdingSites`) | D20 holds untouched: the band always, the exact number only where the view had already decided intel was bought |
+| HISTORY | ledger, via the briefing | The ONLY panel needing persisted state. Zero rows are kept — "Surveillance 0" is a fact about how somebody plays |
+
+**Rank is "yours, not theirs"**: the engine sends a position and a count, so no
+rival reputation crosses the wire.
+
+**A row value may be an interpolated catalogue entry**, and `t()` fills a missing
+arg with an EMPTY STRING — so a dropped interpolation leaves a hole, not a
+visible `{0}`. `cityRow` forwards args, and the `ui` gate reads the standing row
+and asserts it keeps its numbers. A unit test that formats rows with its own
+helper stayed green under mutation, because it was not reading the renderer.

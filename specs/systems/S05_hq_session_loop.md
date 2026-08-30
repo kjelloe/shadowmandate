@@ -139,3 +139,51 @@ engine has, not the one the last bug happened to involve — when a new source
 class lands (drones, informant snitches, whatever S16 grows next), this
 function is one of the places it must be added, and the 22-spawn/6-seed
 15-second-loiter sweep in test/hq.test.js is the guard that notices.
+
+## Q50/Q48 (2026-08-28, era `sm-era-2`)
+
+### The landing lands where the player chose
+
+`hqLandingFor` is confined to the **district of the requested cell**. It used to
+search every safehouse in the world, so a district with no free one relocated
+the Field HQ wherever the nearest was — **62% of drops (n=184, 5 seeds) started
+in a district the player had not chosen**, median travel 30 cells on a 64-cell
+map. The drop picker showed the predicted landing faithfully; it just showed one
+46 cells away, which nobody reads as "you chose Industrial".
+
+**A distance bound was the wrong tool**, and the measurements said so: no radius
+drove the wrong-district rate below ~4%, because a drop near a border
+legitimately has a nearer safehouse across the line. Matching the district makes
+it zero by CONSTRUCTION. `landingSearchRadius` survives as a secondary comfort
+bound on how far you walk inside your own district and ships permissive; its
+test exercises it at 6 so the lever cannot rot.
+
+**Density is what keeps the tent rare.** `safeHousesPerDistrict` 1 → 8. One per
+district is four per CITY and every HQ claims one, so with four rivals deployed
+**51% of drops got no building at all**. Measured: 51% / 24% / 18% / 1% at
+1 / 4 / 6 / 8.
+
+**Fallback order changed with it.** It used to be "clear door, else ANY free
+door". Once the search cannot leave the district that stops holding, because
+there is a strictly better third option: the TENT on the requested cell, which
+`findDropZones` has already certified clear of patrols and cameras. Playtest 5
+ruled that being burned before you have control is unacceptable; not having a
+roof is merely a worse deployment. An unclear door is the last resort now.
+
+### The mid-sortie redrop (`CMD_REDROP`)
+
+Offered only when the Firm has an HQ standing and **nobody left on their feet**.
+A DOWNED operative is rescuable, so the redrop stays shut for them — this is for
+custody and absence, not a bad tick.
+
+- The replacement lands at the Field HQ, **clean**: inheriting the last
+  operative's heat would make the option worthless.
+- `offerRecoveries` runs immediately, so the recovery job is on the board when
+  they arrive rather than waiting for the next drop.
+- Costs `bail.redropReputationHit`, which had read to NOTHING since M4.
+- **The incentives oppose, which is what makes it a decision**: folding EXTRACTS
+  and banks the cache for free; redropping keeps you earning with the cache
+  still at risk.
+- Refusals are ordered so the client can explain them — `evac_running` is
+  checked before the generic `not_deployed`, because a refusal a player cannot
+  understand is the dead-click defect in slow motion.

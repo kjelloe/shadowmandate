@@ -7,8 +7,9 @@ import { readFileSync } from "node:fs";
 import { apply } from "../engine/reducer.js";
 import { hashState } from "../engine/snapshot.js";
 import { CMD_ADVANCE_TICK } from "../engine/commands.js";
-import { createInitialState, FIRM_UNDEPLOYED } from "../engine/state.js";
-import { generateCity } from "../engine/citygen.js";
+import { createInitialState, FIRM_UNDEPLOYED, AGENT_ACTIVE, AGENT_DOWNED, AGENT_HELD } from "../engine/state.js";
+import { captureAgent } from "../engine/combat.js";
+import { generateCity, findDropZones } from "../engine/citygen.js";
 import { refillPool, rebuildOffers } from "../engine/contracts.js";
 import { spawnAiFirms, stepAiFirms, aiLawfulView, aiDecide, scoreContract, workTicksFor, personalityOf } from "../engine/ai_firms.js";
 import { COMMAND_NAMES } from "../engine/commands.js";
@@ -96,6 +97,52 @@ test("the AI reads only its lawful view", () => {
     assert.ok(!decide.includes(forbidden),
       `aiDecide reaches past aiLawfulView via '${forbidden}' — lawful-knowledge rule`);
   }
+});
+
+test("Q48: the AI takes the redrop, and the gate is REACHABLE", () => {
+  // The first version of this gate required `reputation - cost >= floor`, which
+  // AI Firms can never satisfy: they start at reputation 0 and only earn it by
+  // extracting cleanly, so nothing could pay 8 up front. Zero redrops across
+  // four seeds and eighteen captures — the dead-8f-scorer-gate shape, and the
+  // branch READS perfectly. Only counting the outcome found it.
+  //
+  // So this asserts the decision REACHES the command, not that the code looks
+  // right. Unit tests prove behaviour; they never prove reachability.
+  let s = aiWorld(4711);
+  // A REAL drop zone, never a hand-picked cell: (8,8) was tried and is
+  // unlandable on this seed, which is exactly the `x + 3` trap the test
+  // conventions warn about.
+  const zone = findDropZones(s, RULES.citygen)[0];
+  s = apply(s, { type: 10, firmId: 0, cellX: zone.cellX, cellY: zone.cellY });
+  const firm = s.firms[0];
+  const agent = s.agents.find((a) => a.firmId === 0 && a.state === AGENT_ACTIVE);
+  assert.ok(agent, "fixture: the AI never deployed");
+
+  // Give it unfinished accepted work, then take its operative into custody.
+  const contract = s.contractPool.find((c) => c.acceptedBy < 0);
+  contract.acceptedBy = 0;
+  contract.stage = 1;
+  agent.state = AGENT_DOWNED;
+  captureAgent(s, agent, -1, RULES.detection, RULES.agents);
+  assert.equal(s.agents[agent.id].state, AGENT_HELD, "fixture: capture failed");
+
+  const decision = aiDecide(s, 0, RULES);
+  assert.equal(decision.command?.type, 14,
+    `with unfinished work the AI should redrop, got ${JSON.stringify(decision.command)}`);
+
+  // With NOTHING left to finish, folding banks the cache and is correct —
+  // the incentives oppose, which is the whole point of the choice.
+  contract.stage = 4;                                   // STAGE_DONE
+  const folding = aiDecide(s, 0, RULES);
+  assert.equal(folding.command?.type, 11,
+    "with no work left the AI should fold and bank, not pay to stay");
+
+  // And deep in reputation debt it stops buying its way back.
+  contract.stage = 1;
+  firm.reputation = RULES.ai_firms.redropDebtFloor - 1;
+  const broke = aiDecide(s, 0, RULES);
+  assert.equal(broke.command?.type, 11,
+    "past the debt floor the AI should fold rather than redrop forever");
 });
 
 test("the lawful view hides rival HQs the agent cannot see", () => {

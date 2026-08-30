@@ -106,3 +106,31 @@ D34: motorbikes only in V1 — courier flavor; full vehicle use in V2.)
   scorer has no general night term (burn probability by phase) — battery
   question, era-1.
 - Probe: `debugging/dbg_ai_credentials.mjs` (live frequency = economics).
+
+## The redrop (Q48, 2026-08-28)
+
+"No AI-only mechanics" cuts both ways: a player-only option would quietly make
+every AI Firm fold where a human would fight on, and since D11/D19 are verdicted
+from these runs, an AI that cannot take an action a player takes constantly is
+reporting on a different game.
+
+The AI redrops when it has **unfinished accepted work** and its reputation is
+above `redropDebtFloor`; otherwise it folds and banks. Note the incentive runs
+opposite to the obvious guess — folding EXTRACTS, so a fat cache is a reason to
+go home, not to stay.
+
+**The first gate was completely unreachable** and looked perfectly reasonable:
+it required `reputation - cost >= floor`, and AI Firms start at reputation 0 and
+only earn it by extracting cleanly, so nothing could ever pay 8 up front. Zero
+redrops across four seeds and eighteen captures. The branch reads fine; only
+counting the EVENT found it — the dead-8f-scorer-gate shape, in code written
+while thinking about that exact lesson.
+
+Two smaller ones from the same edit: the decision read `state.contractPool`
+directly (the lawful-view guard rejected it — `aiLawfulView` gained
+`myAccepted`, because a Firm's own job list is its own knowledge but
+`myContracts` hangs off an agent it no longer has), and the debt floor was a
+float expression that tripped the no-floats guard. It is a ruleset integer now.
+
+Reachability verified: 2–3 redrops per 20k-tick world on 4 of 5 seeds (the fifth
+had no captures), zero AI rejections across five seeds.

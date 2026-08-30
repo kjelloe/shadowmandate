@@ -180,8 +180,18 @@ M7 in progress and playable in a browser (updated 2026-08-06)
 | D64 | Mission-area shape | **Compound scale** (~24x16 with courtyards). **Burned inside: play on** under escalating lockdown (D44's worsening-situation doctrine, indoors). **PvP takedowns inside: yes** — a rival can put you down and leave you for the guards; that IS sabotage. Ambient city-life numbers delegated (proposals in S17) |
 | D65 | Era 1, AI purchases, the cyberpunk grade | **Era bump ruled** (Q47-A): `sm-era-1`; every era-0 battery baseline void; the version now actually reaches the hash (it never had). **AI buys credentials** from its HQ cache through player commands and **waits for dark** when night is close (owner 4A). **Visual direction** (ref `debugging/cyperpunk-example.png`): the splash goes street-level with haze skylines and edge neon; districts gain facade neon (commercial pink-dominant) and industrial pipe runs. Avenue density deferred (owner: note for later). Waiting polish: the shelter survives lockdown; nightfall countdown in the overlay |
 
+## Nineteenth decision batch (2026-08-28/30, playtest 13 and Q48–Q51)
+
+| # | Decision | Ruling |
+|---:|---|---|
+| D66 | Playtest 13, eight findings | **Camera moves**: right-drag pan and FOUR quarter-turn azimuths (the "no rotation" rule relaxed — a fixed compass hides two facades, and a stealth game must not hide the board). **rAF frame loop**: the "jerky, lag skip" was drawing once per 10Hz snapshot. **Figures 41% taller / 79% leaner**. **Cover shops are standing landmarks**; **alerted patrols scale and pulse**. **A captured Firm is told its options.** **Mission areas: four floor plans by site type**, camera follows at street zoom (the ruled 8x). **Smoke and parks.** **Two typographic voices** — display for chrome, plain ink for anything read to decide |
+| D67 | Q50 / Q48 / Q49 | **Q50**: safehouses 1→**8 per district** and the HQ landing confined to the chosen district — 62% of drops used to start elsewhere, now 0% by construction. **Era `sm-era-2`**; era-1 baselines void at zero cost (those batteries had not run). **Q48**: the **mid-sortie redrop** (`CMD_REDROP`), so `redropReputationHit` finally reads to something; folding banks the cache, redropping keeps you earning at risk. AI taught it in the same slice. **Q49**: owner playtesting, nothing changed |
+| D68 | City Info (Q51) | One tabbed panel, splash and field. **Rival intel earned or bought only**, gated at the view; **human/AI never disclosed** (`isAi` not sent); **standing is yours, not theirs**. BOARD folds in as default (panes shown/hidden, never rebuilt — playtest-5 click safety). LEGEND derived from `tokens.marks`. Only HISTORY needed persisted state. **KIT closed a real gap**: `credentialTier` was never in the view, so a bought badge was invisible while 8f gated the work behind it |
+
 **Open owner questions: Q45 remainders** (the night sneak percentage; the
 patrol-density verdict once the batteries read) in `../dev-questions.md`.
+Q48–Q51 are ruled and closed; the era-2 batteries are the only outstanding
+measurement.
 
 ## Sibling project references
 

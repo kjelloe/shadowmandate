@@ -1254,6 +1254,11 @@ test("the journal covers the indoor game and the waiting actions (playtest 12)",
     "areaEntered", "areaExited", "areaAssetTaken", "assetExtracted",
     "areaAlarm", "areaSuppressed", "guardDowned", "agentDumped",
     "waitingForDark", "waitedForDark", "contractContested", "contractLost",
+    // Q48/CI-3: a redrop is one of the largest decisions in a sortie, and a
+    // credential is the thing the KIT tab exists to make visible. Both were
+    // missed in the sweep after they shipped — the journal is a hand-kept map
+    // and a new event type falls out of it silently.
+    "agentRedropped", "credentialGained", "agentReleased", "bailPaid",
   ];
   for (const type of covered) {
     const line = journalLine({ type });
