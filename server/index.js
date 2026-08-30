@@ -81,7 +81,12 @@ const http = createServer((req, res) => {
   // A SLEEPING world is healthy, not broken: D16 parks an empty world so it
   // costs nothing, and the sample host is empty most of the time. Reporting
   // dormancy as unhealthy would make the runbook cry wolf every quiet night.
-  if (url.pathname === "/health") {
+  // `/healthz` is the SHARED-BOX convention: every sibling serves it, the games
+  // index probes it, and the down-alert monitor calls it. Ours answered only
+  // `/health`, so the index's `"health": "/healthz"` would have 404'd the moment
+  // this went live and fired a DOWN alert for a perfectly healthy game. Serving
+  // both costs one comparison and removes the whole class of drift.
+  if (url.pathname === "/health" || url.pathname === "/healthz") {
     res.writeHead(200, { "content-type": "application/json" });
     res.end(JSON.stringify({
       ok: true,

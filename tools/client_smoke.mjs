@@ -119,10 +119,28 @@ async function main() {
     if (!vendorOk) failures.push("/vendor/three/build/three.module.js did not serve — blank diorama");
 
     // Drop in, and wait for the world screen the way a player would.
+    //
+    // A PLAYER PICKS A DISTRICT. This used to click DROP IN and then sit out the
+    // picker's 15-second auto-deploy timer — with a wait budget of exactly
+    // 60 x 250ms = 15 seconds. Zero margin against the very timer it was waiting
+    // for, so the gate was one slow frame from red for as long as it has
+    // existed, and it finally tipped when the splash grew a button and a
+    // hundred more i18n keys. (The ui gate never flaked because it waits 30s.)
+    //
+    // Clicking a district is both faster and a REAL input path; the auto-timer
+    // is the fallback, not the flow. The budget is 30s regardless, so this is
+    // not racing anything.
     await page.click("#drop-in");
+    try {
+      await page.waitForSelector("#zone-districts li", { timeout: 8000 });
+      await page.evaluate(() => document.querySelector("#zone-districts li")?.click());
+    } catch {
+      // No picker: fall through and let the auto-timer do it. Still a pass if
+      // the world arrives — the point is the world, not which path got there.
+    }
     let deployed = false;
     for (let i = 0; i < 60 && !deployed; i++) {
-      await sleep(250);
+      await sleep(500);
       deployed = await page.evaluate(() => window.__smDebug?.screen === "world");
     }
     if (!deployed) {

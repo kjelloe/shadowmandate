@@ -7,10 +7,12 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { World } from "../server/world.js";
+
+const ROOT = new URL("..", import.meta.url).pathname;
 import { LedgerStore } from "../server/ledger.js";
 import {
   issueIdentity, claimWithCode, resolveToken, looksLikeCode, normaliseCode,
@@ -84,6 +86,19 @@ test("the recovery code is never stored in the clear", () => {
 });
 
 // ── View privacy (the contract that makes cheating structural nonsense) ────
+
+test("the health endpoint answers on BOTH names the box uses", async () => {
+  // The games index probes `"health": "/healthz"` and the down-alert monitor
+  // calls whatever that says. This server answered only `/health`, so the first
+  // time it went live the probe would have 404'd and fired a DOWN alert for a
+  // perfectly healthy game — the same sibling-copy drift that put "A World
+  // Begun" against port 8123 in a runbook. Both names, asserted.
+  const src = readFileSync(join(ROOT, "server", "index.js"), "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  assert.ok(/pathname === "\/health"/.test(src), "/health is gone");
+  assert.ok(/pathname === "\/healthz"/.test(src),
+    "/healthz is gone — the shared-box monitor probes that name");
+});
 
 test("a view carries no field that would leak the world", () => {
   const { world } = hostedWorld();
