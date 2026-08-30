@@ -1,0 +1,8 @@
+{
+  "id": "0002-patrol",
+  "kind": "patrol",
+  "queuedForEra": "sm-era-2",
+  "queuedAtCommit": "04356ac",
+  "base": 3,
+  "count": 300
+}
