@@ -44,7 +44,7 @@ M7 in progress and playable in a browser (updated 2026-08-06)
 | D8 | Title & terminology | **Shadow Mandate**; Firm/Agent/Field HQ/Contract terminology contract; "Syndicate" banned from UI, docs, code identifiers (repo codename `multisyndicate` excepted) |
 | D9 | Building interiors | **Exteriors only** — building entry opens a dialogue/shop overlay (static vendor portrait); no interior simulation |
 | D10 | Identity | **No accounts at start** — seat token + recovery code; email OTP confirmation later (V2) |
-| D11 | Session pacing | One contract sortie 15–20 min; normal deployment 40–60 min |
+| D11 | Session pacing | One contract sortie 15–20 min (**stands, met** — D70b); normal deployment 40–60 min (**RETIRED by D69d**) |
 | D12 | Intel persistence | **Fog resets each drop**; physical world changes (buildings altered by rivals/events) persist |
 | D13 | V1 AI rivals | Active on their own contracts; HQ raids on the player can happen |
 | D14 | Hosting | Official **public sample world** on the existing VM; self-hosters choose public listing or invite-only |
@@ -57,7 +57,7 @@ M7 in progress and playable in a browser (updated 2026-08-06)
 | D16 | Dormancy | AI rivals act only while the world is live; dormancy = heat decay + contract refresh only |
 | D17 | Capture exit | Player chooses: bail (% of bank, tier-scaled) or re-drop (rep hit; agent becomes rescue contract) |
 | D18 | Contract economy | Pool 5 per player slot; each present player shown 5; concurrent players get disjoint offers |
-| D19 | Tier pacing | Median 3–4 deployments (40–60 min) to tier 3 |
+| D19 | Tier pacing | Median 3–4 deployments to tier 3 — the COUNT, not the minutes (that band retired by D69d). Era-3: **6.0, a trustworthy failure** (D70) |
 | D20 | Heat visibility | Fuzzy 3-step default; exact 0–5 via intel |
 | D21 | Cache raids | Reach anywhere while deployed; perimeter alarm countdown allows racing home |
 | D22 | Standoff UI | Engage/Withdraw/Negotiate UI ships in V1 vs AI |

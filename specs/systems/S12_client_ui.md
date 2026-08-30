@@ -324,7 +324,7 @@ One panel, five tabs, reachable from the splash and the field.
 
 | Tab | Owns | Source |
 |---|---|---|
-| FIRM | bank, reputation, recognition, tier, cache at risk | ledger + view |
+| FIRM | bank, reputation, recognition, tier, **progress toward the next tier** (D70a), cache at risk, standing | ledger + view |
 | SORTIE | status, clock, contracts taken/completed/failed, burns, captures | **the client journal** |
 | CITY | world, season, day, light phase, districts, contracts, Firms deployed | briefing + live view |
 | FIRMS | the rival roster | view, gated |

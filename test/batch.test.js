@@ -84,3 +84,29 @@ test("a queued task names the era it was queued for", () => {
     assert.ok(t.queuedForEra, `${f} does not record the era it was queued for`);
   }
 });
+
+// D70. The lane tells the operator "a pacing job already covers patrol base N",
+// and a pacing job sets no PATROL_BASE — so N is whatever `data/` says, not a
+// number this tool gets to have an opinion about. It DID have one, in three
+// places. A retune of patrol density would have left the tool announcing a
+// stale base with total confidence, which is the same restated-constant defect
+// that had both pacing instruments measuring five contract kinds out of six.
+test("D70: the patrol default is DERIVED from the ruleset, never restated", () => {
+  const citygen = JSON.parse(readFileSync(join(ROOT, "data/citygen.json"), "utf8"));
+  const truth = citygen.patrols.perDistrictBase;
+
+  // The env the lane would hand the worker for a patrol job with no explicit
+  // base must equal the ruleset's own number.
+  const env = KINDS.patrol.env({});
+  assert.equal(Number(env.PATROL_BASE), truth,
+    `the lane defaults patrol base to ${env.PATROL_BASE} while data/citygen.json says ${truth}`);
+
+  // And the literal must not be lying around in the source to drift back in.
+  // Comments stripped: guards read code, not prose (this repo's rule, twice
+  // learned) — and the explanation above legitimately contains the number.
+  const src = readFileSync(join(ROOT, "tools/batch.mjs"), "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  const fallbacks = [...src.matchAll(/\?\?\s*(\d+)/g)].map((m) => Number(m[1]));
+  assert.ok(!fallbacks.includes(truth) || truth === 60000,
+    `tools/batch.mjs still hardcodes ${truth} as a fallback; derive it from data/`);
+});

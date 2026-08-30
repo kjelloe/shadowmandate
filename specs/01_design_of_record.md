@@ -56,7 +56,7 @@ These seven rulings resolve the open forks in the starter document and in `batch
 | **D8** | **Title: Shadow Mandate** (supersedes the D5 title). Terminology contract below. "Syndicate" never appears in player-facing UI, docs, filenames, or code identifiers; repo codename `multisyndicate` is the only exception. |
 | **D9** | **Exteriors only, with building entry as overlay.** No interior simulation. An agent at a building entrance can "go inside": the client opens an overlay — dialogue with options (quests/informants) or a shop menu with a static vendor portrait. The world sim sees only "agent inside building" (hidden from view, position parked at the entrance). |
 | **D10** | **Identity: no accounts at start.** Browser-stored seat token + human-typeable recovery code binds a player to their Firm ledger. Later (V2): optional email OTP confirmation to secure/recover a ledger. |
-| **D11** | **Session pacing:** one contract sortie should fit in 15–20 minutes; a normal deployment is 40–60 minutes. |
+| **D11** | **Session pacing:** one contract sortie should fit in 15–20 minutes; a normal deployment is 40–60 minutes. **The deployment half was RETIRED 2026-08-30 (D69d)** — the batteries showed more, shorter deployments and that is correct for a drop-in/drop-out game; the figure predates the drop-in loop existing. **The sortie half stands and is met** (D70b: era-3 measures 13.9–27.8 min human-adjusted, overlapping 15–20, owner-accepted). |
 | **D12** | **Fog resets each drop.** No explored-map persistence in the ledger. Physical world changes persist: buildings may be damaged/changed by rival Firms or world events between your deployments — the world you re-enter is recognisably altered. |
 | **D13** | **AI rivals are live actors in V1**: they run their own contracts, and HQ raids on the player can happen. |
 | **D14** | **Hosting:** an official public sample world runs on the existing VM. Self-hosted servers choose **public listing** (master index heartbeat) or **invite-only** (no heartbeat, join by code only). |
@@ -69,7 +69,7 @@ These seven rulings resolve the open forks in the starter document and in `batch
 | **D16** | **AI rivals act only while the world is live.** The dormancy transition covers heat decay and contract refresh only — no simulated rival progress while everyone is away. |
 | **D17** | **Capture exit — player's choice of both routes:** bail (a percentage of banked resources, scaling with tier) releases the agent; or re-drop (new callsign, flat reputation hit) — the captured agent stays in the world as a rescue contract. |
 | **D18** | **Contract economy:** the world pool holds **5 contracts per player slot** (a 16-slot world pools 80). Each present player is **shown 5**, and concurrent players receive **disjoint offers** — every player always has real options that aren't contested by the neighbour's board. |
-| **D19** | **Tier pacing band:** median 3–4 deployments (of 40–60 min, D11) to reach tier 3 — the M6 battery gate verifies this. |
+| **D19** | **Tier pacing band:** median 3–4 deployments to reach tier 3 — the M6 battery gate verifies this. (The parenthetical "of 40–60 min" is void: D69d retired that band. The COUNT is the criterion, not the minutes.) **Era-3 measures 6.0 and this is now a trustworthy failure** — see D70, where the battery is shown to have always modelled the no-leak world, so D69b moved reality up to the instrument rather than moving the number. Acceptance criterion 10b. |
 | **D20** | **Heat visibility:** fuzzy 3-step indicator by default (calm / tense / lockdown); the exact 0–5 level is intel, revealed by informants or surveillance rewards. |
 | **D21** | **Cache raids reach anywhere** while you're deployed — but the perimeter alarm gives a countdown generous enough to abort a mission and race home. The race home is the story. |
 | **D22** | **The standoff choice UI (Engage / Withdraw / Negotiate) ships in V1** against AI rivals; the AI answers by deterministic policy. V2 swaps the counterpart for a human. |
@@ -353,7 +353,7 @@ Contracts appear at **Contract Sites**. Each has a type, a difficulty tier (1–
 
 **Economy (D18):** the world maintains a pool of **5 contracts per player slot** (a 16-slot world pools 80). Each present player's board shows **5 offers**, and concurrent players receive **disjoint offers** — nobody's board is the neighbour's leftovers, and a returning player always finds tier-appropriate work.
 
-**Pacing (D11):** a single contract sortie — accept, travel, execute, return — should fit in 15–20 minutes. A normal deployment (drop-in to extraction) targets 40–60 minutes and 2–3 contracts. Tier 1 contracts sit at the short end so a tight-on-time player can still run one and bank it.
+**Pacing (D11):** a single contract sortie — accept, travel, execute, return — should fit in 15–20 minutes; era-3 measures 13.9–27.8 human-adjusted and the owner accepted it (D70b). A normal deployment (drop-in to extraction) **no longer targets a band** — the 40–60 minute figure was retired by D69d, because it predates the drop-in/drop-out loop and the batteries consistently showed shorter, more frequent deployments. Tier 1 contracts sit at the short end so a tight-on-time player can still run one and bank it.
 
 ### Mission radius expansion
 

@@ -48,7 +48,7 @@ export const KINDS = {
   firmswap: { env: () => ({ FIRMSWAP: "1" }) },
   size128: { env: () => ({ SIZE: "128" }) },
   pacing: { env: (t) => ({ TICKS: String(t.ticks ?? 60000) }) },
-  patrol: { env: (t) => ({ PATROL_BASE: String(t.base ?? 4), TICKS: String(t.ticks ?? 60000) }) },
+  patrol: { env: (t) => ({ PATROL_BASE: String(t.base ?? patrolBase()), TICKS: String(t.ticks ?? 60000) }) },
 };
 
 const read = (p) => JSON.parse(readFileSync(p, "utf8"));
@@ -69,6 +69,22 @@ export function scrub(text, root = ROOT) {
 function git(...args) {
   const r = spawnSync("git", args, { cwd: ROOT, encoding: "utf8" });
   return (r.stdout ?? "").trim();
+}
+
+// THE PATROL DEFAULT LIVES IN `data/`, NOT HERE. A pacing job sets no
+// PATROL_BASE, so it runs at whatever the ruleset says — and this tool prints
+// "pacing already covers base N" on the strength of that. Hardcoding 4 (which
+// it did, in three places) meant a patrol-density retune would leave the tool
+// confidently announcing the wrong number, which is the restated-constant
+// defect that made both pacing instruments measure five contract kinds of six.
+function patrolBase() {
+  // DELIBERATELY NOT SWALLOWED. `currentEra()` may fall back to "unknown"
+  // because that string announces itself as a failure; a numeric fallback here
+  // would be indistinguishable from a real reading, and this number goes into
+  // advice the operator acts on. If the ruleset cannot be read, say so.
+  const v = read(join(ROOT, "data", "citygen.json"))?.patrols?.perDistrictBase;
+  if (!Number.isFinite(v)) throw new Error("data/citygen.json has no patrols.perDistrictBase");
+  return v;
 }
 
 function currentEra() {
@@ -98,7 +114,7 @@ function queue(argv) {
   const id = `${seq}-${kind}`;
   const task = { id, kind, queuedForEra: currentEra(), queuedAtCommit: git("rev-parse", "--short", "HEAD") };
   if (kind === "patrol") {
-    task.base = Number(argv[1] ?? 4);
+    task.base = Number(argv[1] ?? patrolBase());
     task.count = Number(argv[2] ?? 300);
   } else {
     task.count = Number(argv[1] ?? 100);
@@ -113,7 +129,7 @@ function queue(argv) {
   // on era 2, because the pacing job runs at the DEFAULT patrol base — which is
   // 4. Paying for both buys one result. Said here, at the moment of queuing,
   // because a note in a README is read once and this decision recurs.
-  const patrolDefault = 4;
+  const patrolDefault = patrolBase();
   if (kind === "patrol" && task.base === patrolDefault) {
     console.log(`\nNOTE: patrol base ${patrolDefault} is the DEFAULT, which is what a`
       + ` 'pacing' job already runs at.\n      On era 2 the two came back byte-identical.`

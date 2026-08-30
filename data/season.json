@@ -14,7 +14,7 @@
     "upgrades"
   ],
   "reconnectGraceTicks": 1200,
-  "note_dayNight": "D63a. The LIGHT cycle is compressed game time, separate from the calendar day (TICKS_PER_DAY) the seasons count: a 40-60 min deployment (D11) must SEE both phases or 'wait for dark' can never be a decision. 30 min full cycle: 18 day / 12 night. nightSightPct is the ruled 30%: at night, WATCHERS (patrol sight, camera range) see at 70% \u2014 the agent's own senses are untouched, night helps the sneak without blinding the player.",
+  "note_dayNight": "D63a. The LIGHT cycle is compressed game time, separate from the calendar day (TICKS_PER_DAY) the seasons count: a deployment must SEE both phases or 'wait for dark' can never be a decision. The sizing originally cited D11's 40-60 min deployment band, which D69d RETIRED; it now rests on measurement instead. Era-3 (n=300): median deployment 12.4 min for the AI, 24.8-49.6 min human-adjusted - so a human deployment spans the 30 min cycle and does see both, which is what this number has to guarantee. NOTE the short end: an 18 min day phase against a 24.8 min deployment means a player dropping at dawn waits most of their sortie for dark. Whether that is tension or dead time is a playtest question, not a measured one. 30 min full cycle: 18 day / 12 night. nightSightPct is the ruled 30%: at night, WATCHERS (patrol sight, camera range) see at 70% \u2014 the agent's own senses are untouched, night helps the sneak without blinding the player.",
   "dayNight": {
     "dayTicks": 10800,
     "nightTicks": 7200,
