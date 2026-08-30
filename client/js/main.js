@@ -14,6 +14,7 @@ import {
   payloadForBuilding, overlayRows, disguiseFor, districtChoices, standingRows, missionBanner,
   journalLine, gameClock, evacAvailable, SPOKEN_LINES,
   CITY_TABS, firmPanel, sortiePanel, cityPanel, firmsPanel, firmName,
+  kitPanel, placesPanel, districtsPanel,
   legendRows, LEGEND_STANCES,
   cuttableJunction, liftableGuard, dropshipFlight, DROPSHIP_MS, MAX_PINS,
   beginMission, areaView, areaActions, captureSituation,
@@ -405,16 +406,20 @@ function noteFirmsSeen(view) {
   if (view?.standoff && view.standoff.rivalFirmId >= 0) notedFirms.add(view.standoff.rivalFirmId);
 }
 
-function cityRow(labelKey, value) {
+function cityRow(labelKey, value, ...args) {
   const li = document.createElement("li");
   const k = document.createElement("span");
   k.textContent = t(labelKey);
   const v = document.createElement("span");
   v.className = "val";
-  // A row value may be an i18n KEY (status words) or a plain number/string.
-  // Interpolated catalogue entries used as labels are how the season splash
-  // once rendered "DAY OF ....... 0 / 28", so the check is explicit.
-  v.textContent = typeof value === "string" && value.includes(".") ? t(value) : String(value);
+  // A row value may be an i18n KEY (status words, some of them INTERPOLATED)
+  // or a plain number/string. The args matter: rendering "city.firm.rankValue"
+  // without them prints "{0} of {1} Firms deployed" verbatim, which is exactly
+  // how the season splash once shipped "DAY  OF ....... 0 / 28" — data right,
+  // text gibberish, every unit test green.
+  v.textContent = typeof value === "string" && value.includes(".")
+    ? t(value, ...args)
+    : String(value);
   li.append(k, v);
   return li;
 }
@@ -477,6 +482,7 @@ function renderCityInfo() {
     firm: () => firmPanel(view, session.briefing),
     sortie: () => sortiePanel(view, journal),
     city: () => cityPanel(view, session.briefing),
+    kit: () => kitPanel(view, session.content),
   };
 
   const tabs = $("#city-tabs");
@@ -514,7 +520,48 @@ function renderCityInfo() {
   list.className = "city-rows";
 
   if (rows[cityTab]) {
-    for (const [labelKey, value] of rows[cityTab]()) list.appendChild(cityRow(labelKey, value));
+    for (const [labelKey, value, ...args] of rows[cityTab]()) {
+      list.appendChild(cityRow(labelKey, value, ...args));
+    }
+  } else if (cityTab === "places") {
+    const places = placesPanel(view);
+    if (!places.length) list.appendChild(cityRow("places.none", ""));
+    for (const p of places) {
+      const li = document.createElement("li");
+      const left = document.createElement("span");
+      left.textContent = `${t(p.labelKey)} · ${p.cellX},${p.cellY}`;
+      const right = document.createElement("span");
+      right.className = "val";
+      right.textContent = t("places.cells", p.distance);
+      li.append(left, right);
+      list.appendChild(li);
+    }
+  } else if (cityTab === "districts") {
+    const districts = districtsPanel(view);
+    if (!districts.length) list.appendChild(cityRow("districts.none", ""));
+    for (const d of districts) {
+      const li = document.createElement("li");
+      const left = document.createElement("div");
+      const name = document.createElement("div");
+      name.className = "firm-name";
+      name.textContent = t(d.traitKey);
+      const meta = document.createElement("div");
+      meta.className = "opt-note";
+      // D20: the band always, the exact number only where intel was bought —
+      // the view has already decided that, so the panel just reports it.
+      const heat = d.heatExact === null
+        ? t(d.heatKey)
+        : `${t(d.heatKey)} (${t("districts.heat")} ${d.heatExact})`;
+      meta.textContent = [
+        heat,
+        t("districts.offers", d.offers),
+        ...(d.hasHq ? [t("districts.yourHq")] : []),
+        ...(d.holdsYours ? [t("districts.holdsYours")] : []),
+      ].join(" · ");
+      left.append(name, meta);
+      li.appendChild(left);
+      list.appendChild(li);
+    }
   } else if (cityTab === "firms") {
     const firms = firmsPanel(view, notedFirms);
     if (!firms.length) {

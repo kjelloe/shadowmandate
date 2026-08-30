@@ -20,6 +20,7 @@ import { beamLiveAt } from "./sensors.js";
 import { worldToCellFloor } from "../shared/fixedmath.js";
 import { lightPhase, ticksUntilNight } from "./season.js";
 import { occupantsOf, areaGridFor, areaTemplateFor, areaEntryDoors } from "./areas.js";
+import { credentialTier } from "./access.js";
 
 const SIGHT = 10;          // what your own agent can make out, in cells
 
@@ -36,6 +37,10 @@ export function buildView(state, firmId, detCfg) {
   if (hq) eyes.push({ x: hq.cellX, y: hq.cellY });
 
   const visible = (cx, cy) => eyes.some((e) => within(e.x, e.y, cx, cy, SIGHT));
+  // The operative in the field, hoisted: several blocks below want it, and the
+  // credential row needs it before any of them run.
+  const leadAgent = own.find((a) => a.state === AGENT_ACTIVE)
+    ?? own.find((a) => a.state === AGENT_INSIDE) ?? null;
 
   const phase = lightPhase(state.tick, state.rules?.season?.dayNight);
 
@@ -51,6 +56,28 @@ export function buildView(state, firmId, detCfg) {
     // WD-2: how long until dark, engine-computed (season.js is the single
     // home of the cycle maths) — the waiting overlay's countdown reads this.
     ticksUntilNight: ticksUntilNight(state.tick, state.rules?.season?.dayNight),
+    // CI-3: WHAT THIS OPERATIVE IS CARRYING. The credential tier was not in the
+    // view at all — you could buy a tier-2 badge from the vendor and nothing
+    // anywhere told you that you held it, while the 8f rule gates extraction
+    // and acquisition behind exactly that badge. So a player could walk across
+    // the map to a secured site with no way to know whether the job was
+    // possible. Paying for something invisible is a defect this project has
+    // shipped more than once.
+    credentialTier: leadAgent ? credentialTier(state, leadAgent.id) : 0,
+
+    // CI-3: YOUR RANK, NOT THEIRS (owner-ruled). Position by reputation among
+    // the Firms currently deployed, ties broken by id so it is deterministic.
+    // The other Firms' numbers do NOT cross the wire — D18 keeps rival progress
+    // private, and "3rd of 5" says where you stand without saying whose.
+    rank: (() => {
+      const live = state.firms.filter((f) => f.state !== 0);
+      if (!live.length) return null;
+      const sorted = [...live].sort((a, b) =>
+        (b.reputation | 0) - (a.reputation | 0) || a.id - b.id);
+      const at = sorted.findIndex((f) => f.id === firmId);
+      return at < 0 ? null : { position: at + 1, of: sorted.length };
+    })(),
+
     // Q48: what bringing in a replacement costs in standing. From the ruleset,
     // so the capture overlay quotes the price the reducer will actually charge
     // rather than restating it — the bailQuote lesson, applied up front.

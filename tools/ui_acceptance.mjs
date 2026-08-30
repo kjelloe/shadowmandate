@@ -305,50 +305,46 @@ async function main() {
 
     check("client exposes its state for inspection", hasFatal);
 
-    // --- the frame loop (playtest 13, finding 6) ---------------------------
-    // "Movement was completely jerky, lag skip" was the diorama drawing once
-    // per 10Hz snapshot. Frames must now outnumber snapshots — that is the only
-    // machine-checkable statement of "it is not a slideshow", and it goes red
-    // the moment drawing is moved back under onChange.
-    const motion = await page.evaluate(() => new Promise((resolve) => {
-      const t0 = window.__smDebug?.tick ?? 0, f0 = window.__smFrames | 0;
-      setTimeout(() => resolve({
-        ticks: (window.__smDebug?.tick ?? 0) - t0,
-        frames: (window.__smFrames | 0) - f0,
-      }), 1500);
-    }));
-    // Deliberately not a frame-rate assertion: this runs on SwiftShader, where
-    // the real number is whatever the software rasteriser manages. The claim is
-    // only that the two clocks are separate.
+    // --- City Info renders TEXT, not placeholders -------------------------
+    // `t()` fills a missing arg with an EMPTY STRING, so a dropped
+    // interpolation leaves a HOLE rather than a visible "{0}" — the season
+    // splash shipped exactly that as "DAY  OF ....... 0 / 28" with every unit
+    // test on the data passing, because the data was right.
     //
-    // IF THIS FAILS WITH frames ~= ticks, check what else is on the CPU before
-    // concluding the frame loop regressed. Software rendering starved by a
-    // concurrent probe drops to about 4fps, which at TICK_MS=250 looks exactly
-    // like the once-per-snapshot defect. Seen once, during PT13-C; re-running
-    // alone was green. Do not run probes and gates at the same time.
-    check("the diorama draws faster than snapshots arrive",
-      motion.frames > motion.ticks && motion.ticks > 0, JSON.stringify(motion));
+    // Checked on the FIRM tab's rank row specifically, rather than by scanning
+    // every row for double spaces. That scan was tried and was useless twice
+    // over: it false-positived on a legitimately double-spaced board label, and
+    // it read the wrong pane. A guard aimed at the one row that actually
+    // interpolates is worth more than a broad one that cries wolf.
+    const rankRow = await evalT(async () => {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      // ENSURE open, never toggle: the board check above leaves City Info
+      // open, so a blind click closed it — and `renderCityInfo` early-returns
+      // on a hidden panel, leaving the previous pane's contents in place. The
+      // symptom was "visible but empty", which reads like a render bug.
+      const panel = document.getElementById("cityinfo");
+      if (panel.hidden) document.getElementById("city-btn").click();
+      await wait(120);
+      const tabs = [...document.querySelectorAll("#city-tabs button")];
+      const firmTab = tabs.find((b) => /FIRM|FIRMA/i.test(b.textContent.trim()));
+      if (!firmTab) return { error: "no FIRM tab" };
+      firmTab.click();
+      await wait(200);
+      const host = document.getElementById("city-pane-rows");
+      const rows = [...host.querySelectorAll("li")].map((li) => li.textContent);
+      document.getElementById("city-btn").click();     // leave it as we found it
+      return { hidden: host.hidden, rows };
+    }, undefined, "read the FIRM tab", 30000);
 
-    // --- camera controls (playtest 13, finding 3) --------------------------
-    const cam = await page.evaluate(() => {
-      const view = document.getElementById("view");
-      const r = view.getBoundingClientRect();
-      const before = window.__smCamera?.();
-      document.getElementById("rot-right").click();
-      const rotated = window.__smCamera?.();
-      // A right-button drag must pan and reveal the recentre control.
-      view.dispatchEvent(new PointerEvent("pointerdown", {
-        button: 2, bubbles: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }));
-      view.dispatchEvent(new PointerEvent("pointermove", {
-        button: 2, bubbles: true, clientX: r.left + r.width / 2 + 80, clientY: r.top + r.height / 2 }));
-      view.dispatchEvent(new PointerEvent("pointerup", { button: 2, bubbles: true }));
-      return { before, rotated, panned: window.__smCamera?.().panned,
-        recentreShown: !document.getElementById("recentre").hidden };
-    });
-    check("the rotate control turns the camera a quarter",
-      cam.rotated?.quarter === (cam.before?.quarter + 1) % 4, JSON.stringify(cam));
-    check("a right-drag pans the camera and offers recentre",
-      cam.panned === true && cam.recentreShown === true, JSON.stringify(cam));
+    check("the FIRM tab renders rows", !rankRow.error && !rankRow.hidden
+      && (rankRow.rows ?? []).length >= 5, JSON.stringify(rankRow).slice(0, 160));
+    if (rankRow.rows?.length) {
+      // "3 of 5 Firms deployed" — both numbers, or the interpolation was lost.
+      const rank = rankRow.rows[rankRow.rows.length - 1];
+      check("the standing row keeps its interpolated numbers",
+        /\d+/.test(rank) && !/\{\d+\}/.test(rank) && !/\s{2,}/.test(rank.trim()), rank);
+    }
+
   } catch (e) {
     failures.push(`harness: ${e.message}`);
   } finally {

@@ -900,7 +900,7 @@ export function hoverCarsAt(tick, lanes, count) {
 
 // Ordered by how often a player reaches for them: the board is the mid-mission
 // tab and opens by default; the legend is reference and sits last.
-export const CITY_TABS = ["board", "log", "firm", "sortie", "city", "firms", "legend"];
+export const CITY_TABS = ["board", "log", "kit", "firm", "sortie", "city", "places", "districts", "firms", "legend"];
 
 // One row is [labelKey, value] or [labelKey, valueKey, ...args] for translated
 // values — the same shape `standingRows` uses, so the renderer stays one loop.
@@ -914,6 +914,12 @@ export function firmPanel(view, briefing) {
     // The cache is the tension arc (D7): earned this deployment, LOST if the HQ
     // falls. Showing it beside the bank is the whole point of the split.
     ["city.firm.cache", view?.hq?.cacheResources ?? 0],
+    // YOUR RANK, NOT THEIRS (owner-ruled). The engine sends a position and a
+    // count and nothing else — no rival's reputation crosses the wire, so the
+    // panel could not leak one if it wanted to.
+    view?.rank
+      ? ["city.firm.rank", "city.firm.rankValue", view.rank.position, view.rank.of]
+      : ["city.firm.rank", "city.firm.rankNone"],
   ];
 }
 
@@ -1033,3 +1039,94 @@ export function legendRows(marks) {
 export const LEGEND_STANCES = STANCES.map((s) => ({
   key: s.key, noteKey: `legend.stance.${s.key.split(".").pop()}`,
 }));
+
+// ── KIT, PLACES, DISTRICTS (owner-ruled 2026-08-30) ────────────────────────
+
+// WHAT THIS OPERATIVE IS CARRYING. The credential is the reason this tab
+// exists: `credentialTier` was not in the view at all, so a badge bought from
+// the vendor was invisible — and the 8f rule gates extraction and acquisition
+// behind exactly that badge. A player could cross the map to a secured site
+// with no way to know whether the job was even possible.
+//
+// Items are NOT listed, deliberately: the engine has no inventory model (items
+// are used by slot, never owned), and a panel inventing one would be describing
+// a game that does not exist.
+export const CARRY_KEYS = {
+  0: "kit.carry.nothing",
+  7: "kit.carry.areaAsset",
+};
+
+export function kitPanel(view, content) {
+  const agent = ownAgent(view);
+  const tier = view?.credentialTier | 0;
+  const disguise = disguiseFor(content, agent?.disguiseId ?? 0);
+  return [
+    ["kit.credential", tier > 0 ? "kit.credentialTier" : "kit.credentialNone", tier],
+    ["kit.disguise", disguise ? disguise.key : "kit.disguiseNone"],
+    ["kit.carrying", CARRY_KEYS[agent?.carryKind ?? 0] ?? "kit.carry.something"],
+    ["kit.stance", STANCES[agent?.stance ?? 1]?.key ?? "hud.stance.move"],
+    ["kit.condition", agent?.condition ?? 0],
+  ];
+}
+
+// A DIRECTORY OF DOORS, nearest first. Newly worth having: Q50 took safehouses
+// from four per city to twenty-four, so "where is the closest one" became a real
+// question rather than a rhetorical one.
+//
+// Distance only, no bearing (owner-ruled): enough to choose between two doors,
+// without the panel quietly taking over the radar's job.
+export function placesPanel(view) {
+  const agent = ownAgent(view);
+  const hx = agent ? Math.floor(agent.x / 256) : (view?.hq?.cellX ?? 0);
+  const hy = agent ? Math.floor(agent.y / 256) : (view?.hq?.cellY ?? 0);
+  return (view?.buildings ?? [])
+    .map((b) => ({
+      id: b.id,
+      role: buildingRole(b.kind),
+      labelKey: `places.${buildingRole(b.kind)}`,
+      cellX: b.cellX, cellY: b.cellY,
+      distance: Math.abs(b.cellX - hx) + Math.abs(b.cellY - hy),
+    }))
+    .sort((a, b) => a.distance - b.distance || a.id - b.id);
+}
+
+// TRAIT_KEYS already exists above (the drop-zone picker uses it). A second
+// copy is how the tile palette ended up in three places — one table.
+
+// One row per district: what it is, how hot, and what it holds FOR YOU. Heat
+// follows D20 — the band always, the exact number only where intel was bought,
+// which `view.districts` has already decided.
+export function districtsPanel(view) {
+  const held = new Set();
+  for (const h of view?.holdingSites ?? []) {
+    if ((h.heldOwn ?? []).length) held.add(`${h.cellX},${h.cellY}`);
+  }
+  const hqAt = view?.hq ? `${view.hq.cellX},${view.hq.cellY}` : null;
+  const nearest = (cx, cy) => {
+    // Districts are reported by their CORE, so "which district is this cell in"
+    // is answered the same way districtUnder does it — one rule, not two.
+    const d = districtUnder(view, cx, cy);
+    return d ? d.id : -1;
+  };
+  return (view?.districts ?? []).map((d) => {
+    const offers = (view?.board?.contracts ?? []).filter((c) => {
+      const site = (view.sites ?? []).find((s) => s.id === c.siteId);
+      return site && nearest(site.cellX, site.cellY) === d.id;
+    }).length;
+    let holds = 0;
+    for (const key of held) {
+      const [x, y] = key.split(",").map(Number);
+      if (nearest(x, y) === d.id) holds++;
+    }
+    return {
+      id: d.id,
+      traitKey: TRAIT_KEYS[d.trait] ?? "trait.industrial",
+      heatBand: d.heatBand | 0,
+      heatKey: HEAT_KEYS[d.heatBand | 0] ?? HEAT_KEYS[0],
+      heatExact: d.heat >= 0 ? d.heat : null,
+      offers,
+      hasHq: !!hqAt && nearest(view.hq.cellX, view.hq.cellY) === d.id,
+      holdsYours: holds > 0,
+    };
+  });
+}

@@ -385,6 +385,81 @@ test("PLAYTEST 13: the compound camera clamps per-axis, not against one size", a
   assert.deepEqual(clampCamera({ x: 6, y: 9 }, 64, 17, 11), { x: 17, y: 11 });
 });
 
+test("CITY INFO: kit, places and districts RENDER as text, not as placeholders", async () => {
+  // The defect this exists for: a row whose value is an INTERPOLATED catalogue
+  // entry, rendered without its args, prints "{0} of {1} Firms deployed"
+  // verbatim. The season splash shipped exactly that as "DAY  OF ....... 0/28"
+  // — the data was right and the text was gibberish, and every unit test on the
+  // data passed. So this asserts the rendered STRING.
+  const { kitPanel, placesPanel, districtsPanel, firmPanel } =
+    await import("../client/js/models.js");
+  const render = (catalog, rows) => rows.map(([k, v, ...args]) => {
+    const tr = (key, ...a) => (catalog[key] ?? key)
+      .replace(/\{(\d+)\}/g, (_, i) => a[Number(i)] ?? "");
+    const value = typeof v === "string" && v.includes(".") ? tr(v, ...args) : String(v);
+    return `${tr(k)}: ${value}`;
+  });
+
+  const view = {
+    tick: 50, bank: 100, credentialTier: 2,
+    rank: { position: 3, of: 5 },
+    hq: { cellX: 10, cellY: 10, cacheResources: 40, evacActive: 0 },
+    agents: [{ id: 0, state: 1, x: 10 * 256, y: 10 * 256, detection: 0,
+      disguiseId: 0, carryKind: 7, stance: 0, condition: 80 }],
+    buildings: [
+      { id: 1, kind: 0, cellX: 12, cellY: 10 },
+      { id: 2, kind: 2, cellX: 40, cellY: 40 },
+      { id: 3, kind: 1, cellX: 10, cellY: 14 },
+    ],
+    districts: [{ id: 0, trait: 1, coreX: 10, coreY: 10, heatBand: 1, heat: -1 },
+      { id: 1, trait: 0, coreX: 50, coreY: 50, heatBand: 2, heat: 4 }],
+    sites: [{ id: 9, cellX: 11, cellY: 11 }],
+    board: { contracts: [{ id: 1, siteId: 9 }] },
+    holdingSites: [],
+  };
+
+  for (const [loc, catalog] of [["en", EN], ["no", NO]]) {
+    const lines = [
+      ...render(catalog, kitPanel(view, null)),
+      ...render(catalog, firmPanel(view, { ledger: { reputation: 5 } })),
+    ];
+    for (const line of lines) {
+      assert.ok(!/\{\d+\}/.test(line), `${loc}: "${line}" left a placeholder unfilled`);
+      assert.ok(!/:\s*$/.test(line), `${loc}: "${line}" rendered an empty value`);
+      assert.ok(!/\b[a-z]+\.[a-z]/i.test(line.split(": ")[1] ?? ""),
+        `${loc}: "${line}" printed a raw i18n key as its value`);
+    }
+    // The rank row must carry BOTH numbers — that is the whole content.
+    const rank = lines.find((l) => l.startsWith(catalog["city.firm.rank"]));
+    assert.ok(rank.includes("3") && rank.includes("5"), `${loc}: rank lost its numbers: ${rank}`);
+  }
+
+  // KIT: a held credential must READ as held. This is the gap the tab exists
+  // for — the tier was not in the view at all, so a badge you paid for was
+  // invisible while 8f gated the work behind it.
+  const withBadge = Object.fromEntries(kitPanel(view, null).map(([k, v]) => [k, v]));
+  assert.equal(withBadge["kit.credential"], "kit.credentialTier");
+  const noBadge = Object.fromEntries(
+    kitPanel({ ...view, credentialTier: 0 }, null).map(([k, v]) => [k, v]));
+  assert.equal(noBadge["kit.credential"], "kit.credentialNone",
+    "no credential must say so — 'secured work is closed to you' is the point");
+
+  // PLACES: nearest first, and distances are real walking distance.
+  const places = placesPanel(view);
+  assert.equal(places[0].id, 1, "places are not sorted nearest-first");
+  assert.equal(places[0].distance, 2);
+  assert.ok(places[places.length - 1].distance > places[0].distance);
+
+  // DISTRICTS: D20 holds — the band always, the exact number only where the
+  // view already decided intel was bought.
+  const districts = districtsPanel(view);
+  assert.equal(districts.length, 2);
+  assert.equal(districts[0].heatExact, null, "exact heat leaked without intel");
+  assert.equal(districts[1].heatExact, 4, "bought heat intel did not reach the panel");
+  assert.equal(districts[0].hasHq, true, "the district holding your HQ should say so");
+  assert.equal(districts[0].offers, 1, "a board offer in this district was not counted");
+});
+
 test("LEGEND: every mark is either explained or explicitly excluded", async () => {
   // A legend is a hand-kept list pretending to be documentation, and this
   // project has been bitten by exactly that: SPOKEN_LINES fell silently out of
