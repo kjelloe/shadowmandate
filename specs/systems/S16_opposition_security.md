@@ -813,3 +813,62 @@ sounder reading. The preference ratio stays high because Defend is offered only
 board sooner, depressing its offered share and overstating its ratio. **I have
 not chased that number further**, because chasing a figure the instrument says
 is inflated is how a balance pass ends up tuning the tool instead of the game.
+
+## The beam is LEVEL-triggered, and that is the heat spiral (2026-08-31)
+
+**Diagnosis of the 36% of worlds that never reach tier 3** (owner ruled
+"diagnose before acting"). They are not slow. They are locked down: 1.85x the
+district-ticks at or above `checkpointsActiveAt`, a third the completions, and a
+completion rate per accepted contract of 0-38% against a healthy 60-100%.
+
+**The event census names the cause without ambiguity.** Summed over four spiral
+and four healthy worlds:
+
+| event | spiral | healthy | ratio |
+|---|---|---|---|
+| `beamTripped` | **1687** | **0** | infinite |
+| `alarmEscalated` | 144 | 18 | 8.0x |
+| `alarmRaised` | 108 | 26 | 4.2x |
+| `contractCompleted` | 6 | 23 | 0.26x |
+| `tierUnlocked` | 1 | 9 | 0.11x |
+
+Everything below `beamTripped` is its cascade.
+
+**The mechanism.** `applySecurity` trips a beam for an agent *standing in* it,
+once per beam **per tick**:
+
+```
+// 8c: a LIVE beam that an active agent is standing in trips the facility.
+```
+
+So the beam is **level-triggered, while the design it implements is a
+CROSSING** — the comment two lines below says so: "A beam knows only that
+something crossed it". An agent that STOPS inside one becomes a permanent siren.
+Measured on seed 22509: **614 consecutive ticks** of one agent tripping one
+beam, with all three Firms' agents doing it to the same beam (614/420/314). A
+crossing is about 56 ticks at `agents.baseSpeed`, so this is 11x a crossing.
+
+**Why an agent stops there is not a defect** — it is the game working. D41 makes
+an objective workable only while no patrol is within `patrolWindow`, so waiting
+is the intended decision; WD-1 adds waiting for dark. Both park an agent, and
+nothing ever asserted what a beam does to a stationary agent.
+
+**Beam count correlates hard**: spiral worlds carry 3/4/1/5 beams against
+healthy 1/2/0/0. But seed 7165 spiralled on a SINGLE beam, so presence is not
+sufficient — it is whether an agent's waiting cell sits inside one.
+
+**This is the doctrine's own rule failing on a case it did not enumerate.**
+"Every mechanism must have a usable gap" was asserted for a crossing: the dark
+window must exceed the two cell-moves a crossing takes, and
+`debugging/dbg_area_ring.mjs` checks it. Nobody asked what the gap means for an
+agent who is not crossing. **A mechanism verified against its intended use can
+still be pathological in a state the verification never modelled.**
+
+Probe: `debugging/dbg_heat_spiral.mjs` — real battery seeds, trajectory plus a
+full event-census diff. The census was deliberately not a hand-picked list of
+events; choosing them in advance would have answered the question by assumption,
+and the first two hypotheses (credential gating, then civilians tripping beams)
+were both wrong and both discarded on evidence.
+
+**Not fixed. Owner ruled diagnose-first, and the remedy is a design choice** —
+edge-trigger, cooldown, or dampen the alarm rather than the trip. See Q55.

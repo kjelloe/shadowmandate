@@ -205,6 +205,41 @@ test("the world-day harness produces the full metric row", async () => {
   assert.ok(row.deployments > 0, "a 2000-tick world-day saw no deployment");
 });
 
+// D73. Every battery column must DECLARE its scope. Three readings were wrong
+// in one day for the same reason — a world-scope number whose name reads as
+// per-Firm — and one of them stood as a design verdict for months. This does not
+// prevent a scope error; it prevents an UNDECLARED one, which is the version
+// nobody can catch by reading the CSV.
+test("D73: every battery column declares whose scope it is in", async () => {
+  const { COLUMNS, SCOPE, KIND } = await import("../tools/sm_worldday.mjs");
+  const VALID = new Set(["world", "firm", "district", "config"]);
+
+  // Per-kind columns are generated, so they are declared by RULE rather than by
+  // name — derived from KIND, never restated, or this list drifts from the
+  // engine's the way the pacing instruments once did.
+  const generated = new Set([
+    ...KIND.map((k) => `acc_${k}`), ...KIND.map((k) => `off_${k}`), ...KIND,
+  ]);
+
+  const undeclared = COLUMNS.filter((c) => !generated.has(c) && !(c in SCOPE));
+  assert.deepEqual(undeclared, [],
+    `these columns have no declared scope — say whether each is per-world, `
+    + `per-firm, per-district or config: ${undeclared.join(", ")}`);
+
+  for (const [col, scope] of Object.entries(SCOPE)) {
+    assert.ok(VALID.has(scope), `${col} declares unknown scope '${scope}'`);
+    assert.ok(COLUMNS.includes(col), `SCOPE declares '${col}', which is not a column`);
+  }
+
+  // The two that actually bit, pinned by MEANING rather than by name: the
+  // tier-3 deployment count is the reaching Firm's, and the lockdown counter
+  // accumulates per district so its ceiling is ticks x districts.
+  assert.equal(SCOPE.deploysToTier3, "firm",
+    "deploysToTier3 is one Firm's count — declaring it world-scope is the D71 defect");
+  assert.equal(SCOPE.districtLockdownTicks, "district",
+    "the lockdown counter is district-ticks; reading it against `ticks` overstates it by the district count");
+});
+
 // D71. `deploysToTier3` is graded against D19's PER-FIRM band of 3-4, but it
 // was reading `m.deployments` — every Firm's deployments — at the moment the
 // FIRST Firm reached tier 3. With 3 AI Firms that is roughly a 3x inflation,

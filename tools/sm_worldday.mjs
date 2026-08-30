@@ -59,6 +59,38 @@ function commitName() {
 // cannot see what it prices is worse than no instrument.
 export const KIND = KIND_NAMES;
 
+// D73. EVERY COLUMN DECLARES ITS SCOPE, because three separate readings were
+// wrong today for the same reason: a world-scope number whose NAME reads as
+// per-Firm. The tier-3 metric counted all Firms' deployments against a per-Firm
+// band (a wrong verdict for months); completions-per-deployment was compared to
+// a per-Firm design intent; and the lockdown counter accumulates DISTRICT-ticks,
+// so its ceiling is ticks x districts and it was nearly read as a fraction of
+// the run. No amount of n fixes a scope error, and n=300 makes it look
+// authoritative.
+//
+//   world    — summed across every Firm in the world
+//   firm     — belongs to ONE Firm (the one the metric is about)
+//   district — summed across every district; ceiling is ticks x districts
+//   config   — identity/configuration, not a measurement
+//
+// `test/ai_firms.test.js` fails if a column has no declared scope, so a new
+// column cannot be added without answering the question that caused this.
+export const SCOPE = {
+  seed: "config", size: "config", mirror: "config", firmswap: "config", ticks: "config",
+  offered: "world", accepted: "world", completed: "world", failed: "world", expired: "world",
+  burns: "world", downs: "world", captures: "world", arrests: "world", rescues: "world",
+  banked: "world", cacheLost: "world", raids: "world", raidsSucceeded: "world",
+  deployments: "world", cleanExtracts: "world", emergencyExtracts: "world",
+  heatMax: "district", districtLockdownTicks: "district",
+  recognition: "world", tierReached: "world",
+  avgSortieTicks: "world", avgDeployTicks: "world",
+  // The first Firm to arrive — that ONE Firm's deployment count is the whole
+  // point, and reading the world's instead is exactly what went wrong.
+  deploysToTier3: "firm",
+  // World CLOCK: elapsed ticks from t=0, not a per-Firm duration.
+  ticksToTier3: "world",
+};
+
 export const COLUMNS = [
   "seed", "size", "mirror", "firmswap", "ticks",
   "offered", "accepted", "completed", "failed", "expired",
@@ -68,7 +100,7 @@ export const COLUMNS = [
   "burns", "downs", "captures", "arrests", "rescues",
   "banked", "cacheLost", "raids", "raidsSucceeded",
   "deployments", "cleanExtracts", "emergencyExtracts",
-  "heatMax", "heatLockdownTicks", "recognition", "tierReached",
+  "heatMax", "districtLockdownTicks", "recognition", "tierReached",
   // D11/D19 pacing columns (slice 6e): ticks per completed contract and the
   // deployment length distribution are what the rulings are actually about.
   "avgSortieTicks", "avgDeployTicks", "deploysToTier3",
@@ -171,7 +203,7 @@ export function runWorldDay(seed, { size = SIZE, ticks = TICKS, mirror = MIRROR,
     }
     for (const d of s.districts) {
       if (d.heat > m.heatMax) m.heatMax = d.heat;
-      if (d.heat >= RULES.detection.heat.checkpointsActiveAt) m.heatLockdownTicks++;
+      if (d.heat >= RULES.detection.heat.checkpointsActiveAt) m.districtLockdownTicks++;
     }
   }
 
