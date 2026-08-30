@@ -87,6 +87,8 @@ export function hashStateLocal(state) {
     w.writeI32LE(x.toX); w.writeI32LE(x.toY);
     w.writeI32LE(x.onTicks); w.writeI32LE(x.offTicks); w.writeI32LE(x.phase);
     w.writeI32LE(x.disabledUntil);
+    // D74: the deliberate duplicate of snapshot.js's beam occupant writer.
+    for (const id of (x.inside ?? [])) w.writeI32LE(id);
   }
   for (const j of (state.junctions ?? [])) {
     w.writeI32LE(j.id); w.writeI32LE(j.siteId);

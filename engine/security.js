@@ -191,19 +191,45 @@ export function stepAlarms(state, cfg) {
   // deliberately does NOT touch the agent's detection state: you can trip a
   // beam and still be unseen. That is the decision the mechanism exists to
   // create — trip it and hurry, or wait for the gap.
+  //
+  // D74 — EDGE-TRIGGERED, not level-triggered. This loop used to fire for any
+  // agent STANDING in a live beam, once per beam per tick, which made an agent
+  // who stopped into a permanent siren: 614 consecutive ticks measured on one
+  // beam against ~56 for an actual crossing. Stopping is the game WORKING —
+  // D41 makes an objective workable only while no patrol is within
+  // `patrolWindow`, so waiting IS the decision, and WD-1 waits for dark — so
+  // two correct mechanisms met and produced a heat spiral that left 36% of
+  // worlds unable to reach tier 3. The comment above always said "crossed".
+  //
+  // `beam.inside` holds the agents that were TRIPPING it last tick, which is
+  // "inside AND live", not merely "inside". That distinction is the mechanic:
+  // an agent who waits out the dark window and is still standing there when the
+  // beam comes back ON must trip it, or "wait for the gap" degenerates into
+  // "stand in the gap forever".
   for (const beam of state.beams ?? []) {
-    if (!beamLiveAt(beam, state.tick)) continue;
     const site = siteById.get(beam.siteId);
-    if (!site) continue;
-    for (const agent of state.agents) {
-      if (agent.state !== AGENT_ACTIVE || agent.insideBuildingId >= 0) continue;
-      const cell = agentCell(agent);
-      if (!beamCoversCell(beam, cell.x, cell.y)) continue;
+    const live = beamLiveAt(beam, state.tick);
+    const was = beam.inside ?? [];
+    const now = [];
+    if (live) {
+      for (const agent of state.agents) {
+        if (agent.state !== AGENT_ACTIVE || agent.insideBuildingId >= 0) continue;
+        const cell = agentCell(agent);
+        if (!beamCoversCell(beam, cell.x, cell.y)) continue;
+        now.push(agent.id);
+      }
+    }
+    // Recorded BEFORE the early exit: a beam whose site is momentarily missing
+    // must not forget its occupants and re-trip them when it returns.
+    beam.inside = now;
+    if (!live || !site) continue;
+    for (const id of now) {
+      if (was.includes(id)) continue;          // already tripping — not an edge
       raiseAlarm(state, site, cfg, ALARM_LOCAL, "beam");
       // Announced, because a tripped beam the player cannot perceive is an
       // unfair mechanism: the client needs something to show and to sound.
       state.events.push({
-        type: "beamTripped", beamId: beam.id, siteId: site.id, agentId: agent.id,
+        type: "beamTripped", beamId: beam.id, siteId: site.id, agentId: id,
       });
       break;     // one trip per beam per tick; the alarm is already raised
     }

@@ -870,5 +870,42 @@ events; choosing them in advance would have answered the question by assumption,
 and the first two hypotheses (credential gating, then civilians tripping beams)
 were both wrong and both discarded on evidence.
 
-**Not fixed. Owner ruled diagnose-first, and the remedy is a design choice** —
-edge-trigger, cooldown, or dampen the alarm rather than the trip. See Q55.
+**Fixed as edge-triggered (D74) — and it did not fix the spiral.**
+
+### D74: the fix was right and the diagnosis was wrong
+
+The beam is edge-triggered now. `beam.inside` records who was tripping it last
+tick — **inside AND LIVE**, not merely inside, so an agent who waits out the dark
+window and is still standing there when the beam returns is still tripped;
+otherwise "wait for the gap" becomes "stand in the gap forever". Both directions
+are asserted and mutation-tested.
+
+**`beamTripped` fell 1687 → 36. Nothing else moved.** Same seeds, same
+completions (0/2/1/3), `alarmEscalated` still 144, spiral untouched.
+
+**Why the diagnosis failed.** `raiseAlarm` is idempotent while an alarm is
+already live, and `setStage` emits only on a stage CHANGE — so 1687 trips and 36
+trips produce exactly the same alarm state. The beam count was the loudest column
+in the census and it was a **symptom** (an agent parked in a beam), not a cause.
+
+**Where the spiral actually is**, by alarm reason across the same eight worlds:
+
+| reason | spiral | healthy | ratio |
+|---|---|---|---|
+| `sustained` | 144 | 18 | 8.0x |
+| `burned` | 97 | 25 | 3.9x |
+| `camera` | 3 | 1 | 3.0x |
+| `beam` | **8** | 0 | — |
+
+Burns are only 1.25x more common in spiral worlds but raise 3.9x the alarms, and
+`alarmEased` runs 119 vs 15 — alarms **oscillate** rather than clear. The working
+hypothesis, untested: a burned agent LINGERING near a site (D41 makes waiting for
+the patrol window the correct play) holds an alarm in sustained escalation.
+
+**The lesson, and it is the sharper one.** "Measure what a behaviour returns"
+usually catches a feature that fires and costs something. Here a fix fired
+perfectly, achieved exactly its stated mechanical goal, and **returned nothing**,
+because the quantity it reduced was not on the causal path. **A census ranks
+events by magnitude, not by causation** — and the largest ratio in a census is
+the most tempting thing in the world to call a cause. The A/B was the only thing
+that caught it, and it cost one probe run.

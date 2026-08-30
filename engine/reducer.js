@@ -84,7 +84,11 @@ export function copyState(state) {
     districts: state.districts.map((d) => ({ ...d })),
     sites: state.sites.map((s) => ({ ...s })),
     cameras: (state.cameras ?? []).map((c) => ({ ...c })),
-    beams: (state.beams ?? []).map((x) => ({ ...x })),
+    // D74: `inside` is a nested mutable array, so the spread alone would share
+    // it by REFERENCE across copies — the same trap S17 guards and terminals
+    // hit. A beam that leaked its occupant list would edge-trigger against
+    // another timeline's agents.
+    beams: (state.beams ?? []).map((x) => ({ ...x, inside: [...(x.inside ?? [])] })),
     junctions: (state.junctions ?? []).map((j) => ({ ...j })),
     buildings: state.buildings.map((b) => ({ ...b })),
     patrols: state.patrols.map((p) => ({ ...p, route: p.route.slice() })),

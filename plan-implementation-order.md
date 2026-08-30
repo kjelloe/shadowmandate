@@ -22,7 +22,7 @@ the D42/D43 balance verdict, which waits on a `pacing 300` re-run of the
 batteries against THIS build (the n=24 patrol sweeps predate all of the
 above — reading recorded in dev-questions.md).
 
-**STATUS 2026-08-30: suite 535/535, era `sm-era-3` (D69–D73).** Playtest 13's eight
+**STATUS 2026-08-30: suite 537/537, era `sm-era-4` (D69–D74).** Playtest 13's eight
 findings (D66) all landed as slices PT13-A..G: the camera moves (right-drag pan,
 quarter-turn rotation) and DRAWS ON rAF — the reported "jerky, lag skip" was ten
 hard jumps a second, not the engine; figures 41% taller and 79% leaner; cover

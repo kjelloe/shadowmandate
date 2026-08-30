@@ -207,3 +207,56 @@ test("beams are hashed, and survive the reducer's deep copy", () => {
   assert.equal(stepped.beams.length, s.beams.length, "beams did not survive copyState");
   assert.equal(stepped.beams[0].disabledUntil, 500);
 });
+
+// D74. THE DEFECT THAT COST 36% OF WORLDS. `applySecurity` fired for any agent
+// STANDING in a live beam, once per beam per tick — level-triggered, while the
+// design it implements is a crossing ("a beam knows only that something crossed
+// it", says the code two lines from the bug). An agent that stopped became a
+// permanent siren: 614 consecutive ticks measured on one beam against ~56 for a
+// real crossing, driving alarmEscalated 8x and a district lockdown that left
+// those worlds unable to reach tier 3.
+//
+// Stopping is the game WORKING: D41 makes an objective workable only while no
+// patrol is within `patrolWindow`, so waiting IS the decision, and WD-1 waits
+// for dark. Two correct mechanisms met at a seam nobody had asserted.
+test("D74: a beam trips on ENTRY, not on every tick you stand in it", () => {
+  let s = makeWorld();
+  const b = s.beams?.[0];
+  if (!b) { assert.ok(true, "this world has no beam; nothing to assert"); return; }
+  // Stand ON the beam, and keep it live for the whole window under test.
+  const cells = beamCells(b);
+  const cell = cells[Math.floor(cells.length / 2)];
+  placeAgent(s, { agentId: 0, cellX: cell.x, cellY: cell.y });
+  b.onTicks = 10_000; b.offTicks = 1; b.phase = 0; b.disabledUntil = 0;
+  assert.ok(beamLiveAt(b, s.tick), "fixture: the beam must be live for this test");
+
+  const { events } = tickCollecting(s, apply, 40);
+  const trips = events.filter((e) => e.type === "beamTripped" && e.beamId === b.id);
+  assert.equal(trips.length, 1,
+    `standing still tripped the beam ${trips.length} times in 40 ticks — `
+    + `level-triggered, which is the D74 heat spiral`);
+});
+
+// The other half, and the one that makes edge-triggering safe: an agent who
+// waits out the dark window and is STILL THERE when the beam returns must trip
+// it. Without this, "wait for the gap" degenerates into "stand in the gap
+// forever" and the mechanic is deleted rather than fixed. This is why
+// `beam.inside` records "inside AND LIVE" rather than merely "inside".
+test("D74: a beam that comes back ON trips the agent standing in it", () => {
+  let s = makeWorld();
+  const b = s.beams?.[0];
+  if (!b) { assert.ok(true, "this world has no beam; nothing to assert"); return; }
+  const cells = beamCells(b);
+  const cell = cells[Math.floor(cells.length / 2)];
+  placeAgent(s, { agentId: 0, cellX: cell.x, cellY: cell.y });
+  // Dark now, live shortly — the agent never moves.
+  b.onTicks = 20; b.offTicks = 20; b.disabledUntil = 0;
+  b.phase = 20;                       // start in the dark half
+  assert.equal(beamLiveAt(b, s.tick), false, "fixture: the beam must start dark");
+
+  const { events } = tickCollecting(s, apply, 40);
+  const trips = events.filter((e) => e.type === "beamTripped" && e.beamId === b.id);
+  assert.ok(trips.length >= 1,
+    "an agent camped in a dark beam was never tripped when it came back on — "
+    + "edge-triggering has deleted the mechanic instead of fixing it");
+});

@@ -119,6 +119,9 @@ export function mirrorState(state) {
       ...x,
       cellX: mirrorCellX(x.cellX, width),
       toX: mirrorCellX(x.toX, width),
+      // D74: agent ids, so they do NOT reflect — but the array must be copied,
+      // or the mirror shares the original's occupant list.
+      inside: [...(x.inside ?? [])],
     })),
     junctions: (state.junctions ?? []).map((j) => ({
       ...j, cellX: mirrorCellX(j.cellX, width),
