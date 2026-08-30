@@ -10,10 +10,31 @@
 // have nine. So "captures cause the spiral" is already suspect, and this probe
 // exists to watch the trajectory rather than the totals.
 //
-// The hypothesis it was built to test: `heat.tier1SuspendedAt` is 4 and
-// `checkpointsActiveAt` is 4, so a district at heat 4 simultaneously turns on
-// checkpoints AND withdraws every tier-1 contract. A tier-1 Firm there has no
-// work at all, and nothing it can legally do lowers the heat.
+// WHAT THIS PROBE HAS ALREADY RULED OUT (keep it, so nobody re-runs them):
+//
+//  1. "Hot districts starve tier-1 Firms of work." `tier1SuspendedAt` and
+//     `checkpointsActiveAt` are both 4, so a hot district withdraws tier-1 work
+//     AND turns on checkpoints. Wrong: the `t1cool` column (tier-1 contracts in
+//     districts below the threshold) sits at ~24. There is plenty of work.
+//  2. "CL-1 civilians trip the beams." Wrong: the beam loop iterates
+//     `state.agents`, and civilians are not in it.
+//  3. "Beam trips drive the alarm cascade." `beamTripped` read 1687 vs 0, the
+//     largest ratio in the census — and it was a SYMPTOM. Edge-triggering the
+//     beam (D74) cut it to 36 and changed NOTHING else: same completions, same
+//     `alarmEscalated`. `raiseAlarm` is idempotent while an alarm is already
+//     live, so the repeats were never on the causal path. A census ranks by
+//     magnitude, not causation.
+//
+// WHERE THE EVIDENCE NOW POINTS, by alarm REASON rather than event type:
+// `sustained` 144 vs 18, `burned` 97 vs 25, `camera` 3 vs 1, `beam` 8 vs 0 —
+// and `alarmEased` 119 vs 15, so alarms OSCILLATE rather than clear. Burns are
+// only 1.25x more common in spiral worlds but raise 3.9x the alarms. Working
+// hypothesis, untested: a BURNED agent lingering near a site (D41 makes waiting
+// for the patrol window the correct play) holds an alarm in sustained
+// escalation, which is heat, which is lockdown.
+//
+// If you extend this probe, census the alarm REASON, not the event type — that
+// is the cut that finally separated the two groups.
 //
 // Usage:  node debugging/dbg_heat_spiral.mjs [ticks]
 // Seeds are the real extremes from the battery, not hand-picked.

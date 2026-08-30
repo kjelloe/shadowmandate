@@ -48,7 +48,29 @@ M0: layout exists with firepower-derived seed values where reused; ruleset
 manifest hash test; i18n parity test; D8 grep test. Every later slice adds
 its keys here first.
 
-## Era 3 (2026-08-30) — the current ruleset
+## Era 4 (2026-08-31) — the current ruleset
+
+`data/ruleset.json` is **`sm-era-4`** (D74). **No `data/` value changed** — the
+bump is for an ENGINE behaviour change plus new hashed state, which is exactly
+what the era version exists to separate between hosts.
+
+The sensor beam is **edge-triggered**: it fires when an agent ENTERS it rather
+than every tick they stand in it. `beam.inside` is new hashed state (both twins,
+deep-copied in `copyState` and `mirrorState`) recording who was tripping it last
+tick — *inside AND live*, so an agent who waits out the dark window and is still
+there when the beam returns is still tripped.
+
+**Measured effect: `beamTripped` 1687 → 36. Measured NON-effect: everything
+else.** It did not fix the 36% of worlds that never reach tier 3, which is what
+it was built for — `raiseAlarm` is idempotent while an alarm is live, so the
+repeat trips were never causal. Recorded here so nobody reads era 4 as "the
+release that fixed the spiral". See D74.
+
+**Era-3 baselines are void by discipline**, though the practical difference is
+small: outcomes on eight probed seeds were byte-identical, and the only measured
+change is event volume. Re-pin rather than reason about which seeds might differ.
+
+## Era 3 (2026-08-30)
 
 `data/ruleset.json` is **`sm-era-3`** (D69). Two behavioural changes, neither of
 them worldgen, so the CITY is unchanged and no fixture re-pin was needed — the

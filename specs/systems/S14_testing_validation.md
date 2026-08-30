@@ -341,3 +341,30 @@ away from, precisely because "deployment" changed meaning under drop-in/drop-out
 The criterion is time — **47 min AI, 94-188 min human-adjusted, 64% arriving** —
 and it has no band yet (Q54). `unlockCompletions` stays untouched, now for the
 strongest reason available: nothing measured says it is wrong.
+
+## The populated-fixture hole opened a FOURTH time (2026-08-31, D74)
+
+`beam.inside` is a new hash-inert per-beam array. Both twins gained a writer for
+it, and **deleting the writer from `snapshot.js` left the entire suite green at
+537/537** — because no compared world ever had a beam with an occupant, so the
+two writers only ever ran over empty arrays.
+
+That is the same hole this file exists to close, now for the fourth time:
+contracts (2026-08-05), alarms (M8 8a), `hq.buildingId` (2026-08-22), and now
+this — **and I opened it myself, in the same session in which I had already
+re-read the rule.** Fixed by putting an occupant in a beam in `populatedWorld()`
+and asserting it, with both directions proved: drift one twin (red), and
+un-populate the subject (red).
+
+**The rule, restated because restating it clearly has not been enough:** adding
+a hash-inert collection or a variable-length field to a hashed entity means
+adding a POPULATION step and an assertion in the same edit. The four places
+(`copyState`, both hash twins, mirror) are necessary and **not sufficient** —
+they make the field travel correctly, while nothing makes the twins actually
+COMPARE it. A green suite after adding a hashed field is the alarm, not the
+all-clear.
+
+**A cheap check that would have caught all four**: after adding any hashed
+field, delete it from ONE twin and confirm the suite goes red. It takes one run
+and it is the only thing that distinguishes "the twins agree" from "the twins
+were never asked".

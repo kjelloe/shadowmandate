@@ -56,6 +56,11 @@ function populatedWorld() {
   // populated-fixture blind spot since M3 — a field added to one twin's hq
   // writer alone left the ENTIRE suite green, because no compared world ever
   // contained one.
+  // Somebody standing in a beam (D74). `beam.inside` is written by
+  // `applySecurity` at runtime, but the point here is that the twins' writers
+  // see a NON-EMPTY array, so it is set directly — the same way the alarm above
+  // is raised directly rather than by staging a burn.
+  if (s.beams.length > 0) s.beams[0].inside = [0];
   const zone = findDropZones(s, RULES.citygen)[0];
   const err = dropIn(s, 0, zone.cellX, zone.cellY, RULES.hq, RULES.agents);
   if (err) throw new Error(`fixture drop-in failed: ${err}`);
@@ -96,6 +101,13 @@ test("the populated world actually populates — otherwise this file proves noth
     "no populated mission area — the twins' area writers go uncompared");
   assert.ok(s.agents.some((a) => a.insideAreaId >= 0),
     "no agent inside an area — the area coordinate fields go uncompared at their defaults");
+  // D74, and the FOURTH time this exact hole has opened: a beam's occupant list
+  // is hash-inert while empty, so both twins' `inside` writers ran only over
+  // empty arrays. Deleting the writer from snapshot.js left the whole suite
+  // green — verified, not assumed, before adding this.
+  assert.ok(s.beams.some((b) => (b.inside ?? []).length > 0),
+    "no beam has an occupant — the twins' beam-occupant writers go uncompared, "
+    + "which is precisely the hole this file exists to close");
 });
 
 test("the paired hash functions agree on a world containing contracts and city", () => {

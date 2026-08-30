@@ -149,9 +149,26 @@ battery every quantity is per-world or per-agent, and the two are comparable
 only after an explicit conversion — **state the scope of both sides before
 concluding**.
 
-**Open**: **Q54** — the band for D19's revised (time) unit; with the deployment
-count back in band there may be nothing to answer. `unlockCompletions` stays
-untouched, now because nothing measured says it is wrong; the AI's general night pricing; area retune behind D42; avenue density
+**The 36% that never reach tier 3 — DIAGNOSED WRONG, then corrected**
+(D73 → **D74**, era **`sm-era-4`**). Those worlds are not slow, they are locked
+down. An event census showed **`beamTripped` 1687 vs 0** and I called it the
+cause; the owner approved the fix; the fix worked (**1687 → 36**) and **changed
+nothing else** — same completions, `alarmEscalated` still 144, spiral untouched.
+`raiseAlarm` is idempotent while an alarm is live and `setStage` emits only on a
+stage CHANGE, so the repeat trips were never causal. **A census ranks events by
+MAGNITUDE, not causation**, and the biggest ratio is the most tempting thing to
+call a cause. The beam change is kept because it is right on its own terms — the
+code always said "crossed" — **not because it solved anything**, and the era note
+says so. Real drivers by alarm REASON: `sustained` **144 vs 18**, `burned`
+**97 vs 25**, `beam` **8 vs 0**; `alarmEased` 119 vs 15, so alarms oscillate
+rather than clear. Working hypothesis, untested: a BURNED agent lingering near a
+site (D41 makes waiting for the patrol window correct play) holds an alarm in
+sustained escalation.
+
+**Open**: **the 36% spiral** — still unexplained, and the deploy is HELD for it.
+**Q54** — the band for D19's revised (time) unit; with the deployment count back
+in band there may be nothing to answer. `unlockCompletions` stays untouched, now
+because nothing measured says it is wrong; the AI's general night pricing; area retune behind D42; avenue density
 (7B, noted). Q48–Q53 all ruled and closed.
 
 ## Read first
@@ -192,6 +209,7 @@ node debugging/dbg_area_ring.mjs            # S17: guard-ring legality (4 zero c
 node debugging/dbg_ai_areas.mjs 4711 8000   # the counts behind the M5 gate's binary
 node debugging/dbg_poi_look.mjs             # playtest 13: shops + patrol markers
 node debugging/dbg_cityinfo.mjs             # CI-1: every City Info tab, splash + field
+node debugging/dbg_heat_spiral.mjs 12000    # D73/D74: why 36% of worlds never reach tier 3
 node debugging/dbg_district_look.mjs Industrial 53,39 4   # a named district, aimed
 node tools/batch.mjs queue pacing 300 60000  # queue a battery (commit + push it)
 node tools/batch.mjs status                 # the battery board, either machine
@@ -431,6 +449,13 @@ is undeclared. A missed mirror field silently invalidates every future battery.
 - **Rewards and progression are one system.** Every reward change moved
   "deploys to tier 3" in or out of its 3-4 band. Check both whenever either
   moves.
+- **A census ranks by MAGNITUDE, not causation (D74).** `beamTripped` was the
+  largest ratio in an event census (1687 vs 0) and was a SYMPTOM. Fixing it cut
+  the count 47x and moved no outcome at all, because `raiseAlarm` is idempotent
+  while an alarm is already live. **A/B the OUTCOME, not the mechanism you are
+  changing**: "the event count dropped" is evidence the edit works, never
+  evidence it mattered. One probe run caught this before the era note claimed a
+  fix that had not happened.
 - **Check a number was ever COMPUTED before calling it mis-chosen (D69).** The
   battery read courier at 0.17x and it looked like a payout problem. D53 priced
   pay-per-effort per WORK-tick; courier has none, so the pass computed nothing
