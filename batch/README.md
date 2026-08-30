@@ -72,3 +72,21 @@ file would do it), but with one machine it is complexity for nothing.
 
 The PC is shared with the sibling project. Check `status` in BOTH repos before
 queueing anything large — both workers shard to every core.
+
+## First run on a fresh worker
+
+```bash
+git clone git@github.com:kjelloe/shadowmandate.git
+cd shadowmandate
+npm ci --omit=dev        # enough: the suite needs `three` and `ws`, both
+                         # runtime deps. playwright is dev-only and drives the
+                         # BROWSER gates, which are not part of `npm test` —
+                         # skipping it saves a large download on the worker.
+node tools/batch.mjs status
+node tools/batch.mjs run
+git add batch/responses && git commit -m "batch: results" && git push
+```
+
+The worker checks out the same public repo as the dev machine. It will NOT have
+`dev-log.md`, `dev-questions.md`, `reports/` or `ops/` — those are gitignored
+and local to the dev machine. Nothing in the lane needs them.
