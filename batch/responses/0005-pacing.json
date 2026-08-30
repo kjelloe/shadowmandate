@@ -1,0 +1,14 @@
+{
+  "id": "0005-pacing",
+  "kind": "pacing",
+  "commit": "5176f8a",
+  "ranOnEra": "sm-era-3",
+  "queuedForEra": "sm-era-3",
+  "eraMatch": true,
+  "ticks": 60000,
+  "base": null,
+  "status": "ok",
+  "shards": 6,
+  "rows": 300,
+  "csv": "0005-pacing.csv"
+}
