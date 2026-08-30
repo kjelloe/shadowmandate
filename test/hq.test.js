@@ -446,6 +446,49 @@ test("the ledger persists across a re-drop and survives a reload", () => {
   }
 });
 
+// D69. `tierUnlocked` survived extraction and PROGRESS TOWARD IT did not, so a
+// Firm four contracts into a five-contract tier lost all four by going home.
+// In a drop-in/drop-out game that penalises the core loop, and no battery could
+// see it: a world-day runs continuously and never extracts.
+test("D69: progress toward the next tier survives extraction and a re-drop", () => {
+  const dir = mkdtempSync(join(tmpdir(), "sm-tierprog-"));
+  const path = join(dir, "ledger.json");
+  try {
+    const store = new LedgerStore(path);
+    let { s } = deployed();
+    s.firms[0].tierUnlocked = 2;
+    s.firms[0].completedThisTier = 4;
+    s = apply(s, { type: CMD_ACTIVATE_EVAC, firmId: 0 });
+    for (let i = 0; i < RULES.hq.evacHoldTicks; i++) s = apply(s, { type: CMD_ADVANCE_TICK });
+    const { debrief } = extract(s, 0, RULES.hq);
+    assert.equal(debrief.completedThisTier, 4, "the debrief never reported the progress");
+
+    const led = store.applyDebrief("world-a", debrief, s.tick);
+    assert.equal(led.completedThisTier, 4, "the ledger dropped the progress");
+
+    const again = new LedgerStore(path).get("world-a", 0);
+    assert.equal(again.completedThisTier, 4, "the progress did not survive a reload");
+
+    let s2 = makeWorld();
+    const zone = findDropZones(s2, RULES.citygen)[0];
+    s2 = apply(s2, {
+      type: CMD_DROP_IN, firmId: 0, cellX: zone.cellX, cellY: zone.cellY, ledger: again,
+    });
+    assert.equal(s2.firms[0].completedThisTier, 4,
+      "the next sortie started the tier over — this IS the defect");
+
+    // The other direction, and the reason this field cannot use the `Math.max`
+    // every neighbouring field uses: crossing a tier resets the counter to 0.
+    // Maxing would pin the Firm at 4 forever and gift it each following tier.
+    store.applyDebrief("world-a", { ...debrief, tierUnlocked: 3, completedThisTier: 0 }, s.tick);
+    assert.equal(store.get("world-a", 0).completedThisTier, 0,
+      "a tier crossing must reset progress, not keep the pre-unlock count");
+    assert.equal(store.get("world-a", 0).tierUnlocked, 3, "the tier itself still only climbs");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("D33: season rotation resets the world numbers but keeps lifetime honor", () => {
   const dir = mkdtempSync(join(tmpdir(), "sm-season-"));
   const path = join(dir, "ledger.json");

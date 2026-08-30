@@ -35,7 +35,7 @@
   "types": {
     "courier": {
       "tier": 1,
-      "reward": 69,
+      "reward": 110,
       "expiryTicks": 48000
     },
     "surveillance": {

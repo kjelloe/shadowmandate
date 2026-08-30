@@ -10,7 +10,7 @@ import { CMD_ADVANCE_TICK } from "../engine/commands.js";
 import { createInitialState, FIRM_UNDEPLOYED, AGENT_ACTIVE, AGENT_DOWNED, AGENT_HELD } from "../engine/state.js";
 import { captureAgent } from "../engine/combat.js";
 import { generateCity, findDropZones } from "../engine/citygen.js";
-import { refillPool, rebuildOffers } from "../engine/contracts.js";
+import { refillPool, rebuildOffers, KIND_NAMES } from "../engine/contracts.js";
 import { spawnAiFirms, stepAiFirms, aiLawfulView, aiDecide, scoreContract, workTicksFor, personalityOf } from "../engine/ai_firms.js";
 import { COMMAND_NAMES } from "../engine/commands.js";
 import { RULES } from "./helpers.js";
@@ -254,4 +254,52 @@ test("contract scoring prices time-on-objective and second legs", () => {
   }
   assert.ok(W("surveillance") > W("extraction"),
     "three surveillance passes should still cost more than one grab");
+});
+
+// D69. The test above says courier "is priced by TRAVEL" — and for a long time
+// that was a comment describing an intention nobody had carried out. D53
+// levelled pay-per-effort at a common rate per WORK-tick; courier has no work
+// ticks, so the pass computed nothing for it and its 69 stayed as it was. The
+// scorer, meanwhile, charged courier for two full legs. Result: courier ranked
+// DEAD LAST on every board the AI ever saw, and the era-2 battery read it at
+// 0.17x preference — which looks exactly like a balance problem and was
+// actually a type that had never been priced at all.
+//
+// Ranking, not a literal: the reward is a tuning knob and pinning it here would
+// make this test a chore. What must hold is that courier is a live option —
+// never the worst thing on the board, and never (having corrected it) the best.
+test("courier is a live option on the board, not the worst row on it", () => {
+  const totals = new Map();
+  for (const seed of PINNED_SEEDS) {
+    const s = aiWorld(seed);
+    // A real drop zone, not a hand-picked cell: distance from the HQ is the
+    // whole subject here, and a corner would bias every leg the same way.
+    const zones = findDropZones(s, RULES.citygen);
+    const z = zones[Math.floor(zones.length / 2)] ?? zones[0];
+    const view = { hq: { cellX: z.cellX, cellY: z.cellY } };
+    const p = personalityOf(RULES, 0);
+    for (const c of s.contractPool) {
+      const score = scoreContract(s, view, c, p, RULES);
+      // -1 is "declined for access", not a low price (8f). Averaging it in
+      // would silently move whichever type happens to sit behind a door.
+      if (score < 0) continue;
+      const name = KIND_NAMES[c.kind];
+      const acc = totals.get(name) ?? { sum: 0, n: 0 };
+      acc.sum += score; acc.n += 1;
+      totals.set(name, acc);
+    }
+  }
+
+  const ranked = [...totals.entries()]
+    .map(([k, v]) => [k, Math.round(v.sum / v.n)])
+    .sort((a, b) => b[1] - a[1]);
+  const shown = ranked.map(([k, v]) => `${k}=${v}`).join(" ");
+  assert.ok(ranked.length >= 5, `too few kinds scored to rank: ${shown}`);
+
+  const place = ranked.findIndex(([k]) => k === "courier");
+  assert.ok(place >= 0, `courier never scored at all: ${shown}`);
+  assert.notEqual(place, ranked.length - 1,
+    `courier is the worst-scoring contract on the board — the AI will never take it (${shown})`);
+  assert.notEqual(place, 0,
+    `courier now outscores every other contract — travel-pricing has overcorrected (${shown})`);
 });

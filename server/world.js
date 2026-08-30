@@ -210,6 +210,12 @@ export class World {
           reputationDelta: e.emergency
             ? this.rules.hq.reputation.emergencyEvac : this.rules.hq.reputation.cleanExtract,
           tierUnlocked: this.state.firms[e.firmId]?.tierUnlocked | 0,
+          // D69. THIS is the debrief that reaches the ledger in production —
+          // hq.js builds its own, but the server rebuilds from state here, so a
+          // field added only there would never be persisted. `extractHq`
+          // deliberately leaves this counter alone, which is what makes it
+          // readable after the extraction has already applied.
+          completedThisTier: this.state.firms[e.firmId]?.completedThisTier | 0,
           contractsCompleted: this.completedFor?.get(e.firmId) ?? 0,
           // CI-4: the same count, split by contract type, for the career panel.
           // Derived from the events rather than restated: a tool that

@@ -17,6 +17,13 @@ export function emptyLedger(worldId, firmId, startingBank = 0) {
     reputation: 0,
     recognition: 0,        // lifetime honor — carries across seasons (D33)
     tierUnlocked: 1,
+    // D69. Progress TOWARD the next tier, not just the tier reached. Without
+    // it, a Firm that completed 4 of the 5 contracts tier 3 asks for lost all
+    // four by extracting — and extracting is the core loop, so the game was
+    // quietly punishing the thing it is built around. Invisible to the
+    // batteries, too: a world-day never extracts and re-enters, so the
+    // measured "deploys to tier 3" was the optimistic number.
+    completedThisTier: 0,
     // Playtest 5: a fresh identity with bank 0 could afford NO action at all —
     // the cheapest informant option costs 30. Seeded from rules.hq.startingBank.
     bank: startingBank | 0,
@@ -114,6 +121,11 @@ export class LedgerStore {
     led.reputation += debrief.reputationDelta | 0;
     led.recognition = Math.max(led.recognition, debrief.recognition | 0);
     led.tierUnlocked = Math.max(led.tierUnlocked, debrief.tierUnlocked | 0);
+    // NOT Math.max, unlike every other field here. `completedThisTier` is the
+    // one counter that legitimately goes DOWN: crossing a tier resets it to 0.
+    // Maxing it would pin a Firm at its pre-unlock count forever and hand it
+    // the next tier for free.
+    led.completedThisTier = debrief.completedThisTier | 0;
     led.contractsCompleted += debrief.contractsCompleted | 0;
     // CI-4: the career record. `sorties` counts deployments that ENDED here —
     // an extraction or a fold — which is the only place a sortie is known to be
@@ -161,6 +173,7 @@ export class LedgerStore {
       // playtest-5 defect this seeds against.
       led.bank = this.startingBank;
       led.tierUnlocked = 1;
+      led.completedThisTier = 0;
       led.reputation = 0;
       led.seasonsPlayed = (led.seasonsPlayed | 0) + 1;
       // recognition and contractsCompleted deliberately survive.

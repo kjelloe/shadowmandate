@@ -172,6 +172,8 @@ export function dropIn(state, firmId, cellX, cellY, cfg, agentsCfg, ledger = nul
     firm.reputation = ledger.reputation | 0;
     firm.recognition = ledger.recognition | 0;
     firm.tierUnlocked = Math.max(1, ledger.tierUnlocked | 0);
+    // D69: partial progress toward the NEXT tier survives extraction too.
+    firm.completedThisTier = ledger.completedThisTier | 0;
   }
 
   // The lead agent lands with the HQ.
@@ -478,6 +480,7 @@ export function extract(state, firmId, cfg) {
     reputationDelta: emergency ? cfg.reputation.emergencyEvac : cfg.reputation.cleanExtract,
     hqIntact: emergency ? 0 : 1,
     tierUnlocked: firm.tierUnlocked,
+    completedThisTier: firm.completedThisTier | 0,
   };
   firm.reputation = (firm.reputation + debrief.reputationDelta) | 0;
 

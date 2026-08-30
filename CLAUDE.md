@@ -4,7 +4,7 @@ Drop-in/drop-out covert-ops game. Sibling of Fireline Command
 (`~/GIT/firepower` — the fork source, never modified from here).
 
 **Status: M0–M6 complete; M7 done as far as it can go solo, and PLAYABLE in a
-browser. `npm test` = 521 green**, plus four browser gates (`smoke`, `ui`,
+browser. `npm test` = 530 green**, plus four browser gates (`smoke`, `ui`,
 `mobile`, `gallery`). Batch lane runs through GIT now (`batch/README.md`).
 **Remaining in M7**:
 the VM deploy (7e) and native GPU perf (7f) — both need the owner's hardware.
@@ -101,17 +101,30 @@ over-chosen (era 0, no opposition) to **1.03x — dead neutral** — with its re
 never touched. The opposition did it, exactly as ruled. Also: patrol density 3
 vs 4 is **inside noise at n=300** (the n=24 "3 is gentlest" reading is retired;
 4 stays), progression is SLOW (median 6 deploys to tier 3 vs D11's 3-4, 43%
-never reach it), and **courier is dominated at its own tier** (0.17x, reward 69
-against surveillance's 414). Acquisition's tiny share is tier gating working,
-not a defect.
+never reach it), and **courier read as "dominated" (0.17x) — which was a
+MISDIAGNOSIS**, see D69. Acquisition's tiny share is tier gating working, not a
+defect.
 
-**Open**: Q52's decisions (courier pricing + progression must move together —
-rewards and progression are one system); the AI's general night pricing; area
-retune behind D42; avenue density (7B, noted). Q48/Q49/Q50/Q51 ruled and closed.
+**Ruled and built 2026-08-30 (era `sm-era-3`, Q52 → D69)**: **courier 69 → 110**,
+completing D53 rather than revisiting it — D53 priced a common **0.115 per
+WORK-tick** and courier has none, so it was never priced at all, while
+`scoreContract` charged it two full legs (two-site types walk 62-63 cells against
+29-31). It ranked LAST on every board; the battery reported that as a preference
+problem. The 110 is derived from its second leg at D53's own rate. Nothing cut,
+**D42 untouched**. **`completedThisTier` now persists** — partial tier progress
+was discarded on extraction, penalising the core loop, and **no world-day battery
+can see it** because a world-day never extracts, so the measured "6 deploys to
+tier 3" was the optimistic figure. `unlockCompletions` deliberately unchanged
+until a clean era-3 reading. **D11's 40-60 min sortie target retired.**
+
+**Open**: **Q53** (acquisition and sabotage walk the same unpriced second leg —
+proposal is change nothing until the D42 opposition retune); the era-3 battery
+verdicts; the AI's general night pricing; area retune behind D42; avenue density
+(7B, noted). Q48/Q49/Q50/Q51/Q52 ruled and closed.
 
 ## Read first
 
-1. `specs/00_document_index.md` — document map, rulings D1–D65
+1. `specs/00_document_index.md` — document map, rulings D1–D69
 2. `plan-version1.md` — the operational plan (milestones M0–M7, gates)
 3. `plan-implementation-order.md` — slice-by-slice execution order, per-milestone
    STATUS markers (battery lane: `batch/README.md`)

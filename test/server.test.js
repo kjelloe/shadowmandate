@@ -569,3 +569,34 @@ test("the ledger settle skips AI purchases — cache money is not seat money", (
     "exactly the human purchase settles; the AI's cache purchase must not touch the ledger");
   world.stop();
 });
+
+// D69. Two debriefs exist: `engine/hq.js` builds one as its return value, and
+// `server/world.js` rebuilds another from state when it sees `firmExtracted` —
+// and it is the SERVER'S that reaches the ledger in production. Adding
+// `completedThisTier` to the engine's alone would have left progression
+// leaking with a green suite and a passing round-trip test, which is the
+// "a guard only protects what it reads" defect exactly.
+//
+// DERIVED, not a hand-kept list: whatever `applyDebrief` consumes is what the
+// server must supply, so the next field added is covered without editing this.
+test("D69: the server's debrief supplies every field the ledger reads from one", () => {
+  const strip = (src) => src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  const ledgerSrc = strip(readFileSync(join(ROOT, "server/ledger.js"), "utf8"));
+  const worldSrc = strip(readFileSync(join(ROOT, "server/world.js"), "utf8"));
+
+  const consumed = new Set();
+  for (const m of ledgerSrc.matchAll(/\bdebrief\.([A-Za-z_$][\w$]*)/g)) consumed.add(m[1]);
+  assert.ok(consumed.has("tierUnlocked") && consumed.has("completedThisTier"),
+    `the scan found no debrief fields at all — the instrument is broken, not the code (${[...consumed]})`);
+
+  const call = worldSrc.slice(worldSrc.indexOf("sendDebrief(e.firmId"));
+  assert.ok(call.length > 0, "could not locate the server's debrief construction");
+  const supplied = new Set();
+  for (const m of call.slice(0, call.indexOf("});")).matchAll(/([A-Za-z_$][\w$]*)\s*:/g)) supplied.add(m[1]);
+
+  for (const field of consumed) {
+    assert.ok(supplied.has(field),
+      `the ledger persists debrief.${field}, but the server never puts it in the debrief — `
+      + `it will silently read 0 on every extraction`);
+  }
+});
