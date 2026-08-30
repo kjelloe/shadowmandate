@@ -136,3 +136,40 @@ era and run under another is not wrong — it answers a different question, and
 reading it as the old one is exactly the stale-baseline hazard the era
 discipline exists for. The response records `queuedForEra` and `ranOnEra` and
 the board prints `<-- ERA MISMATCH`; it is never silently corrected.
+
+## The era-2 verdicts (2026-08-30, n=300)
+
+The first batteries through the git lane, and the run D42/D43 deferred to.
+`batch/responses/0001-pacing`, `0002-patrol` (base 3), `0003-patrol` (base 4).
+
+**`0001-pacing` and `0003-patrol` returned byte-identical.** Correct, not a
+fault: the pacing job runs at the DEFAULT patrol base, which is 4. A free
+determinism confirmation — and a note for whoever queues next, because paying
+for both buys one result.
+
+**D42 confirmed by measurement.** Extraction's preference ratio went from 1.43x
+over-chosen (era 0, before opposition existed) to **1.03x** with its reward
+never touched. The ruling was "balance attractiveness with OPPOSITION, not
+price"; the opposition got built and the number came to parity on its own. A
+price cut would have been made and then had to be undone. The eras differ so it
+is not a clean A/B, but the direction is exactly what was predicted.
+
+**A difference that was never there.** The n=24 pre-day-night patrol sweep read
+"3 is gentlest on the economy". At n=300 on the current build every statistic
+separating base 3 from base 4 is inside noise (all |t| < 1.2, reach-rate
+z = -0.41). The old reading's own caveat — "differences of this size are within
+noise on several axes" — was the correct one to have written down.
+
+**Read the analyser, not an ad-hoc column mean.** Checking the numbers by hand I
+computed 3.93 deploys to tier 3 and nearly reported it as inside the 3-4 band.
+It was wrong: 132 of 300 seeds never reach tier 3 at all, and averaging them in
+as "0 deploys" drags the mean down. `analyze_pacing.py` filters to Firms that
+actually got there and reports a median of **6.0** — the opposite verdict. The
+instrument was right and the improvised check was wrong, which is the reverse of
+this project's usual failure and worth the same suspicion.
+
+**Tier gating is not a balance problem.** Acquisition completes at 2.7% and it is
+tempting to read that as an unattractive contract. It is tier 3, and 43% of
+Firms never reach tier 3 in a world-day — its rarity is downstream of
+progression, not of its own pricing. (This column was 0.0% once and that WAS a
+bug, D41. Non-zero means alive.)

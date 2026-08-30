@@ -95,9 +95,19 @@ QUEUED for the batch PC (pacing 300, patrol 3/4).
   mark cannot go undocumented. Panes are shown/hidden, NEVER rebuilt: the
   board's buttons are the playtest-5 defect's original victim.
 
-**Open**: the **era-2** battery verdicts (queue unchanged, still needs the batch
-PC; the queue is committed at `batch/tasks/`); the AI's general night pricing; area retune behind
-D42; avenue density (7B, noted). Q48/Q49/Q50/Q51 are all ruled and closed.
+**The era-2 batteries RAN** (2026-08-30, n=300, `batch/responses/`). Verdicts in
+**Q52**, and the headline is that **D42 was right**: extraction went from 1.43x
+over-chosen (era 0, no opposition) to **1.03x — dead neutral** — with its reward
+never touched. The opposition did it, exactly as ruled. Also: patrol density 3
+vs 4 is **inside noise at n=300** (the n=24 "3 is gentlest" reading is retired;
+4 stays), progression is SLOW (median 6 deploys to tier 3 vs D11's 3-4, 43%
+never reach it), and **courier is dominated at its own tier** (0.17x, reward 69
+against surveillance's 414). Acquisition's tiny share is tier gating working,
+not a defect.
+
+**Open**: Q52's decisions (courier pricing + progression must move together —
+rewards and progression are one system); the AI's general night pricing; area
+retune behind D42; avenue density (7B, noted). Q48/Q49/Q50/Q51 ruled and closed.
 
 ## Read first
 
