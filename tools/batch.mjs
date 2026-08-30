@@ -109,6 +109,22 @@ function queue(argv) {
   writeFileSync(join(TASKS, `${id}.json`), `${JSON.stringify(task, null, 2)}\n`);
   console.log(`queued batch/tasks/${id}.json`);
   console.log(JSON.stringify(task));
+  // Measured, not guessed: 0001-pacing and 0003-patrol came back BYTE-IDENTICAL
+  // on era 2, because the pacing job runs at the DEFAULT patrol base — which is
+  // 4. Paying for both buys one result. Said here, at the moment of queuing,
+  // because a note in a README is read once and this decision recurs.
+  const patrolDefault = 4;
+  if (kind === "patrol" && task.base === patrolDefault) {
+    console.log(`\nNOTE: patrol base ${patrolDefault} is the DEFAULT, which is what a`
+      + ` 'pacing' job already runs at.\n      On era 2 the two came back byte-identical.`
+      + ` Queue this only if you have no\n      pacing job for the same era — otherwise it is a`
+      + ` duplicate you pay for twice.`);
+  }
+  if (kind === "pacing") {
+    console.log(`\nNOTE: this runs at patrol base ${patrolDefault} (the default), so it also`
+      + ` serves as\n      the base-${patrolDefault} patrol reading. Do not queue 'patrol ${patrolDefault}'`
+      + ` alongside it.`);
+  }
   console.log("\ncommit and push it, then the worker picks it up on its next pull.");
 }
 

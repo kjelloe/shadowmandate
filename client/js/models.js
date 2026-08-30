@@ -913,6 +913,19 @@ export const CITY_TABS = ["board", "log", "kit", "firm", "sortie", "history", "c
 
 // One row is [labelKey, value] or [labelKey, valueKey, ...args] for translated
 // values — the same shape `standingRows` uses, so the renderer stays one loop.
+// Three honest states, because "0 of 0" and "we do not know yet" are different
+// things and both look like zero. `needed` is 0 at the top tier, and absent
+// entirely before a view exists (the splash, pre-join).
+export function tierProgress(view, ledger) {
+  const f = view?.firm ?? null;
+  const done = f?.completedThisTier ?? ledger?.completedThisTier ?? 0;
+  if (!f) return ["city.firm.tierProgress", "city.firm.rankNone"];
+  const needed = f.tierCompletionsNeeded | 0;
+  if (needed <= 0) return ["city.firm.tierProgress", "city.firm.tierProgressMax"];
+  return ["city.firm.tierProgress", "city.firm.tierProgressValue",
+    done, needed, (f.tierUnlocked | 0) + 1];
+}
+
 export function firmPanel(view, briefing) {
   const l = briefing?.ledger ?? null;
   return [
@@ -920,6 +933,12 @@ export function firmPanel(view, briefing) {
     ["city.firm.reputation", l?.reputation ?? 0],
     ["city.firm.recognition", l?.recognition ?? 0],
     ["city.firm.tier", l?.tierUnlocked ?? 1],
+    // D70: progress toward the NEXT tier. It survives extraction now (D69b), so
+    // it is a durable thing the player owns — and it was invisible, which makes
+    // a kept asset look exactly like a lost one. `needed` comes from the ENGINE
+    // (view.firm.tierCompletionsNeeded); reading `unlockCompletions` here would
+    // put the contract machine's gating rule in a second place.
+    tierProgress(view, l),
     // The cache is the tension arc (D7): earned this deployment, LOST if the HQ
     // falls. Showing it beside the bank is the whole point of the split.
     ["city.firm.cache", view?.hq?.cacheResources ?? 0],

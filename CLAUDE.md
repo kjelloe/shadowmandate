@@ -4,7 +4,7 @@ Drop-in/drop-out covert-ops game. Sibling of Fireline Command
 (`~/GIT/firepower` — the fork source, never modified from here).
 
 **Status: M0–M6 complete; M7 done as far as it can go solo, and PLAYABLE in a
-browser. `npm test` = 530 green**, plus four browser gates (`smoke`, `ui`,
+browser. `npm test` = 532 green**, plus four browser gates (`smoke`, `ui`,
 `mobile`, `gallery`). Batch lane runs through GIT now (`batch/README.md`).
 **Remaining in M7**:
 the VM deploy (7e) and native GPU perf (7f) — both need the owner's hardware.
@@ -117,14 +117,30 @@ can see it** because a world-day never extracts, so the measured "6 deploys to
 tier 3" was the optimistic figure. `unlockCompletions` deliberately unchanged
 until a clean era-3 reading. **D11's 40-60 min sortie target retired.**
 
-**Open**: **Q53** (acquisition and sabotage walk the same unpriced second leg —
-proposal is change nothing until the D42 opposition retune); the era-3 battery
-verdicts; the AI's general night pricing; area retune behind D42; avenue density
-(7B, noted). Q48/Q49/Q50/Q51/Q52 ruled and closed.
+**The era-3 battery is IN** (`0004-pacing`, n=300, `eraMatch` and `ticks`
+both clean) and ruled → **D70**. **One reward moved and the mix problem largely
+dissolved**: courier **0.17x → 0.59x**, and where era 2 flagged three types
+over-chosen (surveillance 1.62x, sabotage 2.35x, defend 2.03x), **era 3 flags
+none**. Courier's accepts came mostly out of defend — contract choice is a
+RANKING, so one viable option redistributes the whole board. **Tier-3 pace is
+unchanged at 6.0, and the reason matters more than the number**: the world-day
+harness uses NO ledger and `extractHq` never cleared `completedThisTier`, so the
+battery was always modelling the no-leak world. D69(b) could not move this
+measurement — it moved REALITY up to meet it. 6.0 is now a trustworthy failure
+against the 3-4 target (reach 56% → 64%), so `unlockCompletions` is finally
+decidable on honest data. Also D70: **tier progress is now VISIBLE** (FIRM tab,
+both numbers from the engine — the client must never restate the unlock gate);
+the **sortie band accepted as measured** (13.9–27.8 vs 15–20, overlaps);
+**acceptance criterion 10 split** into 10a sortie (PASS) / 10b tier pace (FAIL);
+**Q53 deferred** to the opposition retune.
+
+**Open**: `unlockCompletions` — now decidable, and the one live balance
+question; the AI's general night pricing; area retune behind D42; avenue density
+(7B, noted). Q48–Q53 all ruled and closed.
 
 ## Read first
 
-1. `specs/00_document_index.md` — document map, rulings D1–D69
+1. `specs/00_document_index.md` — document map, rulings D1–D70
 2. `plan-version1.md` — the operational plan (milestones M0–M7, gates)
 3. `plan-implementation-order.md` — slice-by-slice execution order, per-milestone
    STATUS markers (battery lane: `batch/README.md`)

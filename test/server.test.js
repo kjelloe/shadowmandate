@@ -600,3 +600,31 @@ test("D69: the server's debrief supplies every field the ledger reads from one",
       + `it will silently read 0 on every extraction`);
   }
 });
+
+// D70. The view must carry BOTH halves of tier progress. `completedThisTier`
+// alone is unreadable — "3" means nothing without the gate it is counting
+// toward — and the denominator is the contract machine's rule, so the client
+// must be told it rather than recompute it from `unlockCompletions`.
+test("D70: the view carries tier progress AND the gate it counts toward", () => {
+  const { world } = hostedWorld();
+  const cfg = world.rules.contracts;
+
+  world.state.firms[0].tierUnlocked = 2;
+  world.state.firms[0].completedThisTier = 3;
+  let firm = world.viewFor(0).firm;
+  assert.equal(firm.completedThisTier, 3, "progress toward the next tier is not in the view");
+  assert.equal(firm.tierCompletionsNeeded, cfg.unlockCompletions[1],
+    "the gate must come from the ruleset, at the CURRENT tier's index");
+
+  // At the top tier there is nothing to progress toward, and a denominator
+  // would invite the client to render a fraction that cannot ever complete.
+  world.state.firms[0].tierUnlocked = cfg.phases.length;
+  firm = world.viewFor(0).firm;
+  assert.equal(firm.tierCompletionsNeeded, 0,
+    "the top tier must report no gate, not the last one again");
+
+  // The index is off-by-one prone: tier N reads unlockCompletions[N-1].
+  world.state.firms[0].tierUnlocked = 1;
+  assert.equal(world.viewFor(0).firm.tierCompletionsNeeded, cfg.unlockCompletions[0],
+    "tier 1 must read the FIRST unlock count");
+});

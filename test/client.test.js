@@ -1370,3 +1370,45 @@ test("PLAYTEST 13: the works smoke, and residential ground grows parks", async (
   const bare = generateCity(4711, 64, RULES.citygen);
   assert.deepEqual(t3.parkPlacements(Array.from(bare.map.cells), 64, 4711, null), []);
 });
+
+// D70. `completedThisTier` persists across extraction (D69b), so it is a
+// durable thing the player owns — and it was not in the view at all, which
+// makes a KEPT asset look identical to a lost one. Same defect the KIT tab
+// found for `credentialTier`: state the rules act on, that no screen shows.
+test("D70: tier progress is visible, and its denominator comes from the engine", async () => {
+  const { tierProgress } = await import("../client/js/models.js");
+  const EN = JSON.parse(readFileSync(join(ROOT, "client/i18n/en.json"), "utf8"));
+
+  // Mid-tier: the fraction, and which tier it is progress TOWARD.
+  const mid = tierProgress({ firm: { completedThisTier: 3, tierCompletionsNeeded: 5, tierUnlocked: 2 } }, null);
+  assert.deepEqual(mid, ["city.firm.tierProgress", "city.firm.tierProgressValue", 3, 5, 3],
+    "mid-tier must report done, needed, and the tier being worked toward");
+
+  // Top tier: `needed` is 0 and "0 of 0" would be a lie, not a number.
+  const top = tierProgress({ firm: { completedThisTier: 0, tierCompletionsNeeded: 0, tierUnlocked: 4 } }, null);
+  assert.equal(top[1], "city.firm.tierProgressMax", "top tier must not render a fraction");
+
+  // No view yet (splash, pre-join): unknown, which is not the same as zero.
+  assert.equal(tierProgress(null, { completedThisTier: 4 })[1], "city.firm.rankNone",
+    "with no view the denominator is unknowable and must not be invented");
+
+  // THE RENDERED STRING, not the row — an interpolated catalog entry used as a
+  // label prints its own placeholders (the season splash shipped exactly that).
+  const tr = (key, ...a) => (EN[key] ?? key).replace(/\{(\d+)\}/g, (_, i) => a[Number(i)] ?? "");
+  for (const row of [mid, top]) {
+    const [k, v, ...args] = row;
+    const line = `${tr(k)}: ${tr(v, ...args)}`;
+    assert.ok(!/\{\d+\}/.test(line), `left a placeholder unfilled: "${line}"`);
+    assert.ok(!/:\s*$/.test(line), `rendered an empty value: "${line}"`);
+  }
+  assert.match(`${tr(mid[1], ...mid.slice(2))}`, /3 of 5 .*tier 3/,
+    "the mid-tier line must actually read as progress");
+
+  // The RULE lives in the engine. If the client ever recomputes `needed` from
+  // unlockCompletions, the contract machine's gate has a second reader — which
+  // is exactly how 8f ended up known to the contracts and not to the AI.
+  const src = readFileSync(join(ROOT, "client/js/models.js"), "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  assert.ok(!src.includes("unlockCompletions"),
+    "the client restates the tier-unlock rule instead of reading it from the view");
+});

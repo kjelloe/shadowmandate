@@ -116,6 +116,19 @@ export function buildView(state, firmId, detCfg) {
       id: firm.id, nameId: firm.nameId, state: firm.state,
       reputation: firm.reputation, recognition: firm.recognition,
       tierUnlocked: firm.tierUnlocked, upgrades: (firm.upgrades ?? []).slice(),
+      // D69/D70: progress toward the NEXT tier. It persists across extraction
+      // now, so it is a durable thing the player owns — and it was invisible,
+      // which makes a kept asset indistinguishable from a lost one.
+      //
+      // BOTH numbers cross the wire. The client must not compute `needed` from
+      // `unlockCompletions` itself: that is the contract machine's rule, and a
+      // second reader of a rule is how the 8f credential gate ended up known to
+      // the contract machine and not to the AI. `needed` is 0 at the top tier,
+      // which is the client's cue that there is nothing left to progress to.
+      completedThisTier: firm.completedThisTier | 0,
+      tierCompletionsNeeded: firm.tierUnlocked < (state.rules?.contracts?.phases?.length ?? 0)
+        ? (state.rules?.contracts?.unlockCompletions?.[firm.tierUnlocked - 1] ?? 0)
+        : 0,
     },
 
     // Your own agents in full — you know your own operatives.

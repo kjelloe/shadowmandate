@@ -229,3 +229,37 @@ reports a bare number and says the band is retired.
   future tuning pass; the ranking encodes the design promise that actually
   failed ("a contract the AI always ranks last is one it never takes") and can
   fail in both directions.
+
+## The era-3 reading (2026-08-30, n=300, `0004-pacing`)
+
+First battery through the fixed lane: `eraMatch: true` and **`ticks: 60000`
+recorded and matched**, which is the new drift guard doing its job.
+
+**The mix problem largely dissolved.** Courier went **0.17x -> 0.59x**, and the
+spread collapsed with it: era 2 flagged three types over-chosen (surveillance
+1.62x, sabotage 2.35x, defend 2.03x); **era 3 flags none**. Only one reward
+moved. Courier's accepted share went 3.3% -> 9.1%, and the accepts came mostly
+out of defend (11.2% -> 6.2%) — a reminder that contract choice is a RANKING, so
+making one option viable redistributes across the whole board rather than
+trading one-for-one with a neighbour.
+
+**Tier-3 pace is unchanged at 6.0, and that is the expected result — but the
+reason matters more than the number.** `tools/sm_worldday.mjs` imports no ledger
+at all, and `extractHq` never cleared `completedThisTier`, so the firm object
+carried it across redeploys naturally. **The battery was always modelling the
+no-leak world.** D69(b) therefore could not move this measurement; what it moved
+was REALITY, up to meet the instrument. Before the fix, 6.0 was optimistic
+relative to what a player actually experienced; after it, 6.0 is what a player
+gets. Reach rate 56% -> 64%.
+
+**How to apply.** When a fix produces no movement in a battery, do not conclude
+it did nothing until you have checked whether the harness was ever exposed to
+the defect. A harness that skips a subsystem (here: the ledger) silently models
+the FIXED world, so it reports "no change" for a real improvement and, worse,
+reported healthy numbers for a broken one right up until somebody looked.
+
+**A battery cannot answer a question about a boundary it never crosses.** The
+world-day never extracts through a ledger, so no run of it — at any n — could
+have found the leak or can now confirm the fix. Confirming D69(b) needs a
+ledger-crossing harness, or the analytic argument above. That is a gap in the
+instrument set, not a gap in the data.
