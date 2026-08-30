@@ -3,8 +3,20 @@
 Numbered, answered in batches (firepower practice). Answers become rulings in
 `01_design_of_record.md` and slices in the plans.
 
-**All 36 questions answered.** The queue is empty — new questions start at Q36
-(live queue: `../dev-questions.md`). Rulings D15–D40 are in `01_design_of_record.md`.
+**Q1–Q36 are answered and archived below.** Rulings D15–D40 are in
+`01_design_of_record.md`.
+
+**Q37 onward are NOT archived here, deliberately.** They live in
+`../dev-questions.md`, which is **gitignored** — the question text is a private
+working note, so "moving an answered question into the archive" would publish
+it. Practice diverged from the stated convention for that reason and this file
+now says so rather than implying a gap.
+
+**The decisions themselves are public regardless**: every answer becomes a
+numbered ruling in `01_design_of_record.md` (through **D69**), which is the
+authoritative record. Answered questions are marked `ANSWERED (→ Dnn)` in place
+in the live queue. If the question text is ever wanted publicly, archiving it
+here is a deliberate act of publication, not bookkeeping.
 
 ---
 

@@ -28,8 +28,8 @@ Replay-exact: the command with its elapsedMs is in the log like any other.
 ## World ledger (D7)
 
 Store keyed `(worldId, firmId)`:
-`{ reputation, tierUnlocked, bank: {resources, items}, recognition,
-   heldAgents[], callsignHistory[], lastExtractTick }`
+`{ reputation, tierUnlocked, completedThisTier, bank: {resources, items},
+   recognition, heldAgents[], callsignHistory[], lastExtractTick }`
 - Written only on `extract` (clean or emergency) and bail events (S04).
 - Surfaced to the engine as drop-in input (initial-state injection) — the
   reducer never reads storage.
@@ -142,6 +142,26 @@ The ledger gains three fields for the City Info HISTORY panel:
 | `sorties` | deployments that ENDED — an extraction or a fold. The only place a sortie is known to be over. |
 | `bankedTotal` | lifetime earned, never spent down. `bank` is a BALANCE and says nothing about a career: a Firm that banked 4000 and spent 3900 reads identically to one that never worked. |
 | `completedByKind` | completions per contract type, in the engine's own kind order. Derived from `contractCompleted` events at the server — never from a restated list of kinds, which is how the pacing instruments once dropped 30% of completions into a column that did not exist. |
+
+**`completedThisTier` (D69) — progress TOWARD the next tier, not just the tier
+reached.** It was the one thing extraction discarded: a Firm four contracts into
+a five-contract tier lost all four **by going home**, which in a
+drop-in/drop-out game is a penalty on the core loop. No battery could see it —
+a world-day runs continuously and never extracts — so the measured "deploys to
+tier 3" was the optimistic figure.
+
+Two properties that make it unlike its neighbours here:
+
+- **It is the only ledger counter that legitimately goes DOWN.** Crossing a tier
+  resets it to 0, so `applyDebrief` ASSIGNS it where every neighbouring field
+  takes a `Math.max`. Maxing would pin a Firm at its pre-unlock count forever
+  and hand it each following tier for free.
+- **There are TWO debriefs, and only one reaches the ledger.** `engine/hq.js`
+  builds one as its return value; `server/world.js` rebuilds another from state
+  on `firmExtracted`, and **that is the production path**. A field added only to
+  the engine's would leave progression leaking with a green suite and a passing
+  round-trip test. The guard in `test/server.test.js` is therefore DERIVED:
+  whatever `applyDebrief` reads off a debrief, the server must supply.
 
 **`normaliseLedger` fills defaults on READ.** `get()` substitutes a whole missing
 RECORD, not missing FIELDS, so a file written before these existed would return

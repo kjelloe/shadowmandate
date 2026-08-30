@@ -22,7 +22,7 @@ the D42/D43 balance verdict, which waits on a `pacing 300` re-run of the
 batteries against THIS build (the n=24 patrol sweeps predate all of the
 above — reading recorded in dev-questions.md).
 
-**STATUS 2026-08-30: suite 521/521, era `sm-era-2`.** Playtest 13's eight
+**STATUS 2026-08-30: suite 530/530, era `sm-era-3` (D69).** Playtest 13's eight
 findings (D66) all landed as slices PT13-A..G: the camera moves (right-drag pan,
 quarter-turn rotation) and DRAWS ON rAF — the reported "jerky, lag skip" was ten
 hard jumps a second, not the engine; figures 41% taller and 79% leaner; cover
@@ -37,7 +37,20 @@ confined to the chosen district, because 62% of drops used to start somewhere
 the player had not picked. Fixtures re-pinned; era-1 baselines void at zero cost
 because those batteries had not run.
 
-**The pre-M9 remainder is unchanged in shape but now era-2**: the D42/D43 balance
+Then the **era-2 batteries ran** (n=300) and were ruled on (**D69**, slice
+`slice-m8q52`). **D42 was vindicated by measurement**: extraction went 1.43x
+over-chosen → **1.03x, dead neutral, with its reward never touched**, once M8
+opposition existed. Two of the three remaining findings were misdiagnoses of the
+same kind — a quantity nobody had ever computed reads exactly like one computed
+badly. **Courier 69 → 110** completes D53 (which priced per WORK-tick, and
+courier has none) rather than revisiting it; **`completedThisTier` now persists**,
+because partial tier progress was being discarded on every extraction and no
+continuous-run battery can observe that. `unlockCompletions` is deliberately
+untouched pending a clean era-3 reading (`0004-pacing` queued). **D11's 40–60
+min deployment band is retired.** Open: **Q53** — acquisition and sabotage walk
+the same unpriced second leg.
+
+**The pre-M9 remainder is unchanged in shape but now era-3**: the D42/D43 balance
 verdict still waits on a `pacing 300` run against THIS build, and the queue on
 the batch PC (update, pacing 300, patrol 3, patrol 4) is the run that defines
 era 2. Nothing else is blocked on it.
@@ -193,7 +206,8 @@ census complete; battery within provisional bands.
   world-news generation; replay-exactness fixtures with pinned elapsedMs.
 - **6e** **Pacing battery loop**: run pacing batteries (below), tune
   `data/` (speeds, radii, rewards, unlock counts) toward D11 (15–20 min
-  sortie / 40–60 min deployment) and D19 (3–4 deployments to tier 3).
+  sortie; the 40–60 min deployment band was **retired by D69**) and D19
+  (3–4 deployments to tier 3).
   Expect several rounds; every round re-pins the baseline.
 
 **Gate:** pacing battery inside D11/D19 bands; dormancy replay-exact.

@@ -21,7 +21,9 @@ with gameplay-grade rigor).
 
 1. **Deployment rhythm**: each AI Firm follows a seeded schedule of
    deployments (`⚙` per world-day-equivalent, only while world is live — D16),
-   duration targeting D11 (40–60 min equivalents).
+   duration **no longer targets a band** — D11's 40–60 min figure was retired
+   by D69, because the batteries showed more, shorter deployments and that is
+   correct for a drop-in/drop-out game.
 2. **Contract selection**: from its own 5 offers, score by
    `reward / (distance + risk(heat, tier))`; personality weights per Firm
    `⚙` (one cautious, one greedy, one aggressive — gives worlds texture).

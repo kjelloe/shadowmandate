@@ -25,7 +25,7 @@ human multiplayer is an unlock, not a rewrite.
 | Season | 4 weeks (official world); self-host configurable | D15 |
 | AI rival Firms | 2–3, active only while the world is live | D13, D16 |
 | Contract pool | 5 per player slot; 5 disjoint offers shown per player | D18 |
-| Sortie / deployment length | 15–20 min / 40–60 min | D11 |
+| Sortie / deployment length | 15–20 min sortie; **deployment band RETIRED (D69)** | D11, D69 |
 | Tier pacing | median 3–4 deployments to tier 3 | D19 |
 | Combat | stealth-first, disable-only; Snatch not assassination | D6 |
 | Identity | seat token + recovery code, no accounts | D10 |
@@ -81,7 +81,17 @@ partial in `V1_ACCEPTANCE.md`. **10 pass, 3 partial, 1 fail.***
 - [x] A standoff with an AI rival presents Engage/Withdraw/Negotiate and honours the outcome.
 - [x] Every present player's board shows 5 offers, disjoint from other players' boards (headless multi-seat test). — **test written in 7g**; four seats, disjoint, and still disjoint after 30 ticks.
 - [x] Returning after a day: changed world, intact ledger, fog reset, persistent building changes.
-- [ ] A sortie fits 15–20 min; a 2–3 contract deployment fits 40–60 (battery-verified). — **FAIL**: 8.7–17.4 and 27.7–55.4 human-adjusted; both overlap their target, neither sits inside it, and tier-3 pace is 5.0 against 3–4. Per D41/D42 the remedy is the M8 opposition content, not more reward tuning. **Re-measure after M8.**
+- [ ] A sortie fits 15–20 min (battery-verified); deployment length is no longer
+  judged against a band. — **PARTIAL, and the criterion itself changed.** The
+  40–60 min deployment half was **retired by D69**: the era-2 batteries showed
+  more, shorter deployments and the owner ruled that correct for a
+  drop-in/drop-out game, the figure having predated the drop-in loop existing.
+  What remains open is the sortie band (era-2: 14.2–28.3 human-adjusted, overlaps
+  15–20) and **tier-3 pace, 6.0 against 3–4**. The tier figure is not yet a
+  verdict: D69(b) found that partial tier progress was being discarded on every
+  extraction, which no world-day battery can see, so 6.0 is the OPTIMISTIC
+  number. **Re-measure on era 3** (`0004-pacing` queued) before touching
+  `unlockCompletions` — D69(c).
 - [x] Vendor sells ≥3 meaningful upgrades; bank has a purpose.
 - [x] Cleared browser + recovery code restores the Firm ledger.
 - [x] Replays exact; pinned fixture stable; sim gate + battery pass on shipping ruleset.

@@ -399,6 +399,18 @@ is undeclared. A missed mirror field silently invalidates every future battery.
 - **Rewards and progression are one system.** Every reward change moved
   "deploys to tier 3" in or out of its 3-4 band. Check both whenever either
   moves.
+- **Check a number was ever COMPUTED before calling it mis-chosen (D69).** The
+  battery read courier at 0.17x and it looked like a payout problem. D53 priced
+  pay-per-effort per WORK-tick; courier has none, so the pass computed nothing
+  for it and 69 stood untouched from before effort-pricing existed — while the
+  scorer charged it two full legs of travel. A tuning pass keyed on a property
+  some case lacks skips that case in SILENCE and leaves a stale literal wearing
+  the shape of a decision. The test file even carried the comment "courier is
+  priced by TRAVEL": a documented intention is not evidence of execution.
+- **Ask what the harness never does (D69).** A world-day battery runs
+  continuously and never extracts, so it is structurally blind to every cost
+  paid at a session boundary — which is why the discarded `completedThisTier`
+  went unseen and "6 deploys to tier 3" was the optimistic figure.
 - **Balance attractiveness with OPPOSITION, not price (D42).** Extraction read
   1.43x over-chosen and the instinct was to keep cutting its payout. Wrong
   lever: extraction and acquisition are meant to get harder as a season
@@ -434,7 +446,10 @@ is undeclared. A missed mirror field silently invalidates every future battery.
 - **Questions**: anything needing the owner's decision goes to
   `./dev-questions.md` (numbered from Q30) with context, a proposal, and a
   blank `Answer:`. Implement the proposal so nothing blocks; answers become
-  rulings in `specs/01_design_of_record.md` and move to the `specs/06` archive.
+  rulings in `specs/01_design_of_record.md` and are marked `ANSWERED (→ Dnn)`
+  **in place**. They do NOT move to the `specs/06` archive: `dev-questions.md`
+  is gitignored, so moving one would PUBLISH a private working note. The archive
+  holds Q1–Q36 only and says so; the rulings in `specs/01` are the public record.
   **Never guess a product decision.**
 - **Fixture re-pins** are deliberate: `node tools/repin_fixture.mjs "<reason>"`.
   It refuses on event drift (exit 2) — that means the reducer changed, not the
@@ -447,6 +462,14 @@ is undeclared. A missed mirror field silently invalidates every future battery.
   commit AND era in every result, flags an era mismatch rather than correcting
   it, and scrubs absolute paths out of any error — these files are tracked and
   the remote is public.
+  **A battery's SHAPE is part of the instrument**: run length, seed count and
+  config must match the baseline being compared against, or the two answer
+  different questions. `queue pacing 300` once defaulted to 36000 ticks against
+  a 60000 baseline with the era flag GREEN, because the era genuinely matched.
+  Responses record `ticks`/`base` and `status` flags a drift.
+  **And an instrument must never print a retired target** — `analyze_pacing.py`
+  kept printing `(target 40-60)` after D69 retired the band, which manufactures
+  a failing verdict out of a ruling that no longer holds.
   Never tune or convict on 5 seeds — batteries (n=300+) decide. Not live until
   M5 slice 5g.
 - **Git (updated 2026-08-04): committing and pushing to `dev_night` is

@@ -18,7 +18,7 @@ than what was measured is worth nothing.
 | 7 | Standoff offers Engage/Withdraw/Negotiate and honours the outcome | **PASS** |
 | 8 | Every present player's board shows 5 offers, disjoint (headless multi-seat test) | **PASS** (test written in this slice) |
 | 9 | Returning after a day: changed world, intact ledger, fog reset, persistent building changes | **PASS** |
-| 10 | A sortie fits 15–20 min; a 2–3 contract deployment fits 40–60 (battery-verified) | **PARTIAL** — sortie and deployment both pass on D52 overlap; tier-3 pace does not |
+| 10 | A sortie fits 15–20 min (battery-verified); **the 40–60 min deployment half is RETIRED by D69** | **PARTIAL** — sortie passes on overlap. Deployment is no longer graded: the batteries showed more, shorter deployments and the owner ruled that correct for a drop-in/drop-out game. Tier-3 pace still misses (era-2: 6.0 vs 3–4) but is **not yet a verdict** — D69(b) found partial tier progress was discarded on every extraction, which no world-day battery can observe, so 6.0 is the optimistic figure. Re-measure on era 3 |
 | 11 | Vendor sells ≥3 meaningful upgrades; the bank has a purpose | **PASS** |
 | 12 | Cleared browser + recovery code restores the Firm ledger | **PASS** |
 | 13 | Replays exact; pinned fixture stable; sim gate + battery pass on shipping ruleset | **PASS** |

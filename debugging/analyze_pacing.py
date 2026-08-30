@@ -30,13 +30,19 @@ def line(label, value, lo, hi, unit=""):
           f"{'IN BAND' if ok else ('LOW' if value < lo else 'HIGH')}")
 
 line("sortie (AI)", mins(med(sortie)), 15, 20, "m")
-line("deployment (AI)", mins(med(deploy)), 40, 60, "m")
+# D69(d): the 40-60 min DEPLOYMENT band is RETIRED. The batteries showed more,
+# shorter deployments and the owner ruled that correct for a drop-in/drop-out
+# game — the figure predates the drop-in loop existing. Reported as a bare
+# number, deliberately without a band, because an instrument that prints a
+# target is telling you what to conclude: leaving the old band here would have
+# had the next reader judging era-3 against a ruling that no longer holds.
+print(f"{'deployment (AI)':22}{mins(med(deploy)):>13.1f}{'m':>3}   {'(retired)':>7}{'':<10}    band retired by D69")
 line("deploys to tier 3", med(tier3), 3, 4, "")
 
 # The AI never deliberates; a human is slower. Show the band that implies.
 print(f"\nwith a 2-4x human deliberation factor:")
 print(f"  sortie      {mins(med(sortie))*2:5.1f} - {mins(med(sortie))*4:5.1f} min   (target 15-20)")
-print(f"  deployment  {mins(med(deploy))*2:5.1f} - {mins(med(deploy))*4:5.1f} min   (target 40-60)")
+print(f"  deployment  {mins(med(deploy))*2:5.1f} - {mins(med(deploy))*4:5.1f} min   (band retired by D69)")
 
 print(f"\ncontracts: completed median {med(num('completed'))}, "
       f"failed {med(num('failed'))}, expired {med(num('expired'))}")

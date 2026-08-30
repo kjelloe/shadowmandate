@@ -48,9 +48,27 @@ M0: layout exists with firepower-derived seed values where reused; ruleset
 manifest hash test; i18n parity test; D8 grep test. Every later slice adds
 its keys here first.
 
+## Era 3 (2026-08-30) — the current ruleset
+
+`data/ruleset.json` is **`sm-era-3`** (D69). Two behavioural changes, neither of
+them worldgen, so the CITY is unchanged and no fixture re-pin was needed — the
+microscope fixture is a rendered map and neither a reward nor a version string
+moves it. Era-2 **progression** baselines are void all the same, because both
+changes alter what a sortie is worth:
+
+| File | Key | Why |
+|---|---|---|
+| `contracts.json` | `types.courier.reward` 69 → 110 | D69(a). Completes D53 rather than revisiting it: D53 priced a common **0.115 per WORK-tick** and courier has none, so it was never priced at all, while the scorer charged it two full legs of travel. Derived from its ~34-cell second leg at D53's own rate. Nothing cut, so D42 stands |
+| *(ledger, not `data/`)* | `completedThisTier` persisted | D69(b). Partial tier progress was discarded on extraction — a penalty on the core loop, and invisible to a continuous-run battery |
+
+`unlockCompletions` is deliberately **unchanged** pending a clean era-3 reading
+(D69c). The version is hashed in both twins (D65), so two hosts on different
+eras cannot agree by accident — verified by mutation: changing it moves the
+state hash.
+
 ## Era 2 (2026-08-28) and the keys added since
 
-`data/ruleset.json` is **`sm-era-2`**. The bump is a WORLDGEN change (Q50:
+Era 2 was a WORLDGEN change (Q50:
 safehouse density and HQ placement), so every `sm-era-1` baseline is void — at
 zero cost, because the era-1 batteries were queued and had not run. The queued
 pacing-300 and patrol-3/4 runs now define era 2.

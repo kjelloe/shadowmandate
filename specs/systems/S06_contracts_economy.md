@@ -133,6 +133,32 @@ the multiplier is not.
 Final state after the pass: extraction 1.43x over-chosen, surveillance 0.80x,
 sabotage 0.89x, courier 0.79x, acquisition 1.47x.
 
+**Era-2 re-measure (2026-08-30, n=300), and D42 vindicated.** With M8 opposition
+built, extraction fell **1.43x -> 1.03x, dead neutral, with its reward never
+touched**. That is D42's whole argument, measured: the lever was difficulty, not
+price. Surveillance rose to 1.62x and courier read 0.17x.
+
+**D69: courier's 0.17x was NOT a preference problem — it had never been priced.**
+D53 levelled pay-per-effort at a common **0.115 per WORK-tick**. Courier has
+**zero work ticks**, so that pass computed nothing for it and its 69 survived
+from before effort-pricing existed. Meanwhile the AI scorer charges
+`1 + distance + workCells`, where distance is Manhattan HQ->site **plus the
+second leg** — and courier is one of three two-site types (median total 62-63
+cells against 29-31 for one-leg work). Longest journey in the game, smallest
+purse, last on every board the AI ever saw.
+
+**The rule this establishes: effort is WORK plus TRAVEL, and a type whose effort
+is entirely travel must still be priced.** Courier goes **69 -> 110**, derived
+rather than chosen: its ~34-cell second leg above the one-leg baseline every
+type walks, at 28 ticks/cell, at D53's own rate. It lands mid-pack (score ~440,
+beside extraction's 429) and never top. Nothing was cut, so D42 stands.
+
+**Open (Q53): acquisition and sabotage walk the same unpriced second leg**
+(~+107 each at the same rate). Deliberately not acted on — it would make them
+the top two contracts, needs its own battery, and D42 protects those two
+specifically. Revisit with the opposition retune, where they are meant to get
+harder anyway.
+
 **RULED (D42, Q37): stop here. Do not tune extraction or acquisition rewards
 further.** They are not mispriced, they are under-opposed — both are meant to
 get harder as a season progresses, and the opposition that will make them

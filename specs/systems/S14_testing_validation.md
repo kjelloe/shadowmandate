@@ -173,3 +173,59 @@ tempting to read that as an unattractive contract. It is tier 3, and 43% of
 Firms never reach tier 3 in a world-day — its rarity is downstream of
 progression, not of its own pricing. (This column was 0.0% once and that WAS a
 bug, D41. Non-zero means alive.)
+
+## What the era-2 verdicts turned into (2026-08-30, D69)
+
+Two of the three findings above were **not** what they looked like, and both
+mistakes have the same shape.
+
+**A quantity nobody computed reads exactly like a quantity computed badly.**
+The battery reported courier at 0.17x and it was written up as a balance
+problem. It was not: D53 priced pay-per-effort per **WORK-tick** and courier has
+none, so the pass had never priced it at all, while the AI scorer charged it two
+full legs of travel. The fix completes D53 rather than revisiting it.
+
+**Before acting on "type X is mis-valued", check that X's value was ever
+DERIVED.** A tuning pass keyed on a property some case lacks skips that case in
+silence and leaves a stale literal wearing the shape of a decision. A comment
+claiming the intention ("courier is priced by TRAVEL") is not evidence the
+intention was executed — that exact comment sat in `test/ai_firms.test.js`
+while the number it described had never been calculated.
+
+**Ask what the harness never does.** `completedThisTier` was discarded on every
+extraction, so real players lost partial tier progress — and **a world-day
+battery is structurally blind to it**, because it runs continuously and never
+extracts. The measured "6.0 deploys to tier 3" is therefore the OPTIMISTIC
+figure. Any continuous-run instrument cannot see a cost paid at a session
+boundary; enumerate those boundaries before trusting a progression number.
+
+**THE INSTRUMENT'S SHAPE IS PART OF THE INSTRUMENT.** Re-queuing the era-3
+follow-up with the obvious command produced **36000 ticks** against the era-2
+baseline's **60000**, because `pacing`'s CLI default differed from `patrol`'s
+and no response recorded run length. The era flag would have been **green** —
+the era really did match — so the only symptom would have been a progression
+verdict disagreeing with its predecessor for no visible reason. Now: pacing
+defaults to 60000, responses record `ticks`/`base`, and `status` prints the run
+shape and flags a response that ran at a length other than the one queued.
+
+**An instrument must not print a target that has been retired.**
+`analyze_pacing.py` still printed `(target 40-60)` after D69 retired that band.
+An instrument that prints a target is telling the reader what to conclude, so a
+stale one silently manufactures a failing verdict. The deployment row now
+reports a bare number and says the band is retired.
+
+### Two guard patterns worth reusing
+
+- **Derive the requirement from the consumer.** `test/server.test.js` asserts
+  that every field `applyDebrief` reads off a debrief is one the server actually
+  supplies — rather than pinning `completedThisTier` by name. There are TWO
+  debrief constructions and only `server/world.js`'s reaches the ledger, so a
+  field added to the engine's alone leaks silently past a green suite AND a
+  passing round-trip test. Because the guard is derived, the next field added is
+  covered without editing it.
+- **Assert the RANKING, not the literal.** The courier guard asserts it is
+  neither the worst-scoring contract on the board nor the best, using the real
+  scorer against a real pool. A pinned reward would have to be edited by every
+  future tuning pass; the ranking encodes the design promise that actually
+  failed ("a contract the AI always ranks last is one it never takes") and can
+  fail in both directions.
