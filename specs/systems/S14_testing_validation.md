@@ -94,3 +94,45 @@ watches. With an extra field written on one side only, the new file fails 2 of
 **The general lesson, now twice-learned:** a guard that has never been observed
 to fail is not yet a guard. Previously it was guards matching prose in comments
 instead of code; this time it was a test whose subject was empty.
+
+## The battery lane, git-transported (2026-08-30)
+
+The worker machine moved and the LAN agent-mail hub's assumption stopped
+holding. **Git is the transport now**: the dev machine commits a task and
+pushes; the worker pulls, runs, commits a response and pushes back.
+
+```
+batch/tasks/0001-pacing.json      queued by the dev machine
+batch/responses/0001-pacing.json  status, commit, era, row count
+batch/responses/0001-pacing.csv   the data
+```
+
+A task with no response is pending. That is the entire protocol — no claim
+step, no daemon, no shared network. One worker at a time; two would both run a
+pending task and race to push, which is fixable with a claim file if it ever
+matters and is complexity for nothing today.
+
+**Every rule the mail worker had earned is preserved**, and each was verified
+against the new runner rather than assumed:
+
+- **It refuses to serve on a red suite** and writes a FAILED response for every
+  pending task rather than going quiet. Results from a broken build are worse
+  than no results, because they look like data.
+- **It names the commit and the era in every result.** `sm_worldday` already
+  stamps both into the CSV header; the response repeats them so a directory
+  listing answers the question without opening a file.
+- **It refuses empty shard output.** A shard that dies silently would otherwise
+  merge into a cheerful "0 rows".
+
+**One rule the old lane never needed: nothing written may be private.** `ops/`
+is gitignored precisely so host and LAN details never reach a public remote;
+these files are tracked. So the runner records no hostname and no user, and
+scrubs absolute paths out of any captured error. `test/batch.test.js` checks the
+scrubber against repo paths, `/home` and `/Users`, asserts the length cap, and
+scans the actual tree for leaks.
+
+**And one the new transport introduced: era mismatch.** A task queued under one
+era and run under another is not wrong — it answers a different question, and
+reading it as the old one is exactly the stale-baseline hazard the era
+discipline exists for. The response records `queuedForEra` and `ranOnEra` and
+the board prints `<-- ERA MISMATCH`; it is never silently corrected.

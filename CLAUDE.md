@@ -5,7 +5,8 @@ Drop-in/drop-out covert-ops game. Sibling of Fireline Command
 
 **Status: M0–M6 complete; M7 done as far as it can go solo, and PLAYABLE in a
 browser. `npm test` = 521 green**, plus four browser gates (`smoke`, `ui`,
-`mobile`, `gallery`). Batch lane verified (`ops/BATCH_PC.md`). **Remaining in M7**:
+`mobile`, `gallery`). Batch lane runs through GIT now (`batch/README.md`).
+**Remaining in M7**:
 the VM deploy (7e) and native GPU perf (7f) — both need the owner's hardware.
 **M8 — opposition and site security — 8a–8k done** (alarms, cameras, beams,
 junctions, credentials, secured facilities, contested contracts, raids, the
@@ -41,8 +42,7 @@ lockdown, nightfall countdown); BEGIN discoverable (intro + banner hints);
 the cyberpunk splash (SP-1) and district neon/pipes (DC-2), all token-
 driven; the wire's own fog fixed (agent-only events resolved to their firm —
 four event types were mapped, tested and silently dropped). Era-1 batteries
-QUEUED for the batch PC (pacing 300, patrol 3/4 — worker needs ops/ synced
-by hand).
+QUEUED for the batch PC (pacing 300, patrol 3/4).
 **Playtest 13 (2026-08-28), all eight findings built** on `dev_night`, suite
 513 green:
 - **PT13-A** camera: right-drag pan, quarter-turn rotation (four azimuths, all
@@ -96,7 +96,7 @@ by hand).
   board's buttons are the playtest-5 defect's original victim.
 
 **Open**: the **era-2** battery verdicts (queue unchanged, still needs the batch
-PC and a hand-synced `ops/`); the AI's general night pricing; area retune behind
+PC; the queue is committed at `batch/tasks/`); the AI's general night pricing; area retune behind
 D42; avenue density (7B, noted). Q48/Q49/Q50/Q51 are all ruled and closed.
 
 ## Read first
@@ -104,7 +104,7 @@ D42; avenue density (7B, noted). Q48/Q49/Q50/Q51 are all ruled and closed.
 1. `specs/00_document_index.md` — document map, rulings D1–D65
 2. `plan-version1.md` — the operational plan (milestones M0–M7, gates)
 3. `plan-implementation-order.md` — slice-by-slice execution order, per-milestone
-   STATUS markers (battery runbook: `ops/BATCH_PC.md`, private ops repo)
+   STATUS markers (battery lane: `batch/README.md`)
 4. `specs/07_spec_map.md` → `specs/systems/S*.md` — implementation contracts
 5. `dev-log.md` — what actually happened, including every dead end
 6. `dev-questions.md` — decisions waiting on the owner
@@ -138,6 +138,9 @@ node debugging/dbg_ai_areas.mjs 4711 8000   # the counts behind the M5 gate's bi
 node debugging/dbg_poi_look.mjs             # playtest 13: shops + patrol markers
 node debugging/dbg_cityinfo.mjs             # CI-1: every City Info tab, splash + field
 node debugging/dbg_district_look.mjs Industrial 53,39 4   # a named district, aimed
+node tools/batch.mjs queue pacing 300 60000  # queue a battery (commit + push it)
+node tools/batch.mjs status                 # the battery board, either machine
+node tools/batch.mjs run                    # WORKER: run everything pending
 node tools/repin_fixture.mjs "<reason>"     # deliberate fixture re-pin
 ```
 
@@ -154,7 +157,8 @@ node tools/repin_fixture.mjs "<reason>"     # deliberate fixture re-pin
 | `client/i18n/` | `en.json` / `no.json`, key-parity enforced |
 | `test/` | suite + `helpers.js` + `fixture_hash.js` (the paired hash) + `fixtures/` |
 | `tools/`, `debugging/` | re-pin tool, city renderer; probes kept forever |
-| `ops/` | **gitignored, private ops repo**: deploy runbooks (`DEPLOYING.md`, `BATCH_PC.md`), agent-mail hub + batch-lane scripts — never on public GitHub |
+| `batch/` | the battery lane: `tasks/` queued by the dev machine, `responses/` written by the worker. **Git is the transport** — see `batch/README.md` |
+| `ops/` | **gitignored, private ops repo**: deploy runbooks (`DEPLOY.md`, `NOTES.md`, `ssh-deploy.sh`, the unit) and the retired LAN batch scripts — never on public GitHub |
 
 ## Terminology contract (D8 — enforced by test)
 
@@ -413,7 +417,13 @@ is undeclared. A missed mirror field silently invalidates every future battery.
   It refuses on event drift (exit 2) — that means the reducer changed, not the
   fixture. Inspect `test/fixtures/microscope.txt` by eye before regenerating it.
 - **Batch lane** (D25): shared with firepower, repo-tagged; setup in
-  `ops/BATCH_PC.md` (private ops repo, gitignored).
+  `batch/README.md`. **Git is the transport** (2026-08-30): the dev machine
+  commits `batch/tasks/NNNN-kind.json` and pushes; the worker pulls, runs
+  `node tools/batch.mjs run`, and pushes `batch/responses/`. A task with no
+  response is pending. The runner refuses to serve on a red suite, names the
+  commit AND era in every result, flags an era mismatch rather than correcting
+  it, and scrubs absolute paths out of any error — these files are tracked and
+  the remote is public.
   Never tune or convict on 5 seeds — batteries (n=300+) decide. Not live until
   M5 slice 5g.
 - **Git (updated 2026-08-04): committing and pushing to `dev_night` is
